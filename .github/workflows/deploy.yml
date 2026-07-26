@@ -1,0 +1,44 @@
+name: Pubblica su GitHub Pages
+
+# Pubblica il contenuto della radice del repository a ogni push su main.
+# Nessun passaggio di build: il sito è statico puro, i file vengono
+# caricati così come sono.
+
+on:
+  push:
+    branches: [main]
+  # Permette di ripubblicare a mano dalla scheda Actions, senza fare un push.
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+# Se arrivano due push ravvicinati, lascia finire quello in corso e poi
+# pubblica il più recente: non si interrompe una pubblicazione a metà.
+concurrency:
+  group: pages
+  cancel-in-progress: false
+
+jobs:
+  pubblica:
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deploy.outputs.page_url }}
+    steps:
+      - name: Scarica il repository
+        uses: actions/checkout@v4
+
+      - name: Prepara GitHub Pages
+        uses: actions/configure-pages@v5
+
+      - name: Carica il contenuto della radice
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: .
+
+      - name: Pubblica
+        id: deploy
+        uses: actions/deploy-pages@v4

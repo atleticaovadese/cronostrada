@@ -1,0 +1,60 @@
+# ---------------------------------------------------------------
+# CronoStrada — file che NON devono finire nel repository pubblico
+# ---------------------------------------------------------------
+# Nota: la cartella dist/ NON va esclusa. Contiene la copia di
+# emergenza della app e deve essere versionata.
+
+# Dipendenze e strumenti di sviluppo (per ora non usati: il sito è statico puro)
+node_modules/
+package-lock.json
+.npm/
+.cache/
+
+# Chiavi e configurazioni private — mai nel repository
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+
+# File di sistema
+.DS_Store
+._*
+.Spotlight-V100
+.Trashes
+Thumbs.db
+desktop.ini
+$RECYCLE.BIN/
+
+# Editor
+.vscode/
+.idea/
+*.swp
+*~
+
+# Impostazioni locali di Claude Code (valgono solo su questo computer)
+.claude/
+
+# ---------------------------------------------------------------
+# File di test locali con dati reali degli atleti.
+# Restano sul tuo computer: contengono nomi e date di nascita di
+# persone vere e il repository è pubblico.
+# ---------------------------------------------------------------
+reference.json
+wise_iscritti.xlsx
+*.xlsx
+*.xlsm
+!esempio_*.xlsx
+
+# Risultati dei test (serviranno dal passaggio successivo)
+test-results/
+playwright-report/
+blob-report/
+.playwright/
+coverage/
+
+# Backup e file di lavoro generati dalla app
+*.log
+*.tmp
+backup-*.json
+cronostrada-backup*.json

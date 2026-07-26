@@ -1,0 +1,4 @@
+# I file vanno pubblicati esattamente come sono, byte per byte.
+# Senza questa riga git riscriverebbe i fine-riga (LF <-> CRLF) e index.html
+# non sarebbe più una copia identica di dist/CronoStrada.html.
+* -text

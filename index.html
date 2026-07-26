@@ -1,0 +1,1763 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>CronoStrada — Gestione gare su strada</title>
+<style>
+:root{
+  --bg:#f4f6f8; --surface:#ffffff; --surface-2:#fafbfc;
+  --ink:#12151a; --ink-2:#5b6472; --ink-3:#8b95a3;
+  --line:#e0e5ea; --line-2:#eef1f4;
+  --accent:#1f5fd0; --accent-soft:#e8f0fd; --accent-ink:#164aa3;
+  --go:#0f7a3d; --go-soft:#e6f4ec;
+  --warn:#a55a00; --warn-soft:#fdf1e0;
+  --bad:#b4232a; --bad-soft:#fdeced;
+  --radius:10px; --radius-s:7px;
+  --shadow:0 1px 2px rgba(16,24,40,.05),0 1px 3px rgba(16,24,40,.06);
+  --shadow-lg:0 8px 24px rgba(16,24,40,.12);
+  --mono:ui-monospace,"SF Mono",Menlo,Consolas,"Roboto Mono",monospace;
+  --sans:-apple-system,BlinkMacSystemFont,"Segoe UI",Inter,Roboto,"Helvetica Neue",Arial,sans-serif;
+}
+*{box-sizing:border-box}
+html,body{margin:0;padding:0}
+body{font-family:var(--sans);background:var(--bg);color:var(--ink);font-size:14px;line-height:1.45;-webkit-text-size-adjust:100%}
+button,input,select,textarea{font-family:inherit;font-size:inherit;color:inherit}
+h1,h2,h3{margin:0;font-weight:650;letter-spacing:-.01em}
+h2{font-size:17px}
+h3{font-size:14px}
+a{color:var(--accent)}
+
+/* ---------- layout ---------- */
+#top{position:sticky;top:0;z-index:50;background:var(--surface);border-bottom:1px solid var(--line)}
+.topbar{display:flex;align-items:center;gap:14px;padding:9px 16px;flex-wrap:wrap}
+.brand{display:flex;align-items:baseline;gap:8px;font-weight:700;letter-spacing:-.02em;font-size:16px}
+.brand small{font-weight:500;color:var(--ink-3);font-size:11px;letter-spacing:.04em;text-transform:uppercase}
+.racename{font-weight:600;color:var(--ink-2);font-size:13px;padding-left:14px;border-left:1px solid var(--line);max-width:280px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.topspace{flex:1}
+.savestate{font-size:11.5px;color:var(--ink-3);display:flex;align-items:center;gap:6px;white-space:nowrap}
+.dot{width:7px;height:7px;border-radius:50%;background:var(--go);flex:none}
+.dot.off{background:var(--ink-3)}
+.dot.err{background:var(--bad)}
+
+nav{display:flex;gap:2px;padding:0 10px;overflow-x:auto;scrollbar-width:thin}
+nav button{background:none;border:0;padding:9px 13px 11px;font-size:13.5px;font-weight:550;color:var(--ink-2);cursor:pointer;border-bottom:2.5px solid transparent;white-space:nowrap;border-radius:6px 6px 0 0}
+nav button:hover{color:var(--ink);background:var(--surface-2)}
+nav button.on{color:var(--accent);border-bottom-color:var(--accent)}
+nav button .pill{display:inline-block;margin-left:6px;background:var(--line);color:var(--ink-2);border-radius:20px;padding:0 6px;font-size:11px;font-weight:650;min-width:18px;text-align:center}
+nav button.on .pill{background:var(--accent-soft);color:var(--accent-ink)}
+nav button .pill.alert{background:var(--bad-soft);color:var(--bad)}
+
+main{padding:18px 16px 80px;max-width:1400px;margin:0 auto}
+.view{display:none}
+.view.on{display:block}
+.wrap{display:flex;flex-direction:column;gap:16px}
+
+/* ---------- cards ---------- */
+.card{background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);box-shadow:var(--shadow)}
+.card>header{padding:12px 16px;border-bottom:1px solid var(--line-2);display:flex;align-items:center;gap:12px;flex-wrap:wrap}
+.card>header .topspace{flex:1}
+.card>.body{padding:16px}
+.card>.body.flush{padding:0}
+.hint{font-size:12.5px;color:var(--ink-2);margin:0}
+.hint.warn{color:var(--warn)}
+.grid{display:grid;gap:14px}
+.g2{grid-template-columns:repeat(auto-fit,minmax(260px,1fr))}
+.g3{grid-template-columns:repeat(auto-fit,minmax(200px,1fr))}
+.g4{grid-template-columns:repeat(auto-fit,minmax(150px,1fr))}
+
+/* ---------- form ---------- */
+label.f{display:flex;flex-direction:column;gap:5px;font-size:12px;font-weight:600;color:var(--ink-2)}
+label.f input,label.f select{padding:8px 10px;border:1px solid var(--line);border-radius:var(--radius-s);background:var(--surface);font-weight:500;font-size:14px;color:var(--ink);width:100%}
+label.f input:focus,label.f select:focus{outline:2px solid var(--accent-soft);border-color:var(--accent)}
+input[type=number]{font-variant-numeric:tabular-nums}
+
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:7px;padding:8px 14px;border:1px solid var(--line);background:var(--surface);border-radius:var(--radius-s);font-weight:600;font-size:13px;cursor:pointer;white-space:nowrap;transition:background .12s,border-color .12s}
+.btn:hover{background:var(--surface-2);border-color:#cfd6de}
+.btn:active{transform:translateY(.5px)}
+.btn.primary{background:var(--accent);border-color:var(--accent);color:#fff}
+.btn.primary:hover{background:var(--accent-ink);border-color:var(--accent-ink)}
+.btn.go{background:var(--go);border-color:var(--go);color:#fff}
+.btn.danger{color:var(--bad);border-color:#f0c9cc}
+.btn.danger:hover{background:var(--bad-soft)}
+.btn.sm{padding:5px 9px;font-size:12px}
+.btn:disabled{opacity:.42;cursor:not-allowed}
+.btnrow{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+
+/* ---------- stats ---------- */
+.stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(115px,1fr));gap:1px;background:var(--line-2);border-radius:var(--radius);overflow:hidden;border:1px solid var(--line)}
+.stat{background:var(--surface);padding:12px 14px}
+.stat .k{font-size:11px;text-transform:uppercase;letter-spacing:.05em;color:var(--ink-3);font-weight:650}
+.stat .v{font-size:24px;font-weight:680;letter-spacing:-.02em;font-variant-numeric:tabular-nums;margin-top:2px}
+.stat .v.sm{font-size:17px}
+.stat.acc .v{color:var(--accent)}
+.stat.bad .v{color:var(--bad)}
+.stat.warnv .v{color:var(--warn)}
+
+/* ---------- tables ---------- */
+.tw{overflow:auto;max-height:none}
+table{border-collapse:collapse;width:100%;font-size:13px}
+th{text-align:left;font-weight:650;font-size:11px;text-transform:uppercase;letter-spacing:.04em;color:var(--ink-3);padding:8px 10px;border-bottom:1px solid var(--line);background:var(--surface-2);position:sticky;top:0;z-index:2;white-space:nowrap}
+td{padding:6px 10px;border-bottom:1px solid var(--line-2);vertical-align:middle}
+tbody tr:hover{background:var(--surface-2)}
+td.num,th.num{text-align:right;font-variant-numeric:tabular-nums}
+td.mono{font-family:var(--mono);font-variant-numeric:tabular-nums}
+td.t{font-family:var(--mono);font-weight:600;font-variant-numeric:tabular-nums;white-space:nowrap}
+tr.dim td{color:var(--ink-3)}
+tr.hl td{background:var(--accent-soft)}
+tr.bad td{background:var(--bad-soft)}
+.tbl-empty{padding:34px 16px;text-align:center;color:var(--ink-3);font-size:13px}
+
+.tag{display:inline-block;padding:1px 7px;border-radius:20px;font-size:11px;font-weight:650;background:var(--line-2);color:var(--ink-2);white-space:nowrap}
+.tag.acc{background:var(--accent-soft);color:var(--accent-ink)}
+.tag.go{background:var(--go-soft);color:var(--go)}
+.tag.warn{background:var(--warn-soft);color:var(--warn)}
+.tag.bad{background:var(--bad-soft);color:var(--bad)}
+.tag.gold{background:#fdf3d6;color:#8a6100}
+
+td input.cell{width:100%;border:1px solid transparent;background:transparent;padding:3px 5px;border-radius:5px;font-size:13px}
+td input.cell:hover{border-color:var(--line)}
+td input.cell:focus{outline:none;border-color:var(--accent);background:var(--surface)}
+td input.cell.mono{font-family:var(--mono);font-variant-numeric:tabular-nums}
+
+/* ---------- finish line ---------- */
+.finish{display:grid;grid-template-columns:minmax(300px,1fr) minmax(340px,1.3fr);gap:16px;align-items:start}
+@media(max-width:900px){.finish{grid-template-columns:1fr}}
+.clockcard{background:var(--ink);color:#fff;border-radius:var(--radius);padding:20px;box-shadow:var(--shadow-lg);position:sticky;top:96px}
+.clockcard .lbl{font-size:11px;text-transform:uppercase;letter-spacing:.09em;color:#8e99a8;font-weight:650}
+.clock{font-family:var(--mono);font-size:clamp(38px,7vw,60px);font-weight:600;letter-spacing:-.02em;line-height:1.05;margin:4px 0 2px;font-variant-numeric:tabular-nums}
+.clock .ms{font-size:.44em;color:#7f8b9b}
+.clock.idle{color:#5d6875}
+.bigbtn{width:100%;padding:26px;font-size:26px;font-weight:700;letter-spacing:.02em;border-radius:var(--radius);border:0;cursor:pointer;background:var(--go);color:#fff;box-shadow:0 4px 0 #0a5a2c;margin-top:16px;transition:transform .05s,box-shadow .05s;touch-action:manipulation;-webkit-user-select:none;user-select:none}
+.bigbtn:active{transform:translateY(3px);box-shadow:0 1px 0 #0a5a2c}
+.bigbtn.start{background:var(--accent);box-shadow:0 4px 0 #123f8f}
+.bigbtn.start:active{box-shadow:0 1px 0 #123f8f}
+.bigbtn:disabled{background:#39414d;box-shadow:0 4px 0 #262c35;color:#78828f;cursor:not-allowed}
+.startrow{display:flex;align-items:center;gap:8px;font-size:12.5px;font-weight:600;color:#8e99a8;margin-top:4px;flex-wrap:wrap;min-height:24px}
+.startrow .ok{color:#6ee7a0}
+.minibtn{background:#2a313b;border:1px solid #3b444f;color:#d3d9e0;border-radius:6px;padding:3px 9px;font-size:11.5px;font-weight:600;cursor:pointer}
+.minibtn:hover{background:#343d49;color:#fff}
+.ctrlrow{display:flex;gap:8px;margin-top:10px}
+.ctrlrow button{flex:1;padding:11px;border-radius:8px;border:1px solid #3b444f;background:#2a313b;color:#d3d9e0;font-weight:650;font-size:13.5px;cursor:pointer}
+.ctrlrow button:hover{background:#343d49;color:#fff}
+.ctrlrow button.stop{border-color:#7a2b30;color:#ff9ba1}
+.ctrlrow button.stop:hover{background:#3a2226}
+.clock.stopped{color:#ffb0b6}
+.shiftrow{display:flex;gap:6px;flex-wrap:wrap;align-items:center;margin-top:8px}
+.shiftrow button{border:1px solid var(--line);background:var(--surface);border-radius:6px;padding:5px 11px;font-weight:650;font-size:12.5px;cursor:pointer;font-family:var(--mono)}
+.shiftrow button:hover{background:var(--surface-2);border-color:#cfd6de}
+.kbdhint{margin-top:12px;font-size:11.5px;color:#8e99a8;display:flex;flex-wrap:wrap;gap:5px 12px}
+kbd{background:#2a313b;border:1px solid #3b444f;border-bottom-width:2px;border-radius:4px;padding:1px 5px;font-family:var(--mono);font-size:11px;color:#d3d9e0}
+.quickwrap{margin-top:16px}
+.quick{width:100%;padding:15px 16px;font-size:30px;font-weight:700;font-family:var(--mono);text-align:center;border-radius:var(--radius);border:2px solid #39414d;background:#1c2129;color:#fff;letter-spacing:.06em}
+.quick:focus{outline:none;border-color:var(--go);background:#20262f}
+.quick::placeholder{color:#5d6875;font-size:15px;font-weight:500;letter-spacing:0}
+.preview{margin-top:8px;min-height:20px;font-size:13px;font-weight:600;color:#b9c2cc;text-align:center;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.preview .err{color:#ff9ba1}
+.preview .ok{color:#6ee7a0}
+
+.arrhead{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+.arrsearch{padding:6px 10px;border:1px solid var(--line);border-radius:var(--radius-s);width:150px}
+tr.nobib td{background:var(--warn-soft)}
+tr.nobib:hover td{background:#fbe9cf}
+tr.dup td{background:var(--bad-soft)}
+.rowbtns{display:flex;gap:3px}
+.ib{border:1px solid var(--line);background:var(--surface);border-radius:5px;width:24px;height:24px;display:inline-flex;align-items:center;justify-content:center;cursor:pointer;font-size:12px;color:var(--ink-2);padding:0;line-height:1}
+.ib:hover{background:var(--surface-2);color:var(--ink)}
+.ib.danger:hover{background:var(--bad-soft);color:var(--bad);border-color:#f0c9cc}
+
+/* ---------- misc ---------- */
+.banner{padding:10px 14px;border-radius:var(--radius-s);font-size:13px;display:flex;gap:10px;align-items:flex-start;font-weight:500}
+.banner.warn{background:var(--warn-soft);color:#7a4300;border:1px solid #f2d9b3}
+.banner.bad{background:var(--bad-soft);color:#8e1b21;border:1px solid #f2c4c7}
+.banner.info{background:var(--accent-soft);color:var(--accent-ink);border:1px solid #c9dcfa}
+.banner.go{background:var(--go-soft);color:#0a5a2c;border:1px solid #bfe3cf}
+.banner b{font-weight:700}
+
+.matrix{width:100%;font-size:12.5px}
+.matrix input{width:100%;border:1px solid var(--line);border-radius:5px;padding:5px 7px;font-size:12.5px}
+.matrix input.w{text-align:center}
+.chip{display:inline-flex;align-items:center;gap:4px;background:var(--surface-2);border:1px solid var(--line);border-radius:20px;padding:2px 4px 2px 9px;font-size:11.5px;font-weight:600;margin:2px}
+.chip button{border:0;background:none;cursor:pointer;color:var(--ink-3);font-size:14px;line-height:1;padding:0 3px}
+.chip button:hover{color:var(--bad)}
+
+.podium td:first-child{font-weight:700;width:34px}
+.blk{margin-bottom:18px;break-inside:avoid}
+.blk>h3{padding:7px 11px;background:var(--ink);color:#fff;border-radius:var(--radius-s) var(--radius-s) 0 0;font-size:13px;letter-spacing:.02em}
+.blk>h3.gold{background:linear-gradient(90deg,#a07800,#c99a12)}
+.blk table{border:1px solid var(--line);border-top:0;border-radius:0 0 var(--radius-s) var(--radius-s)}
+
+.drop{border:2px dashed var(--line);border-radius:var(--radius);padding:26px;text-align:center;color:var(--ink-2);cursor:pointer;background:var(--surface-2)}
+.drop:hover,.drop.over{border-color:var(--accent);background:var(--accent-soft);color:var(--accent-ink)}
+.drop b{display:block;font-size:15px;color:var(--ink);margin-bottom:3px}
+.drop.over b{color:var(--accent-ink)}
+
+dialog{border:0;border-radius:var(--radius);padding:0;box-shadow:var(--shadow-lg);max-width:min(560px,94vw);width:100%}
+dialog::backdrop{background:rgba(16,20,28,.42)}
+dialog .body{padding:18px}
+dialog header{padding:14px 18px;border-bottom:1px solid var(--line-2);font-weight:680;font-size:15px}
+dialog footer{padding:12px 18px;border-top:1px solid var(--line-2);display:flex;justify-content:flex-end;gap:8px;background:var(--surface-2);border-radius:0 0 var(--radius) var(--radius)}
+
+#toast{position:fixed;left:50%;bottom:22px;transform:translateX(-50%);z-index:200;display:flex;flex-direction:column;gap:8px;align-items:center;pointer-events:none}
+.toast{background:var(--ink);color:#fff;padding:10px 16px;border-radius:22px;font-size:13px;font-weight:600;box-shadow:var(--shadow-lg);animation:pop .2s ease-out}
+.toast.bad{background:var(--bad)}
+.toast.go{background:var(--go)}
+@keyframes pop{from{opacity:0;transform:translateY(8px)}}
+
+.split{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+@media(max-width:800px){.split{grid-template-columns:1fr}}
+.seg{display:inline-flex;border:1px solid var(--line);border-radius:var(--radius-s);overflow:hidden;background:var(--surface)}
+.seg button{border:0;background:none;padding:6px 12px;font-size:12.5px;font-weight:600;cursor:pointer;color:var(--ink-2)}
+.seg button.on{background:var(--accent);color:#fff}
+.seg button+button{border-left:1px solid var(--line)}
+
+@media print{
+  #top,nav,.noprint,#toast{display:none!important}
+  body{background:#fff;font-size:11px}
+  main{padding:0;max-width:none}
+  .card{border:0;box-shadow:none}
+  .card>.body{padding:0}
+  .blk{page-break-inside:avoid}
+  .blk>h3{background:#222!important;-webkit-print-color-adjust:exact;print-color-adjust:exact}
+  th{background:#f0f0f0!important;-webkit-print-color-adjust:exact;print-color-adjust:exact}
+  table{font-size:10.5px}
+  td{padding:3px 6px}
+}
+</style>
+</head>
+<body>
+<div id="top">
+  <div class="topbar">
+    <div class="brand">CronoStrada <small>gare su strada</small></div>
+    <div class="racename" id="raceName">Nuova gara</div>
+    <div class="topspace"></div>
+    <div class="savestate"><span class="dot" id="saveDot"></span><span id="saveTxt">Salvato in locale</span></div>
+    <button class="btn sm" id="btnBackup">Backup file</button>
+  </div>
+  <nav id="nav"></nav>
+</div>
+
+<main>
+
+<!-- ============ GARA ============ -->
+<section class="view" data-v="gara"><div class="wrap">
+  <div class="card"><header><h2>Dati della gara</h2></header><div class="body">
+    <div class="grid g3">
+      <label class="f">Nome della gara<input id="cfgNome" placeholder="es. 7ª Stradolcetto"></label>
+      <label class="f">Data<input type="date" id="cfgData"></label>
+      <label class="f">Località<input id="cfgLuogo" placeholder="es. Ovada"></label>
+      <label class="f">Distanza (km)<input type="number" id="cfgKm" step="0.001" min="0" placeholder="10"></label>
+      <label class="f">Anno di riferimento categorie<input type="number" id="cfgAnno" min="1990" max="2100"></label>
+      <label class="f">Organizzatore<input id="cfgOrg" placeholder="A.S.D. ..."></label>
+    </div>
+    <p class="hint" style="margin-top:12px">La categoria FIDAL si calcola come <b>anno di riferimento − anno di nascita</b>, esattamente come nel foglio Excel. Cambiando la data della gara l'anno si aggiorna da solo.</p>
+    <div id="cfgAnnoWarn"></div>
+  </div></div>
+
+  <div class="card"><header><h2>Premiazioni</h2><div class="topspace"></div>
+    <span class="hint">Quanti atleti premi per fascia</span></header><div class="body">
+    <div class="grid g4">
+      <label class="f">Assolute femminili<input type="number" id="cfgPremAssF" min="0" max="20"></label>
+      <label class="f">Assoluti maschili<input type="number" id="cfgPremAssM" min="0" max="20"></label>
+      <label class="f">Per categoria (default)<input type="number" id="cfgPremCat" min="0" max="20"></label>
+      <label class="f">Società premiate<input type="number" id="cfgPremSoc" min="0" max="50"></label>
+    </div>
+    <p class="hint" style="margin-top:12px">I premiati assoluti vengono <b>esclusi</b> dalla classifica della loro categoria, come nel file originale.</p>
+  </div></div>
+
+  <div class="card"><header><h2>Categorie di premiazione</h2><div class="topspace"></div>
+    <button class="btn sm" id="btnMatrixReset">Ripristina standard</button>
+    <button class="btn sm primary" id="btnMatrixAdd">+ Fascia</button></header>
+    <div class="body">
+      <p class="hint" style="margin-bottom:12px">Ogni riga è una fascia premiata. Trascina dentro le categorie FIDAL da accorpare: chi rientra in una di queste categorie gareggia nella fascia indicata. Le categorie non assegnate a nessuna fascia vengono segnalate tra gli iscritti.</p>
+      <div id="matrixBox"></div>
+      <div id="matrixOrphans"></div>
+    </div>
+  </div>
+
+  <div class="card"><header><h2>Dati e backup</h2></header><div class="body">
+    <div class="btnrow">
+      <button class="btn" id="btnSaveAs">Collega file di salvataggio</button>
+      <button class="btn" id="btnExportJson">Scarica backup .json</button>
+      <button class="btn" id="btnImportJson">Carica backup .json</button>
+      <div class="topspace"></div>
+      <button class="btn danger" id="btnResetArrivi">Azzera arrivi</button>
+      <button class="btn danger" id="btnResetAll">Azzera tutto</button>
+    </div>
+    <p class="hint" style="margin-top:12px" id="fsHint"></p>
+  </div></div>
+</div></section>
+
+<!-- ============ ISCRITTI ============ -->
+<section class="view" data-v="iscritti"><div class="wrap">
+  <div id="iscStats"></div>
+  <div id="iscAlerts"></div>
+
+  <div class="card"><header><h2>Iscritti</h2><div class="topspace"></div>
+    <input class="arrsearch" id="iscSearch" placeholder="Cerca…" style="width:200px">
+    <select id="iscFilter" style="padding:6px 10px;border:1px solid var(--line);border-radius:7px">
+      <option value="">Tutti</option><option value="conf">Solo confermati</option>
+      <option value="dns">Solo non confermati (DNS)</option><option value="alert">Solo con segnalazioni</option>
+    </select>
+    <button class="btn sm" id="btnIscAdd">+ Iscritto</button>
+    <button class="btn sm primary" id="btnIscImport">Importa da WISE</button>
+  </header>
+  <div class="body flush"><div class="tw" id="iscTable"></div></div></div>
+</div></section>
+
+<!-- ============ TRAGUARDO ============ -->
+<section class="view" data-v="traguardo"><div class="wrap">
+  <div id="trgBanner"></div>
+  <div class="finish">
+    <div>
+      <div class="clockcard">
+        <div class="lbl" id="clockLbl">Cronometro</div>
+        <div class="clock idle" id="clock">--:--:--<span class="ms">.--</span></div>
+        <div class="startrow" id="startRow"></div>
+        <button class="bigbtn start" id="btnStart">START</button>
+        <div class="quickwrap" id="quickWrap" style="display:none">
+          <input class="quick" id="quickBib" inputmode="numeric" autocomplete="off" placeholder="pettorale + Invio">
+          <div class="preview" id="quickPrev">&nbsp;</div>
+        </div>
+        <button class="bigbtn" id="btnArrivo" style="display:none">ARRIVO</button>
+        <div class="ctrlrow" id="ctrlRow"></div>
+        <div class="kbdhint" id="kbdHint" style="display:none">
+          <span><kbd>Spazio</kbd> arrivo</span><span><kbd>Invio</kbd> conferma pettorale</span><span><kbd>Ctrl</kbd>+<kbd>Z</kbd> annulla</span>
+        </div>
+      </div>
+    </div>
+    <div>
+      <div class="card"><header class="arrhead"><h2>Elenco arrivi</h2>
+        <span class="tag" id="arrCount">0</span>
+        <div class="topspace"></div>
+        <input class="arrsearch" id="arrSearch" placeholder="Cerca pettorale…">
+        <button class="btn sm danger" id="btnUndo">Annulla ultimo</button>
+      </header>
+      <div class="body flush"><div class="tw" style="max-height:64vh" id="arrTable"></div></div></div>
+    </div>
+  </div>
+</div></section>
+
+<!-- ============ CLASSIFICHE ============ -->
+<section class="view" data-v="classifiche"><div class="wrap">
+  <div id="clsStats"></div>
+  <div class="card"><header><h2>Classifica</h2><div class="topspace"></div>
+    <div class="seg" id="clsSeg">
+      <button data-m="gen" class="on">Generale</button><button data-m="cat">Per categoria</button><button data-m="soc">Per società</button>
+    </div>
+    <input class="arrsearch" id="clsSearch" placeholder="Cerca…" style="width:180px">
+    <button class="btn sm" onclick="window.print()">Stampa</button>
+  </header>
+  <div class="body flush"><div id="clsBody"></div></div></div>
+</div></section>
+
+<!-- ============ PREMIAZIONI ============ -->
+<section class="view" data-v="premiazioni"><div class="wrap">
+  <div class="card noprint"><header><h2>Premiazioni</h2><div class="topspace"></div>
+    <button class="btn sm" onclick="window.print()">Stampa</button></header>
+    <div class="body"><p class="hint">Vengono mostrate solo le fasce con almeno un premiato. Le fasce vuote non compaiono e non serve nasconderle a mano.</p></div>
+  </div>
+  <div id="premBody"></div>
+</div></section>
+
+<!-- ============ SOCIETÀ ============ -->
+<section class="view" data-v="societa"><div class="wrap">
+  <div class="card"><header><h2>Classifica società</h2><div class="topspace"></div>
+    <div class="seg" id="socSeg">
+      <button data-m="conf" class="on">Iscritti confermati</button><button data-m="arr">Arrivati</button>
+    </div>
+    <button class="btn sm" onclick="window.print()">Stampa</button>
+  </header>
+  <div class="body flush"><div class="tw" id="socTable"></div></div></div>
+  <div class="card noprint"><header><h2>Società escluse dalla classifica</h2></header><div class="body">
+    <p class="hint" style="margin-bottom:10px">Chi corre senza società (tesserati singoli, Runcard) non forma una squadra. Le sigle qui elencate non vengono conteggiate.</p>
+    <div id="socExcl"></div>
+    <div class="btnrow" style="margin-top:10px"><input id="socExclNew" placeholder="es. RUNCARD" style="padding:7px 10px;border:1px solid var(--line);border-radius:7px"><button class="btn sm" id="btnSocExclAdd">Escludi</button></div>
+  </div></div>
+</div></section>
+
+<!-- ============ DNS/DNF ============ -->
+<section class="view" data-v="stati"><div class="wrap">
+  <div id="stStats"></div>
+  <div id="stBanner"></div>
+  <div class="card"><header><h2>Stato atleti</h2><div class="topspace"></div>
+    <button class="btn sm" id="btnChiudiGara">Chiudi arrivi</button>
+    <select id="stFilter" style="padding:6px 10px;border:1px solid var(--line);border-radius:7px">
+      <option value="tutti">Tutti</option><option value="DNS">Solo DNS</option>
+      <option value="DNF">Solo DNF</option><option value="Arrivato">Solo arrivati</option>
+    </select>
+    <input class="arrsearch" id="stSearch" placeholder="Cerca…" style="width:180px">
+  </header>
+  <div class="body flush"><div class="tw" id="stTable"></div></div></div>
+</div></section>
+
+<!-- ============ EXPORT ============ -->
+<section class="view" data-v="export"><div class="wrap">
+  <div id="expBanner"></div>
+  <div class="card"><header><h2>Export per WISE</h2></header><div class="body">
+    <p class="hint" style="margin-bottom:14px">Il file CSV contiene gli arrivi con la prestazione formattata (<span class="tag">mm:ss</span> sotto l'ora, <span class="tag">Hhmm:ss</span> sopra), seguiti dai blocchi DNS e DNF. I tempi sono <b>troncati</b> al secondo, come prevede il regolamento.</p>
+    <div class="btnrow">
+      <button class="btn primary" id="btnCsvWise">Scarica CSV WISE</button>
+      <button class="btn" id="btnCsvFull">Scarica classifica completa CSV</button>
+      <button class="btn" id="btnCsvIscritti">Scarica iscritti CSV</button>
+    </div>
+  </div></div>
+  <div class="card"><header><h2>Anteprima CSV WISE</h2><div class="topspace"></div><span class="hint" id="csvInfo"></span></header>
+    <div class="body flush"><div class="tw" style="max-height:52vh"><table id="csvPrev"></table></div></div></div>
+</div></section>
+
+</main>
+
+<div id="toast"></div>
+
+<dialog id="dlgImport">
+  <header>Importa iscritti</header>
+  <div class="body" id="dlgImportBody"></div>
+  <footer><button class="btn" id="impCancel">Annulla</button><button class="btn primary" id="impOk">Importa</button></footer>
+</dialog>
+
+<dialog id="dlgStart">
+  <header id="stTitle">Orario di partenza</header>
+  <div class="body" id="dlgStartBody"></div>
+  <footer><button class="btn" id="stCancel">Annulla</button><button class="btn primary" id="stOk">Applica</button></footer>
+</dialog>
+
+<dialog id="dlgConfirm">
+  <header id="cfTitle">Conferma</header>
+  <div class="body"><p id="cfMsg" style="margin:0"></p></div>
+  <footer><button class="btn" id="cfNo">Annulla</button><button class="btn danger" id="cfYes">Conferma</button></footer>
+</dialog>
+
+<input type="file" id="filePick" style="display:none">
+<script>
+"use strict";
+/* ============================================================
+   CronoStrada — gestione gare podistiche su strada
+   App a file singolo, funziona offline.
+   ============================================================ */
+
+/* ---------- util ---------- */
+const $ = s => document.querySelector(s);
+const $$ = s => Array.from(document.querySelectorAll(s));
+const el = (t, a = {}, ...kids) => {
+  const n = document.createElement(t);
+  for (const k in a) {
+    if (k === 'class') n.className = a[k];
+    else if (k === 'html') n.innerHTML = a[k];
+    else if (k.startsWith('on')) n.addEventListener(k.slice(2), a[k]);
+    else if (a[k] !== null && a[k] !== undefined && a[k] !== false) n.setAttribute(k, a[k]);
+  }
+  for (const c of kids.flat()) if (c !== null && c !== undefined && c !== false) n.append(c.nodeType ? c : String(c));
+  return n;
+};
+const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+const norm = s => String(s ?? '').trim().replace(/\s+/g, ' ').toUpperCase();
+const debounce = (fn, ms) => { let t; return (...a) => { clearTimeout(t); t = setTimeout(() => fn(...a), ms); }; };
+
+function toast(msg, kind) {
+  const box = $('#toast');
+  while (box.children.length >= 3) box.firstChild.remove();
+  const t = el('div', { class: 'toast' + (kind ? ' ' + kind : '') }, msg);
+  box.append(t);
+  setTimeout(() => { t.style.transition = 'opacity .25s'; t.style.opacity = '0'; setTimeout(() => t.remove(), 260); }, 2100);
+}
+function confirmDlg(title, msg) {
+  return new Promise(res => {
+    $('#cfTitle').textContent = title; $('#cfMsg').textContent = msg;
+    const d = $('#dlgConfirm');
+    const yes = () => { cleanup(); res(true); }, no = () => { cleanup(); res(false); };
+    function cleanup() { d.close(); $('#cfYes').removeEventListener('click', yes); $('#cfNo').removeEventListener('click', no); }
+    $('#cfYes').addEventListener('click', yes); $('#cfNo').addEventListener('click', no);
+    d.showModal();
+  });
+}
+
+/* ---------- tempo ---------- */
+// Tutti i tempi sono millisecondi trascorsi dallo start. Mai timestamp assoluti.
+function fmtHMS(ms, dec) {
+  if (ms === null || ms === undefined || isNaN(ms)) return '';
+  const neg = ms < 0; ms = Math.abs(ms);
+  const tot = Math.floor(ms / 1000);                    // troncamento, non arrotondamento
+  const h = Math.floor(tot / 3600), m = Math.floor(tot % 3600 / 60), s = tot % 60;
+  const cs = Math.floor((ms % 1000) / 10);
+  let out = h > 0 ? `${h}:${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`
+    : `${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`;
+  if (dec) out += '.' + String(cs).padStart(2, '0');
+  return (neg ? '-' : '') + out;
+}
+// formato richiesto da WISE: mm:ss sotto l'ora, Hhmm:ss sopra
+function fmtWise(ms) {
+  if (ms === null || ms === undefined || isNaN(ms)) return '';
+  const tot = Math.floor(ms / 1000);
+  const h = Math.floor(tot / 3600), m = Math.floor(tot % 3600 / 60), s = tot % 60;
+  return h > 0 ? `${h}h${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`
+    : `${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`;
+}
+function fmtClock(ms) {
+  const tot = Math.floor(ms / 1000);
+  const h = Math.floor(tot / 3600), m = Math.floor(tot % 3600 / 60), s = tot % 60;
+  const cs = Math.floor((ms % 1000) / 10);
+  return `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}<span class="ms">.${String(cs).padStart(2, '0')}</span>`;
+}
+function fmtPace(ms, km) {
+  if (!km || !ms) return '';
+  const secPerKm = ms / 1000 / km;
+  const m = Math.floor(secPerKm / 60), s = Math.floor(secPerKm % 60);
+  return `${m}:${String(s).padStart(2, '0')}`;
+}
+function fmtOra(epoch) {
+  if (!epoch) return '';
+  const d = new Date(epoch);
+  return `${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}:${String(d.getSeconds()).padStart(2, '0')}`;
+}
+// "09:00:12" + epoch di riferimento -> nuovo epoch, conservando i millisecondi originali
+function oraToEpoch(hhmmss, rifEpoch) {
+  const [h, m, s] = String(hhmmss).split(':').map(n => +n || 0);
+  const d = new Date(rifEpoch || Date.now());
+  d.setHours(h, m, s, (rifEpoch || 0) % 1000);
+  return d.getTime();
+}
+// millisecondi di gara mostrati adesso
+function elapsedOra() {
+  if (!S.start) return 0;
+  return (S.stop || Date.now()) - S.start;
+}
+
+/* ---------- categorie FIDAL ---------- */
+// Replica della formula del foglio Iscritti, estesa alle fasce 85 e 90
+// che nel file originale erano previste in matrice ma irraggiungibili.
+const SOGLIE = [[89, '90'], [84, '85'], [79, '80'], [74, '75'], [69, '70'], [64, '65'], [59, '60'],
+[54, '55'], [49, '50'], [44, '45'], [39, '40'], [34, '35']];
+function catFidal(sesso, annoNascita, annoRif) {
+  if (!annoNascita || !annoRif) return '';
+  const s = String(sesso).toUpperCase().startsWith('F') ? 'F' : 'M';
+  const e = annoRif - annoNascita;
+  for (const [lim, suf] of SOGLIE) if (e > lim) return 'S' + s + suf;
+  if (e > 22) return 'S' + s;     // Senior
+  if (e > 19) return 'P' + s;     // Promesse
+  if (e > 17) return 'J' + s;     // Junior
+  if (e > 15) return 'A' + s;     // Allievi
+  return 'C' + s;                 // Cadetti e più giovani
+}
+const TUTTE_FIDAL = (() => {
+  const out = [];
+  for (const s of ['F', 'M']) {
+    out.push('C' + s, 'A' + s, 'J' + s, 'P' + s, 'S' + s);
+    for (const [, suf] of [...SOGLIE].reverse()) out.push('S' + s + suf);
+  }
+  return out;
+})();
+
+const MATRICE_STD = [
+  { nome: 'JPSF', fidal: ['CF', 'AF', 'JF', 'PF', 'SF'], premi: 3 },
+  { nome: 'SF35', fidal: ['SF35'], premi: 3 }, { nome: 'SF40', fidal: ['SF40'], premi: 3 },
+  { nome: 'SF45', fidal: ['SF45'], premi: 3 }, { nome: 'SF50', fidal: ['SF50'], premi: 3 },
+  { nome: 'SF55', fidal: ['SF55'], premi: 3 }, { nome: 'SF60', fidal: ['SF60'], premi: 3 },
+  { nome: 'SF65', fidal: ['SF65'], premi: 3 },
+  { nome: 'SF70+', fidal: ['SF70', 'SF75', 'SF80', 'SF85', 'SF90'], premi: 3 },
+  { nome: 'JPSM', fidal: ['CM', 'AM', 'JM', 'PM', 'SM'], premi: 3 },
+  { nome: 'SM35', fidal: ['SM35'], premi: 3 }, { nome: 'SM40', fidal: ['SM40'], premi: 3 },
+  { nome: 'SM45', fidal: ['SM45'], premi: 3 }, { nome: 'SM50', fidal: ['SM50'], premi: 3 },
+  { nome: 'SM55', fidal: ['SM55'], premi: 3 }, { nome: 'SM60', fidal: ['SM60'], premi: 3 },
+  { nome: 'SM65', fidal: ['SM65'], premi: 3 },
+  { nome: 'SM70+', fidal: ['SM70', 'SM75', 'SM80', 'SM85', 'SM90'], premi: 3 },
+];
+
+/* ---------- stato ---------- */
+const VUOTO = () => ({
+  v: 1,
+  cfg: {
+    nome: '', data: new Date().toISOString().slice(0, 10), luogo: '', km: null,
+    anno: new Date().getFullYear(), org: '',
+    premAssF: 3, premAssM: 3, premCat: 3, premSoc: 3,
+    socEscluse: ['RUNCARD'],
+  },
+  matrice: JSON.parse(JSON.stringify(MATRICE_STD)),
+  iscritti: [],   // {id,pett,cognome,nome,sesso,societa,nascita,conferma}
+  arrivi: [],     // {id,pett,ms,corr,nota}
+  start: null,    // epoch ms dello sparo
+  stop: null,     // epoch ms in cui il cronometro è stato fermato (null = in corso)
+  dnf: [],        // pettorali dichiarati ritirati
+});
+let S = VUOTO();
+let ui = { view: 'gara', clsMode: 'gen', socMode: 'conf', iscQ: '', iscF: '', arrQ: '', clsQ: '', stQ: '', stF: 'tutti' };
+let uid = 1; const nid = () => 'x' + (uid++) + Date.now().toString(36).slice(-4);
+
+/* ---------- persistenza ---------- */
+const KEY = 'cronostrada.v1';
+let fsHandle = null, storageOk = true;
+
+function markSaved(txt, kind) {
+  $('#saveTxt').textContent = txt;
+  $('#saveDot').className = 'dot' + (kind ? ' ' + kind : '');
+}
+const save = debounce(async () => {
+  const json = JSON.stringify(S);
+  try { localStorage.setItem(KEY, json); storageOk = true; }
+  catch (e) { storageOk = false; markSaved('Memoria del browser non disponibile — usa il backup su file', 'err'); }
+  if (fsHandle) {
+    try {
+      const w = await fsHandle.createWritable();
+      await w.write(json); await w.close();
+      markSaved('Salvato su file · ' + new Date().toLocaleTimeString('it-IT'));
+      return;
+    } catch (e) { markSaved('File non scrivibile — solo memoria locale', 'err'); return; }
+  }
+  if (storageOk) markSaved('Salvato in locale · ' + new Date().toLocaleTimeString('it-IT'));
+}, 350);
+
+function load() {
+  try {
+    const raw = localStorage.getItem(KEY);
+    if (raw) { const d = JSON.parse(raw); if (d && d.cfg) { S = Object.assign(VUOTO(), d); S.cfg = Object.assign(VUOTO().cfg, d.cfg); return true; } }
+  } catch (e) { }
+  return false;
+}
+
+/* ---------- motore ---------- */
+function annoDi(iscr) {
+  if (!iscr.nascita) return null;
+  const m = String(iscr.nascita).match(/(\d{4})/);
+  return m ? +m[1] : null;
+}
+function fidalDi(i) { return catFidal(i.sesso, annoDi(i), S.cfg.anno); }
+function mappaGara() {
+  const m = new Map();
+  for (const f of S.matrice) for (const c of f.fidal) m.set(c, f.nome);
+  return m;
+}
+
+/** Calcolo completo. Restituisce tutto ciò che serve alle viste. */
+function calcola() {
+  const mg = mappaGara();
+  const perPett = new Map();
+  const dupPett = new Map(), dupNome = new Map();
+
+  const iscritti = S.iscritti.map(i => {
+    const cf = fidalDi(i);
+    const cg = mg.get(cf) || '';
+    const o = Object.assign({}, i, {
+      anno: annoDi(i), catFidal: cf, catGara: cg,
+      confermato: String(i.conferma || '').toUpperCase().startsWith('S'),
+    });
+    if (i.pett !== null && i.pett !== '' && i.pett !== undefined) {
+      dupPett.set(i.pett, (dupPett.get(i.pett) || 0) + 1);
+      if (!perPett.has(i.pett)) perPett.set(i.pett, o);
+    }
+    const k = norm(i.cognome) + '|' + norm(i.nome);
+    if (k !== '|') dupNome.set(k, (dupNome.get(k) || 0) + 1);
+    return o;
+  });
+  for (const o of iscritti) {
+    o.alert = [];
+    if (o.pett !== null && o.pett !== '' && dupPett.get(o.pett) > 1) o.alert.push('PETT');
+    if (dupNome.get(norm(o.cognome) + '|' + norm(o.nome)) > 1) o.alert.push('NOME');
+    if (!o.catGara && o.catFidal) o.alert.push('CAT');
+    if (!o.anno) o.alert.push('DATA');
+  }
+
+  const dnfSet = new Set(S.dnf);
+  const arrivati = new Set();
+
+  // arrivi in ordine cronologico reale (tempo corretto)
+  const arr = S.arrivi.map(a => Object.assign({}, a, { tempo: a.ms + (a.corr || 0) * 1000 }))
+    .sort((x, y) => x.tempo - y.tempo);
+
+  let absM = 0, absF = 0;
+  const catCount = new Map();     // arrivi per categoria (compresi assoluti)
+  const catAbs = new Map();       // assoluti per categoria, da sottrarre
+  const ris = [];
+  let pos = 0;
+  const visti = new Set();
+
+  for (const a of arr) {
+    const r = { id: a.id, pett: a.pett, tempo: a.tempo, ms: a.ms, corr: a.corr || 0, nota: a.nota || '' };
+    const i = (a.pett !== null && a.pett !== '' && a.pett !== undefined) ? perPett.get(a.pett) : null;
+    r.iscr = i || null;
+    r.alert = [];
+    if (a.pett === null || a.pett === '' || a.pett === undefined) r.alert.push('NOPETT');
+    else {
+      if (!i) r.alert.push('IGNOTO');
+      else {
+        if (!i.confermato) r.alert.push('NONCONF');
+        if (dnfSet.has(a.pett)) r.alert.push('DNF');
+      }
+      if (visti.has(a.pett)) r.alert.push('DUP'); else visti.add(a.pett);
+    }
+    r.cognome = i ? i.cognome : ''; r.nome = i ? i.nome : '';
+    r.sesso = i ? i.sesso : ''; r.societa = i ? i.societa : '';
+    r.catGara = i ? i.catGara : ''; r.catFidal = i ? i.catFidal : '';
+
+    // solo un arrivo valido e non duplicato entra in classifica
+    const valido = i && !r.alert.includes('DUP');
+    if (valido) {
+      arrivati.add(a.pett);
+      pos++; r.pos = pos;
+      const sessoF = String(i.sesso).toUpperCase().startsWith('F');
+      const maxAbs = sessoF ? S.cfg.premAssF : S.cfg.premAssM;
+      const usati = sessoF ? absF : absM;
+      if (usati < maxAbs) {
+        const n = usati + 1;
+        if (sessoF) absF = n; else absM = n;
+        r.assoluto = n; r.sessoF = sessoF;
+        r.etichetta = n + (sessoF ? ' Assoluta' : ' Assoluto');
+        catAbs.set(r.catGara, (catAbs.get(r.catGara) || 0) + 1);
+      }
+      const prima = catCount.get(r.catGara) || 0;
+      catCount.set(r.catGara, prima + 1);
+      if (!r.assoluto) {
+        r.posCat = prima + 1 - (catAbs.get(r.catGara) || 0);
+        r.etichetta = r.posCat + ' ' + r.catGara;
+      }
+    }
+    ris.push(r);
+  }
+
+  // stati atleta
+  const stati = iscritti.filter(i => i.pett !== null && i.pett !== '' && i.pett !== undefined).map(i => {
+    let st;
+    if (!i.confermato) st = 'DNS';
+    else if (arrivati.has(i.pett)) st = 'Arrivato';
+    else if (dnfSet.has(i.pett)) st = 'DNF';
+    else st = 'Atteso';
+    return Object.assign({}, i, { stato: st });
+  });
+
+  // società
+  const escl = new Set(S.cfg.socEscluse.map(norm));
+  const soc = new Map();
+  for (const s of stati) {
+    const key = norm(s.societa);
+    if (!key || escl.has(key)) continue;
+    if (!soc.has(key)) soc.set(key, { nome: s.societa, conf: 0, arr: 0, iscr: 0 });
+    const o = soc.get(key);
+    o.iscr++;
+    if (s.stato !== 'DNS') o.conf++;
+    if (s.stato === 'Arrivato') o.arr++;
+  }
+  const societa = [...soc.values()];
+
+  // premiazioni
+  const byEtichetta = new Map();
+  for (const r of ris) if (r.etichetta) byEtichetta.set(r.etichetta, r);
+  const blocchi = [];
+  const addBlocco = (titolo, chiavi, gold) => {
+    const righe = chiavi.map((k, n) => ({ n: n + 1, r: byEtichetta.get(k) || null }));
+    if (righe.some(x => x.r)) blocchi.push({ titolo, righe, gold });
+  };
+  addBlocco('Assolute femminili', Array.from({ length: S.cfg.premAssF }, (_, n) => (n + 1) + ' Assoluta'), true);
+  addBlocco('Assoluti maschili', Array.from({ length: S.cfg.premAssM }, (_, n) => (n + 1) + ' Assoluto'), true);
+  for (const f of S.matrice) {
+    const np = f.premi ?? S.cfg.premCat;
+    addBlocco(f.nome, Array.from({ length: np }, (_, n) => (n + 1) + ' ' + f.nome), false);
+  }
+
+  const nConf = stati.filter(s => s.stato !== 'DNS').length;
+  return {
+    iscritti, ris, stati, societa, blocchi, mg,
+    n: {
+      iscritti: iscritti.filter(i => i.pett !== null && i.pett !== '').length,
+      conf: nConf,
+      dns: stati.filter(s => s.stato === 'DNS').length,
+      dnf: stati.filter(s => s.stato === 'DNF').length,
+      attesi: stati.filter(s => s.stato === 'Atteso').length,
+      arrivati: stati.filter(s => s.stato === 'Arrivato').length,
+      arrivi: ris.length,
+      senzaPett: ris.filter(r => r.alert.includes('NOPETT')).length,
+      problemi: ris.filter(r => r.alert.length && !r.alert.includes('NOPETT')).length,
+      societa: societa.length,
+    }
+  };
+}
+let C = null;
+function ricalcola() { C = calcola(); }
+</script>
+<script>
+"use strict";
+/* ============================================================
+   Viste
+   ============================================================ */
+const VIEWS = [
+  { id: 'gara', label: 'Gara' },
+  { id: 'iscritti', label: 'Iscritti', badge: () => C.n.iscritti },
+  { id: 'traguardo', label: 'Arrivi', badge: () => C.n.arrivi, alert: () => C.n.senzaPett + C.n.problemi },
+  { id: 'classifiche', label: 'Classifiche' },
+  { id: 'premiazioni', label: 'Premiazioni' },
+  { id: 'societa', label: 'Società', badge: () => C.n.societa },
+  { id: 'stati', label: 'DNS / DNF', badge: () => C.n.dns + C.n.dnf },
+  { id: 'export', label: 'Export' },
+];
+
+function buildNav() {
+  const n = $('#nav'); n.innerHTML = '';
+  for (const v of VIEWS) {
+    const b = el('button', { 'data-v': v.id, onclick: () => go(v.id) }, v.label);
+    n.append(b);
+  }
+}
+function go(id) { ui.view = id; render(); }
+
+function renderNav() {
+  for (const v of VIEWS) {
+    const b = $(`#nav button[data-v="${v.id}"]`);
+    b.className = ui.view === v.id ? 'on' : '';
+    b.innerHTML = '';
+    b.append(v.label);
+    const a = v.alert ? v.alert() : 0;
+    if (a > 0) b.append(el('span', { class: 'pill alert' }, a));
+    else if (v.badge) { const x = v.badge(); if (x) b.append(el('span', { class: 'pill' }, x)); }
+  }
+  $$('.view').forEach(s => s.classList.toggle('on', s.dataset.v === ui.view));
+}
+
+function stats(items) {
+  const box = el('div', { class: 'stats' });
+  for (const it of items) if (it) box.append(el('div', { class: 'stat ' + (it.k2 || '') },
+    el('div', { class: 'k' }, it.k), el('div', { class: 'v' + (it.sm ? ' sm' : '') }, it.v)));
+  return box;
+}
+function emptyTbl(msg) { return el('div', { class: 'tbl-empty' }, msg); }
+function setHTML(sel, node) { const t = $(sel); t.innerHTML = ''; if (node) t.append(node); }
+
+/* ---------------- GARA ---------------- */
+function renderGara() {
+  const c = S.cfg;
+  const bind = (sel, key, num) => {
+    const e = $(sel);
+    if (document.activeElement !== e) e.value = c[key] ?? '';
+    e.oninput = () => { c[key] = num ? (e.value === '' ? null : +e.value) : e.value; touched(); };
+  };
+  bind('#cfgNome', 'nome'); bind('#cfgLuogo', 'luogo');
+  bind('#cfgKm', 'km', 1); bind('#cfgAnno', 'anno', 1); bind('#cfgOrg', 'org');
+  bind('#cfgPremAssF', 'premAssF', 1); bind('#cfgPremAssM', 'premAssM', 1);
+  bind('#cfgPremCat', 'premCat', 1); bind('#cfgPremSoc', 'premSoc', 1);
+  // la data allinea automaticamente l'anno di riferimento delle categorie
+  const dt = $('#cfgData');
+  if (document.activeElement !== dt) dt.value = c.data || '';
+  dt.onchange = () => {
+    c.data = dt.value;
+    const y = +String(dt.value).slice(0, 4);
+    if (y > 1990 && y < 2100) c.anno = y;
+    touched();
+  };
+  const w = $('#cfgAnnoWarn');
+  const y = +String(c.data || '').slice(0, 4);
+  w.innerHTML = '';
+  if (y && c.anno && y !== c.anno) w.append(el('div', { class: 'banner warn', style: 'margin-top:12px' },
+    el('div', {}, el('b', {}, 'Anno di riferimento diverso dall\'anno di gara. '),
+      `Le categorie vengono calcolate su ${c.anno} mentre la gara è del ${y}. `,
+      el('button', { class: 'btn sm', style: 'margin-left:6px', onclick: () => { c.anno = y; touched(); } }, `Usa ${y}`))));
+  renderMatrice();
+}
+const plur = (n, s, p) => n + ' ' + (n === 1 ? s : p);
+
+function renderMatrice() {
+  const box = $('#matrixBox'); box.innerHTML = '';
+  const usate = new Set(); S.matrice.forEach(f => f.fidal.forEach(x => usate.add(x)));
+  const conteggio = new Map();
+  for (const i of C.iscritti) if (i.catFidal) conteggio.set(i.catFidal, (conteggio.get(i.catFidal) || 0) + 1);
+
+  const t = el('table', { class: 'matrix' });
+  t.append(el('thead', {}, el('tr', {},
+    el('th', {}, 'Fascia'), el('th', {}, 'Categorie FIDAL accorpate'),
+    el('th', { class: 'num' }, 'Premi'), el('th', { class: 'num' }, 'Iscritti'), el('th', {}, ''))));
+  const tb = el('tbody');
+  S.matrice.forEach((f, idx) => {
+    const nInsc = f.fidal.reduce((s, c) => s + (conteggio.get(c) || 0), 0);
+    const chips = el('td');
+    f.fidal.forEach((cf, ci) => chips.append(el('span', { class: 'chip' }, cf,
+      el('button', { title: 'Togli', onclick: () => { f.fidal.splice(ci, 1); touched(); } }, '×'))));
+    const sel = el('select', { style: 'border:1px solid var(--line);border-radius:20px;padding:2px 6px;font-size:11.5px;margin:2px' });
+    sel.append(el('option', { value: '' }, '+ aggiungi'));
+    TUTTE_FIDAL.filter(x => !usate.has(x)).forEach(x => sel.append(el('option', { value: x }, x)));
+    sel.onchange = () => { if (sel.value) { f.fidal.push(sel.value); touched(); } };
+    chips.append(sel);
+    tb.append(el('tr', {},
+      el('td', {}, el('input', { value: f.nome, oninput: e => { f.nome = e.target.value; touchedSoft(); }, onchange: () => touched() })),
+      chips,
+      el('td', { class: 'num' }, el('input', {
+        class: 'w', type: 'number', min: '0', max: '20', value: f.premi ?? S.cfg.premCat, style: 'width:56px',
+        oninput: e => { f.premi = e.target.value === '' ? null : +e.target.value; touchedSoft(); }, onchange: () => touched()
+      })),
+      el('td', { class: 'num' }, el('span', { class: 'tag' + (nInsc ? '' : ' warn') }, nInsc)),
+      el('td', {}, el('button', { class: 'ib danger', title: 'Elimina fascia', onclick: () => { S.matrice.splice(idx, 1); touched(); } }, '×'))
+    ));
+  });
+  t.append(tb); box.append(t);
+
+  const orfani = [...conteggio.keys()].filter(k => !usate.has(k));
+  const ob = $('#matrixOrphans'); ob.innerHTML = '';
+  if (orfani.length) ob.append(el('div', { class: 'banner warn', style: 'margin-top:12px' },
+    el('div', {}, el('b', {}, 'Categorie senza fascia: '), orfani.join(', '),
+      ' — questi atleti non compaiono in nessuna classifica di categoria. Aggiungili a una fascia esistente o creane una nuova.')));
+}
+
+/* ---------------- ISCRITTI ---------------- */
+function renderIscritti() {
+  const n = C.n;
+  setHTML('#iscStats', stats([
+    { k: 'Iscritti', v: n.iscritti },
+    { k: 'Confermati', v: n.conf, k2: 'acc' },
+    { k: 'Non confermati', v: n.dns, k2: n.dns ? 'warnv' : '' },
+    { k: 'Uomini', v: C.iscritti.filter(i => String(i.sesso).toUpperCase().startsWith('M')).length },
+    { k: 'Donne', v: C.iscritti.filter(i => String(i.sesso).toUpperCase().startsWith('F')).length },
+    { k: 'Società', v: n.societa },
+  ]));
+
+  const alerts = C.iscritti.filter(i => i.alert.length);
+  const ab = $('#iscAlerts'); ab.innerHTML = '';
+  if (alerts.length) {
+    const cnt = k => alerts.filter(a => a.alert.includes(k)).length;
+    const parti = [];
+    if (cnt('PETT')) parti.push(cnt('PETT') + ' pettorali duplicati');
+    if (cnt('NOME')) parti.push(cnt('NOME') + ' possibili omonimi');
+    if (cnt('CAT')) parti.push(cnt('CAT') + ' senza fascia di premiazione');
+    if (cnt('DATA')) parti.push(cnt('DATA') + ' senza data di nascita valida');
+    ab.append(el('div', { class: 'banner warn' }, el('div', {}, el('b', {}, 'Da verificare: '), parti.join(' · '),
+      ' ', el('button', { class: 'btn sm', style: 'margin-left:8px', onclick: () => { $('#iscFilter').value = 'alert'; ui.iscF = 'alert'; render(); } }, 'Mostra solo questi'))));
+  }
+
+  const q = norm(ui.iscQ);
+  let rows = C.iscritti;
+  if (ui.iscF === 'conf') rows = rows.filter(i => i.confermato);
+  if (ui.iscF === 'dns') rows = rows.filter(i => !i.confermato);
+  if (ui.iscF === 'alert') rows = rows.filter(i => i.alert.length);
+  if (q) rows = rows.filter(i => norm(i.cognome + ' ' + i.nome + ' ' + i.societa + ' ' + i.pett).includes(q));
+
+  const t = el('table');
+  t.append(el('thead', {}, el('tr', {},
+    ...['Pett.', 'Cognome', 'Nome', 'M/F', 'Società', 'Nascita', 'Conf.', 'FIDAL', 'Fascia', '', ''].map((h, i) =>
+      el('th', { class: i === 0 ? 'num' : '' }, h)))));
+  const tb = el('tbody');
+  if (!rows.length) { t.append(tb); setHTML('#iscTable', t); $('#iscTable').append(emptyTbl(S.iscritti.length ? 'Nessun iscritto corrisponde ai filtri.' : 'Nessun iscritto. Importa il file da WISE o aggiungili a mano.')); return; }
+
+  const upd = (i, k, v) => { const o = S.iscritti.find(x => x.id === i.id); if (o) { o[k] = v; touched(); } };
+  for (const i of rows) {
+    const tr = el('tr', { class: i.alert.length ? 'bad' : (i.confermato ? '' : 'dim') });
+    const inp = (k, w, cls) => el('input', {
+      class: 'cell ' + (cls || ''), value: i[k] ?? '', style: w ? 'width:' + w : '',
+      onchange: e => upd(i, k, e.target.value)
+    });
+    tr.append(
+      el('td', { class: 'num' }, el('input', { class: 'cell mono', style: 'width:56px;text-align:right', value: i.pett ?? '', onchange: e => upd(i, 'pett', e.target.value === '' ? null : +e.target.value) })),
+      el('td', {}, inp('cognome')), el('td', {}, inp('nome')),
+      el('td', {}, el('select', { style: 'border:0;background:transparent;padding:3px', onchange: e => upd(i, 'sesso', e.target.value) },
+        ...['M', 'F'].map(s => el('option', { value: s, selected: String(i.sesso).toUpperCase().startsWith(s) || null }, s)))),
+      el('td', {}, inp('societa')),
+      el('td', {}, el('input', { class: 'cell mono', type: 'date', value: i.nascita || '', style: 'width:130px', onchange: e => upd(i, 'nascita', e.target.value) })),
+      el('td', {}, el('input', { type: 'checkbox', checked: i.confermato || null, onchange: e => upd(i, 'conferma', e.target.checked ? 'S' : 'N') })),
+      el('td', {}, el('span', { class: 'tag' }, i.catFidal || '—')),
+      el('td', {}, el('span', { class: 'tag ' + (i.catGara ? 'acc' : 'bad') }, i.catGara || 'nessuna')),
+      el('td', {}, ...i.alert.map(a => el('span', { class: 'tag bad', style: 'margin-right:3px' }, a))),
+      el('td', {}, el('button', { class: 'ib danger', title: 'Elimina', onclick: () => { S.iscritti = S.iscritti.filter(x => x.id !== i.id); touched(); } }, '×'))
+    );
+    tb.append(tr);
+  }
+  t.append(tb); setHTML('#iscTable', t);
+}
+
+/* ---------------- TRAGUARDO ---------------- */
+let clockTimer = null;
+function renderTraguardo() {
+  const started = !!S.start, fermo = !!S.stop;
+  $('#btnStart').style.display = started ? 'none' : 'block';
+  $('#btnArrivo').style.display = started && !fermo ? 'block' : 'none';
+  $('#quickWrap').style.display = started && !fermo ? 'block' : 'none';
+  $('#kbdHint').style.display = started && !fermo ? 'flex' : 'none';
+  $('#clockLbl').textContent = !started ? 'Cronometro fermo' : (fermo ? 'Cronometro fermato' : 'Tempo di gara');
+  $('#arrCount').textContent = C.n.arrivi + ' arrivi';
+
+  // riga informativa sulla partenza + modifica orario
+  const sr = $('#startRow'); sr.innerHTML = '';
+  if (started) {
+    sr.append(el('span', { class: 'ok' }, 'Partenza alle ' + fmtOra(S.start)));
+    sr.append(el('button', { class: 'minibtn', onclick: apriStart }, 'Modifica orario'));
+    if (fermo) sr.append(el('span', {}, '· stop alle ' + fmtOra(S.stop)));
+  } else {
+    sr.append(el('span', {}, 'Non ancora partita'));
+    sr.append(el('button', { class: 'minibtn', onclick: apriStart }, 'Imposta orario a mano'));
+  }
+
+  // pulsanti stop / riprendi / azzera
+  const cr = $('#ctrlRow'); cr.innerHTML = '';
+  if (started && !fermo) cr.append(el('button', { class: 'stop', onclick: fermaCrono }, 'STOP cronometro'));
+  else if (fermo) cr.append(el('button', { onclick: riprendiCrono }, 'Riprendi cronometro'));
+  if (started || S.arrivi.length) cr.append(el('button', { class: 'stop', style: 'flex:0 0 auto;padding-left:18px;padding-right:18px', onclick: azzeraCrono }, 'Azzera'));
+
+  const b = $('#trgBanner'); b.innerHTML = '';
+  if (!started) b.append(el('div', { class: 'banner info' }, el('div', {}, el('b', {}, 'Premi START allo sparo. '),
+    'Da quel momento ogni arrivo registra il tempo trascorso. Se te ne dimentichi puoi impostare l\'orario a mano anche dopo, senza perdere gli arrivi.')));
+  else if (fermo) b.append(el('div', { class: 'banner go' }, el('div', {}, el('b', {}, 'Cronometro fermato alle ' + fmtOra(S.stop) + '. '),
+    'Non si registrano più arrivi e il tempo non scorre. Se qualcuno è ancora in gara premi Riprendi: nessun tempo va perso, il riferimento resta lo sparo.')));
+  else {
+    const msgs = [];
+    if (C.n.senzaPett) msgs.push(plur(C.n.senzaPett, 'arrivo ancora senza pettorale', 'arrivi ancora senza pettorale'));
+    if (C.n.problemi) msgs.push(plur(C.n.problemi, 'arrivo da verificare', 'arrivi da verificare'));
+    if (msgs.length) b.append(el('div', { class: 'banner warn' }, el('div', {}, el('b', {}, 'Attenzione: '), msgs.join(' · '))));
+  }
+  if (!clockTimer) clockTimer = setInterval(tickClock, 47);
+  tickClock();
+  renderArrivi();
+}
+function tickClock() {
+  const c = $('#clock');
+  if (!c) return;
+  if (!S.start) { c.className = 'clock idle'; c.innerHTML = '--:--:--<span class="ms">.--</span>'; return; }
+  c.className = 'clock' + (S.stop ? ' stopped' : '');
+  c.innerHTML = fmtClock(elapsedOra());
+}
+
+async function fermaCrono() {
+  S.stop = Date.now();
+  touched(); toast('Cronometro fermato · ' + fmtHMS(elapsedOra()), 'bad');
+  const att = C.stati.filter(s => s.stato === 'Atteso').length;
+  if (att && await confirmDlg('Atleti non arrivati', att + ' atleti confermati non sono arrivati. Dichiararli ritirati (DNF) adesso? Puoi comunque farlo dopo dalla scheda DNS / DNF.')) {
+    S.dnf = [...new Set([...S.dnf, ...C.stati.filter(s => s.stato === 'Atteso').map(s => s.pett)])];
+    touched();
+  }
+}
+function riprendiCrono() { S.stop = null; touched(); toast('Cronometro ripreso', 'go'); setTimeout(() => $('#quickBib') && $('#quickBib').focus(), 60); }
+
+async function azzeraCrono() {
+  const n = S.arrivi.length;
+  const msg = n
+    ? `Vengono cancellati ${plur(n, 'arrivo registrato', 'arrivi registrati')} e l'orario di partenza. Gli iscritti restano. L'operazione non si può annullare: se ti servono, scarica prima un backup.`
+    : 'Il cronometro torna a zero e la gara risulta non partita. Gli iscritti restano.';
+  if (!await confirmDlg('Azzera cronometro', msg)) return;
+  S.arrivi = []; S.start = null; S.stop = null; S.dnf = [];
+  touched(); toast('Cronometro azzerato', 'bad');
+}
+
+/* --- modifica orario di partenza --- */
+let stNew = null;
+function apriStart() {
+  stNew = S.start || Date.now();
+  disegnaStart();
+  $('#stTitle').textContent = S.start ? 'Modifica orario di partenza' : 'Imposta orario di partenza';
+  $('#dlgStart').showModal();
+}
+function disegnaStart() {
+  const b = $('#dlgStartBody'); b.innerHTML = '';
+  const delta = S.start ? stNew - S.start : 0;
+
+  if (S.start) b.append(el('p', { class: 'hint', style: 'margin:0 0 12px' },
+    'Partenza attualmente registrata alle ', el('b', {}, fmtOra(S.start)),
+    '. Correggendola tutti i tempi già presi si spostano di conseguenza: nessun arrivo viene perso.'));
+  else b.append(el('p', { class: 'hint', style: 'margin:0 0 12px' },
+    'Indica a che ora è partita la gara. Serve se il cronometro non è stato avviato allo sparo.'));
+
+  const inp = el('input', { type: 'time', step: '1', value: fmtOra(stNew), style: 'font-family:var(--mono);font-size:22px;font-weight:700;text-align:center;padding:10px;letter-spacing:.04em' });
+  inp.onchange = () => { if (inp.value) { stNew = oraToEpoch(inp.value, S.start || stNew); disegnaStart(); } };
+  b.append(el('label', { class: 'f' }, 'Ora di partenza', inp));
+
+  const row = el('div', { class: 'shiftrow' });
+  row.append(el('span', { class: 'hint', style: 'margin-right:4px' }, 'Sposta di:'));
+  for (const s of [-60, -10, -1, +1, +10, +60])
+    row.append(el('button', { onclick: () => { stNew += s * 1000; disegnaStart(); } }, (s > 0 ? '+' : '') + s + 's'));
+  row.append(el('button', { onclick: () => { stNew = S.start || Date.now(); disegnaStart(); } }, 'azzera'));
+  b.append(row);
+
+  // anteprima dell'effetto
+  const prev = el('div', { style: 'margin-top:14px' });
+  if (!S.start || !delta) prev.append(el('div', { class: 'banner info' }, el('div', {}, 'Nessuna modifica ai tempi già registrati.')));
+  else {
+    const segno = delta > 0 ? 'diminuiscono' : 'aumentano';
+    const validi = C.ris.filter(r => r.pos);
+    const primo = validi[0], ultimo = validi[validi.length - 1];
+    const neg = C.ris.some(r => r.tempo - delta < 0);
+    const righe = [el('div', {}, el('b', {}, `Tutti i tempi ${segno} di ${fmtHMS(Math.abs(delta), true)}.`))];
+    if (primo) righe.push(el('div', { style: 'margin-top:4px;font-family:var(--mono);font-size:12.5px' },
+      `1° ${primo.cognome}: ${fmtHMS(primo.tempo, true)} → ${fmtHMS(primo.tempo - delta, true)}`));
+    if (ultimo && ultimo !== primo) righe.push(el('div', { style: 'font-family:var(--mono);font-size:12.5px' },
+      `ultimo ${ultimo.cognome}: ${fmtHMS(ultimo.tempo, true)} → ${fmtHMS(ultimo.tempo - delta, true)}`));
+    prev.append(el('div', { class: 'banner ' + (neg ? 'bad' : 'warn') }, el('div', {}, ...righe,
+      neg ? el('div', { style: 'margin-top:6px' }, el('b', {}, 'Attenzione: alcuni tempi diventerebbero negativi.')) : null)));
+    $('#stOk').disabled = neg;
+  }
+  if (!S.start || !delta) $('#stOk').disabled = false;
+  b.append(prev);
+}
+function applicaStart() {
+  if (S.start) {
+    const delta = stNew - S.start;
+    if (delta) for (const a of S.arrivi) a.ms -= delta;
+  }
+  S.start = stNew;
+  $('#dlgStart').close();
+  touched(); toast('Partenza impostata alle ' + fmtOra(S.start), 'go');
+}
+
+function renderArrivi() {
+  const q = norm(ui.arrQ);
+  let rows = C.ris.slice().reverse();
+  if (q) rows = rows.filter(r => norm((r.pett ?? '') + ' ' + r.cognome + ' ' + r.nome + ' ' + r.societa).includes(q));
+
+  const t = el('table');
+  t.append(el('thead', {}, el('tr', {},
+    el('th', { class: 'num' }, '#'), el('th', { class: 'num' }, 'Pett.'), el('th', {}, 'Atleta'),
+    el('th', {}, 'Tempo'), el('th', { class: 'num' }, 'Corr. s'), el('th', {}, 'Fascia'), el('th', {}, ''))));
+  const tb = el('tbody');
+  if (!rows.length) { t.append(tb); setHTML('#arrTable', t); $('#arrTable').append(emptyTbl('Nessun arrivo registrato.')); return; }
+
+  for (const r of rows) {
+    const noBib = r.alert.includes('NOPETT');
+    const bad = r.alert.some(a => a !== 'NOPETT');
+    const tr = el('tr', { class: noBib ? 'nobib' : (bad ? 'dup' : '') });
+    const setPett = v => {
+      const o = S.arrivi.find(x => x.id === r.id); if (!o) return;
+      o.pett = v === '' ? null : +v; touched();
+    };
+    const setCorr = v => { const o = S.arrivi.find(x => x.id === r.id); if (o) { o.corr = v === '' ? 0 : +v; touched(); } };
+    tr.append(
+      el('td', { class: 'num', style: 'color:var(--ink-3);font-size:12px' }, r.pos ?? '—'),
+      el('td', { class: 'num' }, el('input', {
+        class: 'cell mono', style: 'width:60px;text-align:right;font-weight:700', value: r.pett ?? '',
+        inputmode: 'numeric', placeholder: '—', onchange: e => setPett(e.target.value)
+      })),
+      el('td', {}, r.iscr ? el('span', {}, el('b', {}, r.cognome + ' ' + r.nome),
+        el('span', { style: 'color:var(--ink-3)' }, ' · ' + (r.societa || '—')))
+        : el('span', { style: 'color:var(--bad);font-weight:600' }, noBib ? 'pettorale da inserire' : 'pettorale non iscritto')),
+      el('td', { class: 't' }, fmtHMS(r.tempo, true)),
+      el('td', { class: 'num' }, el('input', { class: 'cell mono', style: 'width:52px;text-align:right', type: 'number', step: '1', value: r.corr || '', placeholder: '0', onchange: e => setCorr(e.target.value) })),
+      el('td', {}, r.etichetta ? el('span', { class: 'tag ' + (r.assoluto ? 'gold' : 'acc') }, r.etichetta) : ''),
+      el('td', {}, el('div', { class: 'rowbtns' },
+        el('button', { class: 'ib danger', title: 'Elimina arrivo', onclick: () => { S.arrivi = S.arrivi.filter(x => x.id !== r.id); touched(); } }, '×')))
+    );
+    tb.append(tr);
+  }
+  t.append(tb); setHTML('#arrTable', t);
+}
+
+function segnaArrivo(pett) {
+  if (!S.start) { toast('Prima premi START', 'bad'); return; }
+  if (S.stop) { toast('Cronometro fermo: premi Riprendi', 'bad'); return; }
+  const ms = Date.now() - S.start;
+  S.arrivi.push({ id: nid(), pett: (pett === undefined || pett === null || pett === '') ? null : +pett, ms, corr: 0 });
+  touched();
+  return ms;
+}
+
+/* ---------------- CLASSIFICHE ---------------- */
+function renderClassifiche() {
+  const n = C.n;
+  const validi = C.ris.filter(r => r.pos);
+  const best = validi[0], last = validi[validi.length - 1];
+  setHTML('#clsStats', stats([
+    { k: 'Classificati', v: validi.length, k2: 'acc' },
+    { k: 'Miglior tempo', v: best ? fmtHMS(best.tempo) : '—', sm: 1 },
+    { k: 'Ultimo tempo', v: last ? fmtHMS(last.tempo) : '—', sm: 1 },
+    S.cfg.km ? { k: 'Passo vincitore', v: best ? fmtPace(best.tempo, S.cfg.km) + '/km' : '—', sm: 1 } : null,
+    { k: 'Da sistemare', v: n.senzaPett + n.problemi, k2: (n.senzaPett + n.problemi) ? 'bad' : '' },
+  ]));
+  $$('#clsSeg button').forEach(b => b.classList.toggle('on', b.dataset.m === ui.clsMode));
+
+  const q = norm(ui.clsQ);
+  const filt = a => !q || a.some(r => norm(r.cognome + ' ' + r.nome + ' ' + r.societa + ' ' + r.pett).includes(q));
+  const box = el('div');
+
+  if (ui.clsMode === 'gen') {
+    let rows = C.ris.filter(r => r.pos);
+    if (q) rows = rows.filter(r => norm(r.cognome + ' ' + r.nome + ' ' + r.societa + ' ' + r.pett).includes(q));
+    box.append(tabellaRis(rows, true));
+  } else if (ui.clsMode === 'cat') {
+    const gruppi = new Map();
+    for (const r of C.ris) if (r.pos) { if (!gruppi.has(r.catGara)) gruppi.set(r.catGara, []); gruppi.get(r.catGara).push(r); }
+    const ordine = S.matrice.map(f => f.nome).filter(x => gruppi.has(x));
+    for (const k of gruppi.keys()) if (!ordine.includes(k)) ordine.push(k);
+    for (const k of ordine) {
+      const rows = gruppi.get(k).sort((a, b) => a.tempo - b.tempo);
+      if (!filt(rows)) continue;
+      const vis = q ? rows.filter(r => norm(r.cognome + ' ' + r.nome + ' ' + r.societa + ' ' + r.pett).includes(q)) : rows;
+      if (!vis.length) continue;
+      box.append(el('div', { class: 'blk' }, el('h3', {}, `${k || 'senza fascia'} — ${rows.length} atleti`), tabellaRis(vis, false, true)));
+    }
+  } else {
+    const gruppi = new Map();
+    for (const r of C.ris) if (r.pos) { const k = r.societa || '—'; if (!gruppi.has(k)) gruppi.set(k, []); gruppi.get(k).push(r); }
+    const ordine = [...gruppi.entries()].sort((a, b) => b[1].length - a[1].length || a[0].localeCompare(b[0]));
+    for (const [k, rows] of ordine) {
+      if (!filt(rows)) continue;
+      const vis = q ? rows.filter(r => norm(r.cognome + ' ' + r.nome + ' ' + r.societa + ' ' + r.pett).includes(q)) : rows;
+      if (!vis.length) continue;
+      box.append(el('div', { class: 'blk' }, el('h3', {}, `${k} — ${rows.length} arrivati`), tabellaRis(vis, true)));
+    }
+  }
+  if (!box.children.length) box.append(emptyTbl('Nessun risultato.'));
+  setHTML('#clsBody', box);
+}
+
+function tabellaRis(rows, mostraPosAss, posCat) {
+  const km = S.cfg.km;
+  const t = el('table');
+  t.append(el('thead', {}, el('tr', {},
+    el('th', { class: 'num' }, posCat ? 'Cat.' : 'Pos.'),
+    el('th', { class: 'num' }, 'Pett.'), el('th', {}, 'Cognome'), el('th', {}, 'Nome'),
+    el('th', {}, 'M/F'), el('th', {}, 'Società'), el('th', {}, 'Fascia'),
+    el('th', { class: 'num' }, 'Tempo'), km ? el('th', { class: 'num' }, 'Passo') : null)));
+  const tb = el('tbody');
+  for (const r of rows) {
+    tb.append(el('tr', {},
+      el('td', { class: 'num', style: 'font-weight:700' }, posCat ? (r.assoluto ? '★' : r.posCat) : r.pos),
+      el('td', { class: 'num mono' }, r.pett ?? ''),
+      el('td', {}, el('b', {}, r.cognome)), el('td', {}, r.nome),
+      el('td', {}, r.sesso), el('td', { style: 'font-size:12.5px;color:var(--ink-2)' }, r.societa),
+      el('td', {}, el('span', { class: 'tag ' + (r.assoluto ? 'gold' : '') }, r.assoluto ? r.etichetta : r.catGara)),
+      el('td', { class: 't num' }, fmtHMS(r.tempo)),
+      km ? el('td', { class: 'num mono', style: 'color:var(--ink-2)' }, fmtPace(r.tempo, km)) : null));
+  }
+  t.append(tb); return t;
+}
+
+/* ---------------- PREMIAZIONI ---------------- */
+function renderPremiazioni() {
+  const box = el('div');
+  const head = el('div', { style: 'margin-bottom:14px' },
+    el('h2', {}, S.cfg.nome || 'Gara'),
+    el('div', { class: 'hint' }, [S.cfg.luogo, S.cfg.data ? new Date(S.cfg.data + 'T00:00').toLocaleDateString('it-IT', { day: 'numeric', month: 'long', year: 'numeric' }) : ''].filter(Boolean).join(' · ')));
+  box.append(head);
+  if (!C.blocchi.length) { box.append(emptyTbl('Nessun premiato: servono arrivi con pettorale assegnato.')); setHTML('#premBody', box); return; }
+  const cols = () => el('colgroup', {}, ...['38px', '62px', '', '32%', '80px', '92px'].map(w => el('col', { style: w ? 'width:' + w : '' })));
+  for (const b of C.blocchi) {
+    const t = el('table', { style: 'table-layout:fixed' });
+    t.append(cols());
+    const tb = el('tbody');
+    for (const r of b.righe) {
+      if (!r.r) continue;
+      tb.append(el('tr', {},
+        el('td', { style: 'font-weight:700' }, r.n),
+        el('td', { class: 'num mono' }, r.r.pett),
+        el('td', {}, el('b', {}, r.r.cognome + ' ' + r.r.nome)),
+        el('td', { style: 'color:var(--ink-2);overflow:hidden;text-overflow:ellipsis;white-space:nowrap' }, r.r.societa),
+        el('td', {}, el('span', { class: 'tag' }, r.r.catGara)),
+        el('td', { class: 't num' }, fmtHMS(r.r.tempo))));
+    }
+    t.append(tb);
+    box.append(el('div', { class: 'blk' }, el('h3', { class: b.gold ? 'gold' : '' }, b.titolo), t));
+  }
+  // società premiate
+  const soc = classificaSoc().slice(0, S.cfg.premSoc);
+  if (soc.length) {
+    const t = el('table'); const tb = el('tbody');
+    soc.forEach((s, i) => tb.append(el('tr', {},
+      el('td', { style: 'font-weight:700;width:34px' }, i + 1),
+      el('td', {}, el('b', {}, s.nome)),
+      el('td', { class: 'num', style: 'width:120px' }, (ui.socMode === 'arr' ? s.arr : s.conf) + ' atleti'))));
+    t.append(tb);
+    box.append(el('div', { class: 'blk' }, el('h3', { class: 'gold' }, 'Società'), t));
+  }
+  setHTML('#premBody', box);
+}
+
+/* ---------------- SOCIETÀ ---------------- */
+function classificaSoc() {
+  const k = ui.socMode === 'arr' ? 'arr' : 'conf';
+  return C.societa.slice().sort((a, b) => b[k] - a[k] || a.nome.localeCompare(b.nome));
+}
+function renderSocieta() {
+  $$('#socSeg button').forEach(b => b.classList.toggle('on', b.dataset.m === ui.socMode));
+  const rows = classificaSoc();
+  const t = el('table');
+  t.append(el('thead', {}, el('tr', {}, el('th', { class: 'num' }, 'Pos.'), el('th', {}, 'Società'),
+    el('th', { class: 'num' }, 'Iscritti'), el('th', { class: 'num' }, 'Confermati'), el('th', { class: 'num' }, 'Arrivati'))));
+  const tb = el('tbody');
+  rows.forEach((s, i) => tb.append(el('tr', { class: i < S.cfg.premSoc ? 'hl' : '' },
+    el('td', { class: 'num', style: 'font-weight:700' }, i + 1),
+    el('td', {}, el('b', {}, s.nome)),
+    el('td', { class: 'num' }, s.iscr), el('td', { class: 'num' }, s.conf), el('td', { class: 'num' }, s.arr))));
+  t.append(tb); setHTML('#socTable', t);
+  if (!rows.length) $('#socTable').append(emptyTbl('Nessuna società.'));
+
+  const eb = $('#socExcl'); eb.innerHTML = '';
+  S.cfg.socEscluse.forEach((s, i) => eb.append(el('span', { class: 'chip' }, s,
+    el('button', { onclick: () => { S.cfg.socEscluse.splice(i, 1); touched(); } }, '×'))));
+  if (!S.cfg.socEscluse.length) eb.append(el('span', { class: 'hint' }, 'Nessuna esclusione.'));
+}
+
+/* ---------------- STATI ---------------- */
+function renderStati() {
+  const n = C.n;
+  setHTML('#stStats', stats([
+    { k: 'Confermati', v: n.conf }, { k: 'Arrivati', v: n.arrivati, k2: 'acc' },
+    { k: 'DNS', v: n.dns, k2: n.dns ? 'warnv' : '' }, { k: 'DNF', v: n.dnf, k2: n.dnf ? 'bad' : '' },
+    { k: 'Ancora attesi', v: n.attesi, k2: n.attesi ? 'warnv' : '' },
+  ]));
+  const bb = $('#stBanner'); bb.innerHTML = '';
+  if (n.attesi) bb.append(el('div', { class: 'banner warn' }, el('div', {},
+    el('b', {}, n.attesi + ' atleti confermati non sono ancora arrivati. '),
+    'Finché la gara è in corso è normale. A gara conclusa usa ', el('b', {}, 'Chiudi arrivi'),
+    ' per dichiararli ritirati: solo così finiscono nel blocco DNF dell\'export.')));
+  const q = norm(ui.stQ);
+  let rows = C.stati;
+  if (ui.stF !== 'tutti') rows = rows.filter(s => s.stato === ui.stF);
+  if (q) rows = rows.filter(s => norm(s.cognome + ' ' + s.nome + ' ' + s.societa + ' ' + s.pett).includes(q));
+  rows = rows.slice().sort((a, b) => (a.pett ?? 0) - (b.pett ?? 0));
+
+  const dnfSet = new Set(S.dnf);
+  const t = el('table');
+  t.append(el('thead', {}, el('tr', {}, el('th', { class: 'num' }, 'Pett.'), el('th', {}, 'Cognome'), el('th', {}, 'Nome'),
+    el('th', {}, 'M/F'), el('th', {}, 'Società'), el('th', {}, 'Fascia'), el('th', {}, 'Stato'), el('th', {}, 'Ritirato'))));
+  const tb = el('tbody');
+  for (const s of rows) {
+    const cls = { DNS: 'warn', DNF: 'bad', Arrivato: 'go', Atteso: '' }[s.stato];
+    tb.append(el('tr', { class: s.stato === 'Arrivato' ? '' : 'dim' },
+      el('td', { class: 'num mono' }, s.pett),
+      el('td', {}, el('b', {}, s.cognome)), el('td', {}, s.nome), el('td', {}, s.sesso),
+      el('td', { style: 'font-size:12.5px;color:var(--ink-2)' }, s.societa),
+      el('td', {}, el('span', { class: 'tag' }, s.catGara || '—')),
+      el('td', {}, el('span', { class: 'tag ' + cls }, s.stato)),
+      el('td', {}, el('input', {
+        type: 'checkbox', checked: dnfSet.has(s.pett) || null,
+        onchange: e => { S.dnf = e.target.checked ? [...new Set([...S.dnf, s.pett])] : S.dnf.filter(p => p !== s.pett); touched(); }
+      }))));
+  }
+  t.append(tb); setHTML('#stTable', t);
+  if (!rows.length) $('#stTable').append(emptyTbl('Nessun atleta.'));
+}
+
+/* ---------------- EXPORT ---------------- */
+function csvWiseRows() {
+  const out = [['CLASSIFICA', 'PETTORALE', 'TIPO CLASSIFICA', 'PRESTAZIONE']];
+  for (const r of C.ris) if (r.pos) out.push([String(r.pos), String(r.pett), 'TIME', fmtWise(r.tempo)]);
+  for (const s of C.stati) if (s.stato === 'DNS') out.push(['', String(s.pett), 'DNS', '']);
+  for (const s of C.stati) if (s.stato === 'DNF') out.push(['', String(s.pett), 'DNF', '']);
+  return out;
+}
+function renderExport() {
+  const rows = csvWiseRows();
+  const b = $('#expBanner'); b.innerHTML = '';
+  const av = [];
+  if (C.n.senzaPett) av.push(C.n.senzaPett + ' arrivi senza pettorale: non finiscono in classifica');
+  if (C.n.problemi) av.push(C.n.problemi + ' arrivi con segnalazioni da verificare');
+  if (C.n.attesi) av.push(C.n.attesi + ' atleti né arrivati né dichiarati ritirati: mancano dal blocco DNF');
+  if (av.length) b.append(el('div', { class: 'banner bad' }, el('div', {}, el('b', {}, 'Prima di esportare: '), av.join(' · '))));
+  $('#csvInfo').textContent = (rows.length - 1) + ' righe';
+  const t = $('#csvPrev'); t.innerHTML = '';
+  t.append(el('thead', {}, el('tr', {}, ...rows[0].map(h => el('th', {}, h)))));
+  const tb = el('tbody');
+  for (const r of rows.slice(1)) tb.append(el('tr', {}, ...r.map((c, i) => el('td', { class: i === 3 || i === 1 || i === 0 ? 'mono' : '' }, c))));
+  t.append(tb);
+}
+function toCSV(rows) { return rows.map(r => r.map(c => /[";\n]/.test(c) ? '"' + String(c).replace(/"/g, '""') + '"' : c).join(';')).join('\r\n'); }
+function download(name, text, mime) {
+  const b = new Blob(['﻿' + text], { type: (mime || 'text/csv') + ';charset=utf-8' });
+  const u = URL.createObjectURL(b);
+  const a = el('a', { href: u, download: name }); document.body.append(a); a.click(); a.remove();
+  setTimeout(() => URL.revokeObjectURL(u), 3000);
+}
+const slug = () => (S.cfg.nome || 'gara').replace(/[^\w\- ]+/g, '').trim().replace(/\s+/g, '_').toLowerCase() + '_' + (S.cfg.data || '');
+
+/* ---------------- render ---------------- */
+function render() {
+  ricalcola();
+  renderNav();
+  const f = { gara: renderGara, iscritti: renderIscritti, traguardo: renderTraguardo, classifiche: renderClassifiche, premiazioni: renderPremiazioni, societa: renderSocieta, stati: renderStati, export: renderExport }[ui.view];
+  if (f) f();
+  $('#raceName').textContent = S.cfg.nome || 'Nuova gara';
+  document.title = (S.cfg.nome ? S.cfg.nome + ' — ' : '') + 'CronoStrada';
+}
+function touched() { save(); render(); }
+function touchedSoft() { save(); }
+</script>
+<script>
+"use strict";
+/* ============================================================
+   Lettura file: xlsx (zip + DecompressionStream) e csv
+   ============================================================ */
+async function inflateRaw(buf) {
+  if (typeof DecompressionStream === 'undefined') throw new Error('Il browser non sa decomprimere gli .xlsx. Salva il file come CSV.');
+  const ds = new DecompressionStream('deflate-raw');
+  const s = new Blob([buf]).stream().pipeThrough(ds);
+  return new Uint8Array(await new Response(s).arrayBuffer());
+}
+async function unzip(ab) {
+  const u = new Uint8Array(ab), dv = new DataView(ab);
+  let eo = -1;
+  for (let i = u.length - 22; i >= Math.max(0, u.length - 66000); i--) if (dv.getUint32(i, true) === 0x06054b50) { eo = i; break; }
+  if (eo < 0) throw new Error('File non valido (non è un .xlsx).');
+  const nEnt = dv.getUint16(eo + 10, true); let p = dv.getUint32(eo + 16, true);
+  const files = {};
+  for (let k = 0; k < nEnt; k++) {
+    if (dv.getUint32(p, true) !== 0x02014b50) break;
+    const method = dv.getUint16(p + 10, true), csize = dv.getUint32(p + 20, true);
+    const nl = dv.getUint16(p + 28, true), xl = dv.getUint16(p + 30, true), cl = dv.getUint16(p + 32, true);
+    const lo = dv.getUint32(p + 42, true);
+    const name = new TextDecoder().decode(u.subarray(p + 46, p + 46 + nl));
+    const lnl = dv.getUint16(lo + 26, true), lxl = dv.getUint16(lo + 28, true);
+    const start = lo + 30 + lnl + lxl;
+    files[name] = { method, data: u.subarray(start, start + csize) };
+    p += 46 + nl + xl + cl;
+  }
+  return {
+    async text(name) {
+      const f = files[name]; if (!f) return null;
+      const raw = f.method === 0 ? f.data : await inflateRaw(f.data);
+      return new TextDecoder('utf-8').decode(raw);
+    },
+    names: Object.keys(files)
+  };
+}
+const colNum = ref => { let n = 0; for (const ch of ref) { const c = ch.charCodeAt(0); if (c < 65 || c > 90) break; n = n * 26 + c - 64; } return n - 1; };
+
+async function leggiXlsx(ab) {
+  const z = await unzip(ab);
+  const ss = [];
+  const sst = await z.text('xl/sharedStrings.xml');
+  if (sst) {
+    const doc = new DOMParser().parseFromString(sst, 'application/xml');
+    for (const si of doc.getElementsByTagName('si')) {
+      let s = '';
+      for (const t of si.getElementsByTagName('t')) s += t.textContent;
+      ss.push(s);
+    }
+  }
+  const wbx = await z.text('xl/workbook.xml');
+  const rels = await z.text('xl/_rels/workbook.xml.rels');
+  const relMap = {};
+  if (rels) for (const r of new DOMParser().parseFromString(rels, 'application/xml').getElementsByTagName('Relationship'))
+    relMap[r.getAttribute('Id')] = r.getAttribute('Target').replace(/^\/?xl\//, '');
+  const sheets = [];
+  if (wbx) for (const sh of new DOMParser().parseFromString(wbx, 'application/xml').getElementsByTagName('sheet')) {
+    const rid = sh.getAttribute('r:id') || sh.getAttributeNS('http://schemas.openxmlformats.org/officeDocument/2006/relationships', 'id');
+    sheets.push({ name: sh.getAttribute('name'), path: 'xl/' + (relMap[rid] || '') });
+  }
+  const out = [];
+  for (const sh of sheets) {
+    const xml = await z.text(sh.path);
+    if (!xml) continue;
+    const doc = new DOMParser().parseFromString(xml, 'application/xml');
+    const rows = [];
+    for (const row of doc.getElementsByTagName('row')) {
+      const arr = [];
+      for (const c of row.getElementsByTagName('c')) {
+        const ref = c.getAttribute('r') || '', ci = ref ? colNum(ref) : arr.length;
+        const t = c.getAttribute('t');
+        let v = null;
+        if (t === 'inlineStr') { const is = c.getElementsByTagName('t'); v = is.length ? is[0].textContent : ''; }
+        else {
+          const vn = c.getElementsByTagName('v')[0];
+          if (vn) { v = vn.textContent; if (t === 's') v = ss[+v] ?? ''; else if (!t || t === 'n') v = v === '' ? null : +v; }
+        }
+        while (arr.length < ci) arr.push(null);
+        arr[ci] = v;
+      }
+      if (arr.some(x => x !== null && x !== '')) rows.push(arr);
+      if (rows.length > 6000) break;
+    }
+    if (rows.length) out.push({ name: sh.name, rows });
+  }
+  if (!out.length) throw new Error('Nessun foglio con dati.');
+  return out;
+}
+function leggiCsv(text) {
+  const t = text.replace(/^﻿/, '');
+  const head = t.slice(0, 4000);
+  const d = [';', '\t', ','].map(c => [c, (head.split(c).length)]).sort((a, b) => b[1] - a[1])[0][0];
+  const rows = []; let cur = [], f = '', q = false;
+  for (let i = 0; i < t.length; i++) {
+    const ch = t[i];
+    if (q) { if (ch === '"') { if (t[i + 1] === '"') { f += '"'; i++; } else q = false; } else f += ch; }
+    else if (ch === '"') q = true;
+    else if (ch === d) { cur.push(f); f = ''; }
+    else if (ch === '\n') { cur.push(f); f = ''; if (cur.some(x => x.trim())) rows.push(cur); cur = []; }
+    else if (ch !== '\r') f += ch;
+  }
+  cur.push(f); if (cur.some(x => x.trim())) rows.push(cur);
+  return [{ name: 'CSV', rows }];
+}
+// seriale Excel -> yyyy-mm-dd (sistema 1900 con il baco dell'anno bisestile)
+function serialToISO(n) {
+  if (typeof n !== 'number' || !isFinite(n) || n < 1 || n > 80000) return null;
+  const d = new Date(Date.UTC(1899, 11, 30) + Math.floor(n) * 86400000);
+  return d.toISOString().slice(0, 10);
+}
+function parseData(v) {
+  if (v === null || v === undefined || v === '') return '';
+  if (typeof v === 'number') return serialToISO(v) || '';
+  const s = String(v).trim();
+  let m = s.match(/^(\d{4})-(\d{2})-(\d{2})/); if (m) return `${m[1]}-${m[2]}-${m[3]}`;
+  m = s.match(/^(\d{1,2})[\/\.\-](\d{1,2})[\/\.\-](\d{2,4})/);
+  if (m) { let y = +m[3]; if (y < 100) y += y > 30 ? 1900 : 2000; return `${y}-${String(+m[2]).padStart(2, '0')}-${String(+m[1]).padStart(2, '0')}`; }
+  const d = new Date(s); return isNaN(d) ? '' : d.toISOString().slice(0, 10);
+}
+
+/* ---------------- dialogo importazione ---------------- */
+const CAMPI = [
+  { k: 'pett', l: 'Pettorale', rx: /^(pett|numero|num|bib|n\.?)/i, req: 1 },
+  { k: 'cognome', l: 'Cognome', rx: /cognom|surname|last/i, req: 1 },
+  { k: 'nome', l: 'Nome', rx: /^nome|first|name/i, req: 1 },
+  { k: 'sesso', l: 'Sesso', rx: /sesso|sex|gender|m\/f/i, req: 1 },
+  { k: 'societa', l: 'Società', rx: /societ|team|club|gareggia/i },
+  { k: 'nascita', l: 'Data di nascita', rx: /nascita|birth|nato|data/i, req: 1 },
+  { k: 'conferma', l: 'Conferma', rx: /conferm|confirm|present/i },
+];
+let imp = null;
+function apriImport() {
+  $('#filePick').value = '';
+  $('#filePick').accept = '.xlsx,.xlsm,.csv,.txt';
+  $('#filePick').onchange = async e => {
+    const f = e.target.files[0]; if (!f) return;
+    try {
+      let fogli;
+      if (/\.(xlsx|xlsm)$/i.test(f.name)) fogli = await leggiXlsx(await f.arrayBuffer());
+      else fogli = leggiCsv(await f.text());
+      imp = { fogli, fi: 0, map: {}, header: true, modo: 'sost' };
+      autoMappa(); mostraImport();
+      $('#dlgImport').showModal();
+    } catch (err) { toast(err.message || 'File non leggibile', 'bad'); }
+  };
+  $('#filePick').click();
+}
+function autoMappa() {
+  const rows = imp.fogli[imp.fi].rows;
+  // trova la riga di intestazione fra le prime 8
+  let hi = 0, best = -1;
+  for (let i = 0; i < Math.min(8, rows.length); i++) {
+    const sc = CAMPI.reduce((s, c) => s + (rows[i].some(v => typeof v === 'string' && c.rx.test(v)) ? 1 : 0), 0);
+    if (sc > best) { best = sc; hi = i; }
+  }
+  imp.hi = best > 1 ? hi : 0; imp.header = best > 1;
+  const head = rows[imp.hi] || [];
+  imp.map = {};
+  for (const c of CAMPI) {
+    const idx = head.findIndex(v => typeof v === 'string' && c.rx.test(v));
+    imp.map[c.k] = idx >= 0 ? idx : -1;
+  }
+  // fallback: ordine WISE standard
+  if (Object.values(imp.map).every(v => v < 0)) CAMPI.forEach((c, i) => imp.map[c.k] = i);
+}
+function mostraImport() {
+  const b = $('#dlgImportBody'); b.innerHTML = '';
+  const rows = imp.fogli[imp.fi].rows;
+  const head = rows[imp.hi] || [];
+  const nCol = Math.max(...rows.slice(0, 30).map(r => r.length), head.length);
+  const opts = () => [el('option', { value: '-1' }, '— non importare '),
+  ...Array.from({ length: nCol }, (_, i) => el('option', { value: String(i) },
+    `Col ${i + 1}${imp.header && head[i] ? ' · ' + String(head[i]).slice(0, 22) : ''}`))];
+
+  if (imp.fogli.length > 1) {
+    const s = el('select', { style: 'padding:7px 10px;border:1px solid var(--line);border-radius:7px;width:100%' },
+      ...imp.fogli.map((f, i) => el('option', { value: String(i), selected: i === imp.fi || null }, `${f.name} (${f.rows.length} righe)`)));
+    s.onchange = () => { imp.fi = +s.value; autoMappa(); mostraImport(); };
+    b.append(el('label', { class: 'f', style: 'margin-bottom:12px' }, 'Foglio', s));
+  }
+  const g = el('div', { class: 'grid g2' });
+  for (const c of CAMPI) {
+    const s = el('select', {}, ...opts());
+    s.value = String(imp.map[c.k] ?? -1);
+    s.onchange = () => { imp.map[c.k] = +s.value; mostraImport(); };
+    g.append(el('label', { class: 'f' }, c.l + (c.req ? ' *' : ''), s));
+  }
+  b.append(g);
+
+  const hr = el('label', { class: 'f', style: 'margin-top:12px;flex-direction:row;align-items:center;gap:8px' },
+    el('input', { type: 'checkbox', checked: imp.header || null, onchange: e => { imp.header = e.target.checked; mostraImport(); } }),
+    'La prima riga contiene le intestazioni');
+  b.append(hr);
+
+  const seg = el('div', { class: 'seg', style: 'margin-top:12px' },
+    el('button', { class: imp.modo === 'sost' ? 'on' : '', onclick: () => { imp.modo = 'sost'; mostraImport(); } }, 'Sostituisci tutti'),
+    el('button', { class: imp.modo === 'agg' ? 'on' : '', onclick: () => { imp.modo = 'agg'; mostraImport(); } }, 'Aggiungi ai presenti'));
+  b.append(el('div', {}, seg));
+
+  const dati = righeImport();
+  b.append(el('p', { class: 'hint', style: 'margin-top:12px' }, `Anteprima — ${dati.length} atleti riconosciuti`));
+  const t = el('table', { style: 'margin-top:6px' });
+  t.append(el('thead', {}, el('tr', {}, ...CAMPI.map(c => el('th', {}, c.l)))));
+  const tb = el('tbody');
+  for (const r of dati.slice(0, 5)) tb.append(el('tr', {}, ...CAMPI.map(c => el('td', {}, String(r[c.k] ?? '')))));
+  t.append(tb);
+  b.append(el('div', { class: 'tw', style: 'max-height:190px;border:1px solid var(--line);border-radius:7px' }, t));
+  $('#impOk').disabled = !dati.length;
+}
+function righeImport() {
+  const rows = imp.fogli[imp.fi].rows;
+  const dati = [];
+  for (let i = (imp.header ? imp.hi + 1 : 0); i < rows.length; i++) {
+    const r = rows[i]; const g = k => imp.map[k] >= 0 ? r[imp.map[k]] : null;
+    const pett = g('pett'), cog = g('cognome'), nom = g('nome');
+    if ((pett === null || pett === '') && !cog && !nom) continue;
+    const sx = String(g('sesso') ?? '').trim().toUpperCase();
+    dati.push({
+      pett: pett === null || pett === '' ? null : (isNaN(+pett) ? String(pett) : +pett),
+      cognome: String(cog ?? '').trim(), nome: String(nom ?? '').trim(),
+      sesso: sx.startsWith('F') || sx === 'W' ? 'F' : 'M',
+      societa: String(g('societa') ?? '').trim(),
+      nascita: parseData(g('nascita')),
+      conferma: (() => { const v = String(g('conferma') ?? '').trim().toUpperCase(); if (v === '') return 'S'; return (v.startsWith('S') || v.startsWith('Y') || v === '1' || v === 'X' || v === 'TRUE') ? 'S' : 'N'; })(),
+    });
+  }
+  return dati;
+}
+function eseguiImport() {
+  const dati = righeImport().map(d => Object.assign({ id: nid() }, d));
+  if (imp.modo === 'sost') S.iscritti = dati;
+  else {
+    const have = new Set(S.iscritti.map(i => i.pett));
+    S.iscritti = S.iscritti.concat(dati.filter(d => !have.has(d.pett)));
+  }
+  $('#dlgImport').close();
+  toast(dati.length + ' iscritti importati', 'go');
+  ui.view = 'iscritti'; touched();
+}
+
+/* ============================================================
+   Eventi
+   ============================================================ */
+function wire() {
+  buildNav();
+
+  // --- traguardo
+  $('#btnStart').onclick = async () => {
+    if (S.arrivi.length && !await confirmDlg('Nuova partenza', 'Ci sono già arrivi registrati. Far ripartire il cronometro azzera i tempi esistenti?')) return;
+    S.start = Date.now(); S.stop = null; touched(); toast('Partenza! ' + fmtOra(S.start), 'go');
+    setTimeout(() => $('#quickBib').focus(), 60);
+  };
+  $('#stCancel').onclick = () => $('#dlgStart').close();
+  $('#stOk').onclick = applicaStart;
+  $('#btnArrivo').onclick = () => { const ms = segnaArrivo(null); if (ms !== undefined) toast('Tempo ' + fmtHMS(ms), 'go'); $('#quickBib').focus(); };
+  $('#btnUndo').onclick = () => {
+    if (!S.arrivi.length) return;
+    const ult = S.arrivi.reduce((a, b) => (a.ms > b.ms ? a : b));
+    S.arrivi = S.arrivi.filter(x => x.id !== ult.id);
+    toast('Annullato ' + (ult.pett ?? 'arrivo') + ' · ' + fmtHMS(ult.ms), 'bad'); touched();
+  };
+  const qb = $('#quickBib');
+  qb.oninput = () => {
+    const v = qb.value.trim(); const p = $('#quickPrev');
+    if (!v) { p.innerHTML = '&nbsp;'; return; }
+    const i = C.iscritti.find(x => String(x.pett) === v);
+    if (!i) { p.innerHTML = '<span class="err">pettorale ' + esc(v) + ' non fra gli iscritti</span>'; return; }
+    const gia = C.ris.some(r => String(r.pett) === v);
+    p.innerHTML = (gia ? '<span class="err">GIÀ ARRIVATO · </span>' : '') +
+      '<span class="ok">' + esc(i.cognome + ' ' + i.nome) + '</span> · ' + esc(i.catGara || i.catFidal);
+  };
+  qb.onkeydown = e => {
+    if (e.key === 'Enter') {
+      e.preventDefault();
+      const v = qb.value.trim();
+      const ms = segnaArrivo(v === '' ? null : v);
+      if (ms !== undefined) toast((v ? 'Pett. ' + v + ' · ' : 'Tempo ') + fmtHMS(ms), 'go');
+      qb.value = ''; $('#quickPrev').innerHTML = '&nbsp;';
+    } else if (e.key === ' ') {
+      e.preventDefault();
+      const ms = segnaArrivo(null); if (ms !== undefined) toast('Tempo ' + fmtHMS(ms), 'go');
+    }
+  };
+  document.addEventListener('keydown', e => {
+    if (ui.view !== 'traguardo') return;
+    const tag = (e.target.tagName || '').toLowerCase();
+    if (e.key === ' ' && tag !== 'input' && tag !== 'select' && tag !== 'textarea') {
+      e.preventDefault(); const ms = segnaArrivo(null); if (ms !== undefined) toast('Tempo ' + fmtHMS(ms), 'go');
+    }
+    if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'z') { e.preventDefault(); $('#btnUndo').click(); }
+  });
+  $('#arrSearch').oninput = debounce(e => { ui.arrQ = e.target.value; renderArrivi(); }, 180);
+
+  // --- iscritti
+  $('#iscSearch').oninput = debounce(e => { ui.iscQ = e.target.value; renderIscritti(); }, 180);
+  $('#iscFilter').onchange = e => { ui.iscF = e.target.value; renderIscritti(); };
+  $('#btnIscImport').onclick = apriImport;
+  $('#btnIscAdd').onclick = () => {
+    const max = S.iscritti.reduce((m, i) => Math.max(m, +i.pett || 0), 0);
+    S.iscritti.unshift({ id: nid(), pett: max + 1, cognome: '', nome: '', sesso: 'M', societa: '', nascita: '', conferma: 'S' });
+    touched();
+  };
+  $('#impCancel').onclick = () => $('#dlgImport').close();
+  $('#impOk').onclick = eseguiImport;
+
+  // --- classifiche / società / stati
+  $$('#clsSeg button').forEach(b => b.onclick = () => { ui.clsMode = b.dataset.m; renderClassifiche(); });
+  $('#clsSearch').oninput = debounce(e => { ui.clsQ = e.target.value; renderClassifiche(); }, 200);
+  $$('#socSeg button').forEach(b => b.onclick = () => { ui.socMode = b.dataset.m; render(); });
+  $('#btnSocExclAdd').onclick = () => {
+    const v = $('#socExclNew').value.trim(); if (!v) return;
+    S.cfg.socEscluse.push(v.toUpperCase()); $('#socExclNew').value = ''; touched();
+  };
+  $('#btnChiudiGara').onclick = async () => {
+    const att = C.stati.filter(s => s.stato === 'Atteso').map(s => s.pett);
+    if (!att.length) { toast('Nessun atleta in attesa'); return; }
+    if (!await confirmDlg('Chiudi arrivi', att.length + ' atleti confermati non sono arrivati: dichiararli tutti ritirati (DNF)?')) return;
+    S.dnf = [...new Set([...S.dnf, ...att])]; touched(); toast(att.length + ' atleti segnati DNF');
+  };
+  $('#stFilter').onchange = e => { ui.stF = e.target.value; renderStati(); };
+  $('#stSearch').oninput = debounce(e => { ui.stQ = e.target.value; renderStati(); }, 180);
+
+  // --- gara
+  $('#btnMatrixAdd').onclick = () => { S.matrice.push({ nome: 'NUOVA', fidal: [], premi: S.cfg.premCat }); touched(); };
+  $('#btnMatrixReset').onclick = async () => {
+    if (!await confirmDlg('Ripristina', 'Sostituire la matrice attuale con quella standard a 18 fasce?')) return;
+    S.matrice = JSON.parse(JSON.stringify(MATRICE_STD)); touched();
+  };
+  $('#btnResetArrivi').onclick = azzeraCrono;
+  $('#btnResetAll').onclick = async () => {
+    if (!await confirmDlg('Azzera tutto', 'Vengono cancellati iscritti, arrivi e impostazioni. Scarica prima un backup se ti serve.')) return;
+    S = VUOTO(); fsHandle = null; touched(); toast('Tutto azzerato');
+  };
+
+  // --- backup
+  $('#btnExportJson').onclick = () => download(slug() + '.json', JSON.stringify(S, null, 1), 'application/json');
+  $('#btnBackup').onclick = () => $('#btnExportJson').click();
+  $('#btnImportJson').onclick = () => {
+    $('#filePick').value = ''; $('#filePick').accept = '.json';
+    $('#filePick').onchange = async e => {
+      const f = e.target.files[0]; if (!f) return;
+      try {
+        const d = JSON.parse(await f.text());
+        if (!d.cfg) throw new Error('bad');
+        S = Object.assign(VUOTO(), d); S.cfg = Object.assign(VUOTO().cfg, d.cfg);
+        touched(); toast('Backup caricato', 'go');
+      } catch (err) { toast('File di backup non valido', 'bad'); }
+    };
+    $('#filePick').click();
+  };
+  $('#btnSaveAs').onclick = async () => {
+    if (!window.showSaveFilePicker) { toast('Funzione non disponibile in questo browser', 'bad'); return; }
+    try {
+      fsHandle = await window.showSaveFilePicker({
+        suggestedName: slug() + '.json',
+        types: [{ description: 'Gara CronoStrada', accept: { 'application/json': ['.json'] } }]
+      });
+      save(); toast('Salvataggio automatico attivo', 'go'); renderFsHint();
+    } catch (e) { }
+  };
+
+  // --- export
+  $('#btnCsvWise').onclick = () => download(slug() + '_wise.csv', toCSV(csvWiseRows()));
+  $('#btnCsvFull').onclick = () => {
+    const rows = [['Pos', 'Pettorale', 'Cognome', 'Nome', 'Sesso', 'Societa', 'Fascia', 'Cat FIDAL', 'Tempo', 'Premio']];
+    for (const r of C.ris) if (r.pos) rows.push([r.pos, r.pett, r.cognome, r.nome, r.sesso, r.societa, r.catGara, r.catFidal, fmtHMS(r.tempo, true), r.etichetta || '']);
+    download(slug() + '_classifica.csv', toCSV(rows.map(r => r.map(String))));
+  };
+  $('#btnCsvIscritti').onclick = () => {
+    const rows = [['Pettorale', 'Cognome', 'Nome', 'Sesso', 'Societa', 'Nascita', 'Conferma', 'Cat FIDAL', 'Fascia', 'Stato']];
+    const st = new Map(C.stati.map(s => [s.id, s.stato]));
+    for (const i of C.iscritti) rows.push([i.pett ?? '', i.cognome, i.nome, i.sesso, i.societa, i.nascita, i.conferma, i.catFidal, i.catGara, st.get(i.id) || '']);
+    download(slug() + '_iscritti.csv', toCSV(rows.map(r => r.map(String))));
+  };
+}
+function renderFsHint() {
+  $('#fsHint').innerHTML = fsHandle
+    ? 'Salvataggio automatico su file attivo: ogni modifica viene scritta subito su disco.'
+    : (window.showSaveFilePicker
+      ? 'Consigliato: collega un file di salvataggio così ogni modifica finisce anche su disco, non solo nella memoria del browser.'
+      : 'Questo browser non consente il salvataggio automatico su file. I dati restano nella memoria del browser: scarica un backup .json a fine gara.');
+}
+
+/* ============================================================
+   Avvio
+   ============================================================ */
+(function init() {
+  const trovato = load();
+  wire();
+  if (!trovato) { S.cfg.anno = new Date().getFullYear(); ui.view = 'gara'; }
+  else ui.view = 'traguardo';
+  renderFsHint();
+  render();
+  markSaved(trovato ? 'Gara ripresa dalla memoria locale' : 'Pronto');
+  window.addEventListener('beforeunload', e => {
+    if (S.arrivi.length && !fsHandle) { e.preventDefault(); e.returnValue = ''; }
+  });
+})();
+</script>
+</body>
+</html>
