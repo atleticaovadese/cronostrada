@@ -421,7 +421,50 @@ test.describe('Layout verticale', () => {
 
   test('nessuno scorrimento orizzontale e niente zoom a doppio tocco', async ({ page }) => {
     await traguardoPronto(page);
-    for (let i = 0; i < 6; i++) await page.tap('#btnArrivo');
+
+    /*
+     * Lo scorrimento orizzontale non compare "in generale": compare in certi
+     * stati e non in altri. Una versione precedente di questo test usava un
+     * solo stato e lasciava passare un difetto vero, scoperto solo provando
+     * il sito pubblicato. Qui si controlla dopo OGNI passaggio, perché è la
+     * larghezza dei pezzi dell'intestazione a cambiare con il contenuto.
+     */
+    const controlla = async passaggio => {
+      const m = await page.evaluate(() => ({
+        doc: document.documentElement.scrollWidth,
+        schermo: window.innerWidth,
+        card: (() => {
+          const c = document.querySelector('.finish .card');
+          return c ? Math.round(c.getBoundingClientRect().width) : 0;
+        })(),
+      }));
+      if (m.doc > m.schermo + 1) {
+        throw new Error(
+          `\nLa pagina scorre in orizzontale dopo: ${passaggio}\n` +
+          `  documento ${m.doc}px, schermo ${m.schermo}px ` +
+          `(la scheda dell'elenco è larga ${m.card}px)\n\n` +
+          `  Al traguardo si tiene il telefono con una mano sola: una pagina che\n` +
+          `  balla di lato mentre si preme è inservibile.\n`);
+      }
+    };
+
+    await controlla('apertura della schermata Arrivi');
+
+    await page.tap('#padGrid button:text-is("1")');
+    await page.tap('#padGrid button:text-is("2")');
+    await page.tap('#padGrid button:text-is("0")');
+    await page.tap('#btnArrivo');
+    await controlla('un arrivo con pettorale');
+
+    for (let i = 0; i < 3; i++) await page.tap('#btnArrivo');
+    await controlla('tre arrivi senza pettorale');
+
+    await page.evaluate(() => { for (let i = 0; i < 30; i++) segnaArrivo(null); });
+    await page.waitForTimeout(200);
+    await controlla('oltre trenta arrivi in elenco');
+
+    await page.locator('#arrTable tbody tr.nobib input.mono').first().tap();
+    await controlla('modalità assegnazione aperta');
 
     const m = await page.evaluate(() => ({
       scrollOrizzontale: document.documentElement.scrollWidth > window.innerWidth + 1,
@@ -436,9 +479,6 @@ test.describe('Layout verticale', () => {
       overscrollSupportato: CSS.supports('overscroll-behavior-y', 'contain'),
     }));
 
-    expect(m.scrollOrizzontale,
-      `la pagina non deve scorrere in orizzontale (documento ${m.larghezzaDoc}px, schermo ${m.larghezzaSchermo}px)`)
-      .toBe(false);
     expect(m.tastoArrivo, 'il pulsante ARRIVO non deve zoomare al doppio tocco').toBe('manipulation');
     expect(m.tastoPad, 'i tasti del tastierino non devono zoomare al doppio tocco').toBe('manipulation');
 

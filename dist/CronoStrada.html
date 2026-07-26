@@ -296,13 +296,17 @@ html,body{overscroll-behavior-y:contain}
   .finish .card .tw{max-height:none!important}
   /* senza questo una tabella larga sfonda il contenitore e la pagina
      scorrerebbe in orizzontale */
-  .finish .card{min-width:0}
+  .finish .card{min-width:0;max-width:100%}
+  .finish .card>.body{min-width:0}
   /* Intestazione dell'elenco compatta: su iPhone ogni riga sprecata qui
      significa nessun arrivo visibile senza scorrere. */
-  .finish .card>header{padding:8px 10px;gap:6px}
-  .finish .card>header h2{font-size:15px}
+  .finish .card>header{padding:8px 10px;gap:6px;min-width:0}
+  .finish .card>header h2{font-size:15px;min-width:0}
   .arrhead{gap:6px}
-  .arrsearch{width:auto;flex:1;min-width:88px;font-size:13px;padding:6px 8px}
+  /* min-width:0 è indispensabile: con una larghezza minima fissa il campo
+     non può restringersi, la somma dei pezzi supera lo schermo e a farne le
+     spese è tutta la pagina, che comincia a scorrere in orizzontale. */
+  .arrsearch{width:auto;flex:1 1 60px;min-width:0;font-size:13px;padding:6px 8px}
   #arrTable th{padding:5px 7px;font-size:10px}
 
   /* Durante la gara l'avviso "arrivi senza pettorale" va sotto e non sopra:
