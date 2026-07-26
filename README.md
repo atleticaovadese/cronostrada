@@ -157,9 +157,41 @@ Se te ne dimentichi non è un dramma: **Modifica orario** ti fa impostare
 l'orario dello sparo anche dopo, e tutti i tempi si spostano di conseguenza
 senza che nessun arrivo vada perso e senza che l'ordine cambi.
 
-### Gli arrivi
+### Gli arrivi — dal telefono
 
-Hai due modi, e puoi mescolarli liberamente durante la gara.
+Sul telefono la app ha **un suo tastierino**, disegnato dentro la pagina. Non
+usa più la tastiera di sistema: quella di iPhone non ha il tasto invio e non
+permetteva di confermare il pettorale.
+
+- **Se leggi il pettorale:** lo digiti sul tastierino. Il pulsante verde cambia
+  scritta e diventa **ARRIVO 126**, così vedi a colpo d'occhio cosa stai per
+  registrare, e sotto compare il nome dell'atleta.
+- **Se non fai in tempo:** premi il pulsante verde con il campo vuoto, dove c'è
+  scritto solo **ARRIVO**. Registra il tempo e basta.
+- **Se sbagli una cifra:** `⌫` cancella l'ultima, `C` svuota tutto.
+- **Per completare dopo un pettorale mancante:** tocca la casella arancione di
+  quella riga nell'elenco. Il tastierino passa in modalità assegnazione, ti
+  ricorda l'ora di quell'arrivo, e il pulsante diventa **ASSEGNA 126**. Anche
+  qui la tastiera del telefono non si apre mai.
+
+A ogni arrivo il telefono **vibra** e lo schermo dà un **lampo verde**: al
+traguardo non c'è tempo di leggere un messaggio.
+
+I tasti non si spostano mai, nemmeno quando compaiono avvisi: al traguardo si
+preme senza guardare. Cronometro e tastierino restano sempre in alto, l'elenco
+arrivi scorre sotto.
+
+**Lo schermo non si spegne** da solo mentre il cronometro va, e torna normale
+quando premi STOP.
+
+**In volata puoi premere a raffica.** Non c'è nessun ritardo e nessun blocco fra
+due pressioni ravvicinate: ogni pressione registra un arrivo. Nella gara di
+riferimento 26 atleti su 265 sono arrivati entro un secondo dal precedente, con
+un minimo di 0,22 secondi, e i test verificano proprio questo.
+
+### Gli arrivi — dal computer
+
+Dal computer non è cambiato nulla.
 
 **Se fai in tempo a leggere il pettorale:** scrivi il numero nel campo grande e
 premi **Invio**. Mentre digiti, sotto compare il nome dell'atleta — così ti

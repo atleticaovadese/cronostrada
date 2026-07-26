@@ -211,8 +211,126 @@ dialog footer{padding:12px 18px;border-top:1px solid var(--line-2);display:flex;
 .seg button.on{background:var(--accent);color:#fff}
 .seg button+button{border-left:1px solid var(--line)}
 
+/* ============================================================
+   TELEFONO — tastierino interno alla app
+   Il tastierino numerico di iOS non ha il tasto invio: dal telefono il
+   pettorale non si riusciva a confermare. Su schermi stretti la app
+   sostituisce la tastiera di sistema con la propria.
+   Tutto quanto segue vale SOLO sotto i 700px: da computer non cambia nulla.
+   ============================================================ */
+
+/* niente ricarica trascinando la pagina verso il basso durante la gara */
+html,body{overscroll-behavior-y:contain}
+
+/* lampo di conferma a ogni arrivo: non intercetta mai i tocchi */
+#flash{position:fixed;inset:0;z-index:300;pointer-events:none;background:var(--go);opacity:0}
+#flash.on{animation:lampo .18s ease-out}
+@keyframes lampo{from{opacity:.42}to{opacity:0}}
+
+/* il tastierino esiste sempre nel documento ma si vede solo su schermi stretti */
+.pad{display:none;margin-top:12px}
+.padgrid{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
+.padgrid button{
+  min-height:56px;min-width:48px;                 /* ben oltre i 48px richiesti */
+  font-size:26px;font-weight:700;font-family:var(--mono);
+  border-radius:10px;border:1px solid #3b444f;background:#2a313b;color:#fff;
+  cursor:pointer;padding:0;
+  touch-action:manipulation;                      /* niente zoom a doppio tocco */
+  -webkit-user-select:none;user-select:none;
+  -webkit-tap-highlight-color:transparent;
+}
+.padgrid button:active{background:#4a5563}
+.padgrid button.fn{font-size:19px;background:#20262f;color:#aab4c0}
+.padgrid button.fn:active{background:#39414d}
+
+/* riga che dice su quale campo sta scrivendo il tastierino */
+.padmodo{margin-top:10px;padding:9px 12px;border-radius:9px;background:#3a2f16;color:#ffd484;
+  font-size:12.5px;font-weight:600;display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.padmodo .topspace{flex:1}
+.padmodo button{border:1px solid #6b5a2a;background:#2a313b;color:#ffd484;border-radius:7px;
+  padding:6px 12px;font-size:12.5px;font-weight:650;cursor:pointer;min-height:34px;
+  touch-action:manipulation}
+
+@media (max-width:700px){
+  main{padding:10px 10px 34px}
+  .pad{display:block}
+  .kbdhint{display:none!important}                /* scorciatoie da tastiera: inutili qui */
+
+  /* Barra in alto compatta: ogni pixel qui è spazio tolto all'elenco arrivi.
+     Il pallino del salvataggio resta, la sua scritta no. */
+  .topbar{padding:6px 10px;gap:8px}
+  .brand{font-size:15px}
+  .brand small,.racename,#saveTxt{display:none}
+  nav button{padding:7px 11px 9px;font-size:13px}
+
+  /* I due riquadri diventano fratelli, così il cronometro può restare
+     appiccicato in alto mentre l'elenco arrivi scorre sotto. */
+  .finish{display:flex;flex-direction:column;gap:10px}
+  .finish>div{display:contents}
+
+  /* Ogni pixel risparmiato qui è una riga in più di elenco visibile.
+     I tasti restano comunque ben sopra i 48px richiesti. */
+  .clockcard{
+    position:sticky;top:var(--toph,86px);z-index:40;
+    padding:10px;border-radius:12px;
+  }
+  .clock{font-size:clamp(22px,7.5vw,30px);margin:0}
+  .clockcard .lbl{font-size:9.5px;letter-spacing:.07em}
+  .startrow{font-size:11px;gap:6px;min-height:18px;margin-top:2px}
+
+  .quickwrap{margin-top:7px}
+  .quick{font-size:25px;padding:7px 12px;caret-color:transparent}
+  .quick::placeholder{font-size:13px}
+  .preview{font-size:12px;margin-top:3px;min-height:15px}
+
+  .padgrid{gap:6px}
+  .padgrid button{min-height:48px;font-size:22px}   /* il minimo richiesto */
+  .pad{margin-top:8px}
+
+  .bigbtn{padding:15px;font-size:21px;margin-top:8px}
+  /* fuori dal pannello appiccicato, subito sotto il cronometro */
+  .ctrlrow{margin-top:0;gap:7px}
+  .ctrlrow button{padding:9px;font-size:12.5px}
+
+  /* un solo scorrimento: quello della pagina. L'elenco non ha altezza propria. */
+  .finish .card .tw{max-height:none!important}
+  /* senza questo una tabella larga sfonda il contenitore e la pagina
+     scorrerebbe in orizzontale */
+  .finish .card{min-width:0}
+  /* Intestazione dell'elenco compatta: su iPhone ogni riga sprecata qui
+     significa nessun arrivo visibile senza scorrere. */
+  .finish .card>header{padding:8px 10px;gap:6px}
+  .finish .card>header h2{font-size:15px}
+  .arrhead{gap:6px}
+  .arrsearch{width:auto;flex:1;min-width:88px;font-size:13px;padding:6px 8px}
+  #arrTable th{padding:5px 7px;font-size:10px}
+
+  /* Durante la gara l'avviso "arrivi senza pettorale" va sotto e non sopra:
+     comparendo sopra sposterebbe il tastierino di 58px mentre qualcuno sta
+     premendo senza guardare. Il conteggio resta comunque sempre visibile
+     nella pallina rossa sulla scheda Arrivi, in cima. */
+  .view.ingara #trgBanner{order:9}
+
+  /* La cella del pettorale è un bersaglio da dito, non da mouse. */
+  #arrTable td{padding:4px 6px}
+  /* Il pettorale non deve MAI risultare tagliato: 105 che si legge "10" al
+     traguardo è un errore che si scopre a premiazione fatta. Spazio per
+     quattro cifre. */
+  #arrTable th:nth-child(2),#arrTable td:nth-child(2){min-width:64px}
+  #arrTable td input.cell.mono{
+    width:100%!important;min-height:40px;font-size:15px;text-align:center!important;
+    padding:2px 4px;
+    border:1px solid var(--line);background:var(--surface-2);border-radius:7px;
+    touch-action:manipulation;
+  }
+  #arrTable tr.nobib td input.cell.mono{border-color:var(--warn);background:#fff}
+
+  /* bersaglio del tastierino evidenziato nell'elenco */
+  tr.inmodifica td{background:#fdf1e0;box-shadow:inset 3px 0 0 var(--warn)}
+}
+
 @media print{
-  #top,nav,.noprint,#toast{display:none!important}
+  #top,nav,.noprint,#toast,.pad,#flash{display:none!important}
   body{background:#fff;font-size:11px}
   main{padding:0;max-width:none}
   .card{border:0;box-shadow:none}
@@ -319,12 +437,22 @@ dialog footer{padding:12px 18px;border-top:1px solid var(--line-2);display:flex;
           <input class="quick" id="quickBib" inputmode="numeric" autocomplete="off" placeholder="pettorale + Invio">
           <div class="preview" id="quickPrev">&nbsp;</div>
         </div>
+        <!-- Tastierino della app: visibile solo su schermi stretti.
+             I tasti non cambiano mai posizione, al traguardo si preme senza guardare. -->
+        <div class="pad" id="pad">
+          <div class="padgrid" id="padGrid"></div>
+          <div id="padModo"></div>
+        </div>
         <button class="bigbtn" id="btnArrivo" style="display:none">ARRIVO</button>
         <div class="ctrlrow" id="ctrlRow"></div>
         <div class="kbdhint" id="kbdHint" style="display:none">
           <span><kbd>Spazio</kbd> arrivo</span><span><kbd>Invio</kbd> conferma pettorale</span><span><kbd>Ctrl</kbd>+<kbd>Z</kbd> annulla</span>
         </div>
       </div>
+      <!-- Da telefono i comandi STOP/Azzera vengono spostati qui dentro: nel
+           pannello appiccicato rubavano 47px all'elenco arrivi, e servono una
+           volta sola a fine gara. Restano comunque subito sotto il cronometro. -->
+      <div id="ctrlHost"></div>
     </div>
     <div>
       <div class="card"><header class="arrhead"><h2>Elenco arrivi</h2>
@@ -409,6 +537,7 @@ dialog footer{padding:12px 18px;border-top:1px solid var(--line-2);display:flex;
 </main>
 
 <div id="toast"></div>
+<div id="flash"></div>
 
 <dialog id="dlgImport">
   <header>Importa iscritti</header>
@@ -995,6 +1124,28 @@ function renderTraguardo() {
     if (C.n.problemi) msgs.push(plur(C.n.problemi, 'arrivo da verificare', 'arrivi da verificare'));
     if (msgs.length) b.append(el('div', { class: 'banner warn' }, el('div', {}, el('b', {}, 'Attenzione: '), msgs.join(' · '))));
   }
+  // Durante la gara gli avvisi scendono sotto il pannello: se comparissero
+  // sopra sposterebbero il tastierino sotto le dita.
+  const sez = document.querySelector('section[data-v="traguardo"]');
+  if (sez) sez.classList.toggle('ingara', started && !fermo);
+
+  // Da telefono i comandi di fine gara escono dal pannello appiccicato, per
+  // lasciare spazio all'elenco. Da computer restano dove sono sempre stati.
+  const ctrl = $('#ctrlRow');
+  const casa = modoTelefono() ? $('#ctrlHost') : document.querySelector('.clockcard');
+  if (ctrl && casa && ctrl.parentElement !== casa) {
+    if (casa === $('#ctrlHost')) casa.append(ctrl);
+    else casa.insertBefore(ctrl, $('#kbdHint'));
+  }
+
+  // tastierino del telefono: costruito una volta sola, mai ricostruito fra
+  // due pressioni; qui si aggiorna solo l'etichetta.
+  costruisciPad();
+  $('#pad').style.display = (started && !fermo) ? '' : 'none';
+  if (padBersaglio !== null && !S.arrivi.some(a => a.id === padBersaglio)) padBersaglio = null;
+  aggiornaPad();
+  sincronizzaWakeLock();
+
   if (!clockTimer) clockTimer = setInterval(tickClock, 47);
   tickClock();
   renderArrivi();
@@ -1102,7 +1253,10 @@ function renderArrivi() {
   for (const r of rows) {
     const noBib = r.alert.includes('NOPETT');
     const bad = r.alert.some(a => a !== 'NOPETT');
-    const tr = el('tr', { class: noBib ? 'nobib' : (bad ? 'dup' : '') });
+    const inModifica = padBersaglio === r.id;
+    const tr = el('tr', {
+      class: (noBib ? 'nobib' : (bad ? 'dup' : '')) + (inModifica ? ' inmodifica' : '')
+    });
     const setPett = v => {
       const o = S.arrivi.find(x => x.id === r.id); if (!o) return;
       o.pett = v === '' ? null : +v; touched();
@@ -1110,10 +1264,20 @@ function renderArrivi() {
     const setCorr = v => { const o = S.arrivi.find(x => x.id === r.id); if (o) { o.corr = v === '' ? 0 : +v; touched(); } };
     tr.append(
       el('td', { class: 'num', style: 'color:var(--ink-3);font-size:12px' }, r.pos ?? '—'),
-      el('td', { class: 'num' }, el('input', {
-        class: 'cell mono', style: 'width:60px;text-align:right;font-weight:700', value: r.pett ?? '',
-        inputmode: 'numeric', placeholder: '—', onchange: e => setPett(e.target.value)
-      })),
+      el('td', { class: 'num' }, (() => {
+        const inp = el('input', {
+          class: 'cell mono', style: 'width:60px;text-align:right;font-weight:700', value: r.pett ?? '',
+          inputmode: modoTelefono() ? 'none' : 'numeric', placeholder: '—',
+          onchange: e => setPett(e.target.value)
+        });
+        if (modoTelefono()) {
+          // Da telefono anche completare un pettorale mancante passa dal
+          // tastierino della app, mai dalla tastiera di sistema.
+          inp.readOnly = true;
+          inp.addEventListener('click', ev => { ev.preventDefault(); apriAssegnazione(r.id); });
+        }
+        return inp;
+      })()),
       el('td', {}, r.iscr ? el('span', {}, el('b', {}, r.cognome + ' ' + r.nome),
         el('span', { style: 'color:var(--ink-3)' }, ' · ' + (r.societa || '—')))
         : el('span', { style: 'color:var(--bad);font-weight:600' }, noBib ? 'pettorale da inserire' : 'pettorale non iscritto')),
@@ -1132,7 +1296,10 @@ function segnaArrivo(pett) {
   if (!S.start) { toast('Prima premi START', 'bad'); return; }
   if (S.stop) { toast('Cronometro fermo: premi Riprendi', 'bad'); return; }
   const ms = Date.now() - S.start;
+  // Prima si registra, poi si ridisegna: anche se il ridisegno fosse lento,
+  // l'arrivo è già salvo. Nessuna pressione può andare persa.
   S.arrivi.push({ id: nid(), pett: (pett === undefined || pett === null || pett === '') ? null : +pett, ms, corr: 0 });
+  feedbackArrivo();
   touched();
   return ms;
 }
@@ -1601,6 +1768,186 @@ function eseguiImport() {
 }
 
 /* ============================================================
+   Telefono: tastierino interno, schermo acceso, conferma tattile
+
+   Il tastierino numerico di iOS non ha il tasto invio, quindi dal telefono
+   il pettorale non si riusciva a confermare. Sotto i 700px la app usa il
+   proprio tastierino al posto della tastiera di sistema.
+
+   NIENTE RITARDI. Nessun anti-doppio-tocco, nessun raggruppamento fra
+   pressioni ravvicinate: in volata due arrivi a 220 millisecondi sono la
+   normalità e ogni pressione deve produrre un arrivo. Per questo il tasto
+   di conferma reagisce a `pointerdown` e non attende il click, il
+   tastierino si costruisce una volta sola, e l'arrivo viene registrato
+   prima di qualsiasi ridisegno.
+   ============================================================ */
+const MQ_TEL = window.matchMedia('(max-width:700px)');
+const modoTelefono = () => MQ_TEL.matches;
+
+// Su cosa scrive il tastierino: null = nuovo arrivo, altrimenti l'id
+// dell'arrivo a cui si sta assegnando il pettorale a posteriori.
+let padBersaglio = null;
+
+/* --- conferma tattile: vibrazione + lampo, mai bloccanti --- */
+function feedbackArrivo() {
+  try { if (navigator.vibrate) navigator.vibrate(35); } catch (e) { }
+  const f = $('#flash');
+  if (!f) return;
+  f.classList.remove('on');
+  void f.offsetWidth;            // riavvia l'animazione anche a raffica
+  f.classList.add('on');
+}
+
+/* --- schermo sempre acceso mentre il cronometro va --- */
+let wakeLock = null;
+async function sincronizzaWakeLock() {
+  if (!('wakeLock' in navigator)) return;
+  const serve = !!S.start && !S.stop;
+  try {
+    if (serve && !wakeLock) {
+      wakeLock = await navigator.wakeLock.request('screen');
+      wakeLock.addEventListener('release', () => { wakeLock = null; });
+    } else if (!serve && wakeLock) {
+      const w = wakeLock; wakeLock = null; await w.release();
+    }
+  } catch (e) { wakeLock = null; }
+}
+document.addEventListener('visibilitychange', () => {
+  // il sistema rilascia il blocco quando la pagina va in secondo piano
+  if (document.visibilityState === 'visible') sincronizzaWakeLock();
+});
+
+/* --- altezza della barra in alto, per tenere il cronometro appiccicato --- */
+function misuraTop() {
+  const t = $('#top');
+  if (t) document.documentElement.style.setProperty('--toph', t.offsetHeight + 'px');
+}
+
+/* --- il tastierino --- */
+const PAD_TASTI = ['1', '2', '3', '4', '5', '6', '7', '8', '9', 'C', '0', '⌫'];
+function costruisciPad() {
+  const g = $('#padGrid');
+  if (!g || g.childElementCount) return;     // una volta sola: mai ricostruito
+  for (const t of PAD_TASTI) {
+    const fn = (t === 'C' || t === '⌫');
+    const b = el('button', {
+      type: 'button', class: fn ? 'fn' : '',
+      'aria-label': t === 'C' ? 'svuota il campo' : t === '⌫' ? 'cancella una cifra' : t,
+    }, t);
+    b.addEventListener('click', ev => {
+      ev.preventDefault();
+      if (t === 'C') padImposta('');
+      else if (t === '⌫') padImposta($('#quickBib').value.slice(0, -1));
+      else padImposta($('#quickBib').value + t);
+    });
+    g.append(b);
+  }
+}
+
+function padImposta(v) {
+  const q = $('#quickBib');
+  q.value = String(v).replace(/\D/g, '').slice(0, 6);
+  aggiornaAnteprimaPett();
+  aggiornaPad();
+}
+
+/** Apre l'assegnazione posticipata di un pettorale, con lo stesso tastierino. */
+function apriAssegnazione(id) {
+  const a = S.arrivi.find(x => x.id === id);
+  if (!a) return;
+  padBersaglio = id;
+  $('#quickBib').value = (a.pett === null || a.pett === undefined) ? '' : String(a.pett);
+  render();
+  const c = document.querySelector('.clockcard');
+  if (c) c.scrollIntoView({ block: 'start', behavior: 'smooth' });
+}
+function chiudiAssegnazione() {
+  padBersaglio = null;
+  $('#quickBib').value = '';
+  render();
+}
+
+/** Il tasto grande: registra un arrivo, oppure assegna il pettorale in attesa. */
+function padConferma() {
+  const q = $('#quickBib');
+  const v = q.value.trim();
+
+  if (padBersaglio !== null) {
+    const o = S.arrivi.find(x => x.id === padBersaglio);
+    padBersaglio = null;
+    q.value = '';
+    if (o) {
+      o.pett = v === '' ? null : +v;
+      touched();
+      toast(v ? 'Pettorale ' + v + ' assegnato' : 'Pettorale tolto', v ? 'go' : 'bad');
+    } else render();
+    return;
+  }
+
+  // Il campo si svuota PRIMA, così il ridisegno mostra subito il pulsante
+  // pronto per l'arrivo successivo.
+  q.value = '';
+  const ms = segnaArrivo(v === '' ? null : v);
+  if (ms !== undefined) toast((v ? 'Pett. ' + v + ' · ' : 'Tempo ') + fmtHMS(ms), 'go');
+  else { q.value = v; aggiornaPad(); }        // rifiutato: non perdo quanto digitato
+}
+
+/** Etichetta del pulsante grande e riga di stato del tastierino. */
+function aggiornaPad() {
+  const b = $('#btnArrivo'), m = $('#padModo');
+  if (!b) return;
+
+  if (!modoTelefono()) {
+    // Da computer tutto resta com'era: pulsante ARRIVO e basta.
+    b.textContent = 'ARRIVO';
+    if (m) m.innerHTML = '';
+    return;
+  }
+
+  const v = $('#quickBib').value.trim();
+  if (padBersaglio !== null) {
+    const a = S.arrivi.find(x => x.id === padBersaglio);
+    b.textContent = v ? 'ASSEGNA ' + v : 'TOGLI PETTORALE';
+    if (m) {
+      m.innerHTML = '';
+      m.append(el('div', { class: 'padmodo' },
+        el('span', {}, 'Assegni il pettorale all\'arrivo delle ' +
+          (a ? fmtHMS(a.ms + (a.corr || 0) * 1000, true) : '—')),
+        el('div', { class: 'topspace' }),
+        el('button', { type: 'button', onclick: chiudiAssegnazione }, 'Annulla')));
+    }
+  } else {
+    // "ARRIVO 126" oppure "ARRIVO": si vede a colpo d'occhio cosa succederà.
+    b.textContent = v ? 'ARRIVO ' + v : 'ARRIVO';
+    if (m) m.innerHTML = '';
+  }
+}
+
+/** Anteprima dell'atleta sotto il campo. Usata sia dal tastierino sia dalla tastiera. */
+function aggiornaAnteprimaPett() {
+  const qb = $('#quickBib'), p = $('#quickPrev');
+  if (!qb || !p) return;
+  const v = qb.value.trim();
+  if (!v) { p.innerHTML = '&nbsp;'; return; }
+  const i = C.iscritti.find(x => String(x.pett) === v);
+  if (!i) { p.innerHTML = '<span class="err">pettorale ' + esc(v) + ' non fra gli iscritti</span>'; return; }
+  const gia = C.ris.some(r => String(r.pett) === v);
+  p.innerHTML = (gia ? '<span class="err">GIÀ ARRIVATO · </span>' : '') +
+    '<span class="ok">' + esc(i.cognome + ' ' + i.nome) + '</span> · ' + esc(i.catGara || i.catFidal);
+}
+
+/** Il campo non deve aprire la tastiera del telefono. */
+function sincronizzaInputMode() {
+  const q = $('#quickBib');
+  if (!q) return;
+  q.setAttribute('inputmode', modoTelefono() ? 'none' : 'numeric');
+  q.setAttribute('placeholder', modoTelefono() ? 'pettorale' : 'pettorale + Invio');
+}
+MQ_TEL.addEventListener('change', () => {
+  sincronizzaInputMode(); misuraTop(); render();
+});
+
+/* ============================================================
    Eventi
    ============================================================ */
 function wire() {
@@ -1614,7 +1961,21 @@ function wire() {
   };
   $('#stCancel').onclick = () => $('#dlgStart').close();
   $('#stOk').onclick = applicaStart;
-  $('#btnArrivo').onclick = () => { const ms = segnaArrivo(null); if (ms !== undefined) toast('Tempo ' + fmtHMS(ms), 'go'); $('#quickBib').focus(); };
+  // Da computer: comportamento di sempre, il click registra il solo tempo.
+  $('#btnArrivo').onclick = () => {
+    if (modoTelefono()) return;               // da telefono ha già agito pointerdown
+    const ms = segnaArrivo(null);
+    if (ms !== undefined) toast('Tempo ' + fmtHMS(ms), 'go');
+    $('#quickBib').focus();
+  };
+  // Da telefono: si agisce sulla pressione, non sul rilascio. Niente attesa,
+  // niente rischio che due tocchi ravvicinati vengano fusi in uno.
+  $('#btnArrivo').addEventListener('pointerdown', e => {
+    if (!modoTelefono()) return;
+    if (e.pointerType === 'mouse' && e.button !== 0) return;
+    e.preventDefault();
+    padConferma();
+  });
   $('#btnUndo').onclick = () => {
     if (!S.arrivi.length) return;
     const ult = S.arrivi.reduce((a, b) => (a.ms > b.ms ? a : b));
@@ -1622,15 +1983,7 @@ function wire() {
     toast('Annullato ' + (ult.pett ?? 'arrivo') + ' · ' + fmtHMS(ult.ms), 'bad'); touched();
   };
   const qb = $('#quickBib');
-  qb.oninput = () => {
-    const v = qb.value.trim(); const p = $('#quickPrev');
-    if (!v) { p.innerHTML = '&nbsp;'; return; }
-    const i = C.iscritti.find(x => String(x.pett) === v);
-    if (!i) { p.innerHTML = '<span class="err">pettorale ' + esc(v) + ' non fra gli iscritti</span>'; return; }
-    const gia = C.ris.some(r => String(r.pett) === v);
-    p.innerHTML = (gia ? '<span class="err">GIÀ ARRIVATO · </span>' : '') +
-      '<span class="ok">' + esc(i.cognome + ' ' + i.nome) + '</span> · ' + esc(i.catGara || i.catFidal);
-  };
+  qb.oninput = () => { aggiornaAnteprimaPett(); aggiornaPad(); };
   qb.onkeydown = e => {
     if (e.key === 'Enter') {
       e.preventDefault();
@@ -1752,6 +2105,9 @@ function renderFsHint() {
   if (!trovato) { S.cfg.anno = new Date().getFullYear(); ui.view = 'gara'; }
   else ui.view = 'traguardo';
   renderFsHint();
+  sincronizzaInputMode();
+  misuraTop();
+  window.addEventListener('resize', misuraTop);
   render();
   markSaved(trovato ? 'Gara ripresa dalla memoria locale' : 'Pronto');
   window.addEventListener('beforeunload', e => {

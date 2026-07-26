@@ -11,8 +11,14 @@ module.exports = defineConfig({
   retries: 0,
 
   forbidOnly: !!process.env.CI,
-  workers: process.env.CI ? 2 : undefined,
-  timeout: 30_000,
+
+  // Due worker, non "quanti core hai".
+  // I test della volata misurano intervalli sotto i 300 ms fra un tocco e
+  // l'altro: con quattro browser che si contendono la stessa CPU la misura
+  // diventa inaffidabile e i test ballano. Meglio un minuto in più che un
+  // fallimento che non significa niente.
+  workers: 2,
+  timeout: 45_000,
   expect: { timeout: 7_000 },
 
   reporter: process.env.CI
@@ -28,7 +34,25 @@ module.exports = defineConfig({
   },
 
   projects: [
-    { name: 'chromium', use: { ...devices['Desktop Chrome'] } },
+    // I test di riferimento e funzionali girano da computer.
+    {
+      name: 'computer',
+      use: { ...devices['Desktop Chrome'] },
+      testIgnore: /telefono\.spec\.js/,
+    },
+    // I test del traguardo da telefono girano su due veri profili di
+    // dispositivo, con tocco reale. iPhone usa WebKit, il motore di Safari:
+    // è lì che il tastierino di sistema non ha il tasto invio.
+    {
+      name: 'iphone',
+      use: { ...devices['iPhone 14'] },
+      testMatch: /telefono\.spec\.js/,
+    },
+    {
+      name: 'android',
+      use: { ...devices['Pixel 7'] },
+      testMatch: /telefono\.spec\.js/,
+    },
   ],
 
   // Serve la app su http, come fa GitHub Pages.

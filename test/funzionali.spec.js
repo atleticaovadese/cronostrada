@@ -115,6 +115,43 @@ test.describe('Cronometro e registrazione arrivi', () => {
     confrontaNumero('il tempo non deve cambiare assegnando il pettorale', msPrima, dopo.ms);
   });
 
+  test('da computer il comportamento resta quello di sempre', async ({ page }) => {
+    // Il tastierino e il pulsante a doppia funzione valgono solo su schermo
+    // stretto. Da computer nulla deve cambiare: questo test lo blinda.
+    await apriApp(page);
+    await page.click('nav button:text-is("Arrivi")');
+    await page.click('#btnStart');
+
+    const modo = await page.evaluate(() => ({
+      telefono: modoTelefono(),
+      inputmode: document.querySelector('#quickBib').getAttribute('inputmode'),
+      padVisibile: getComputedStyle(document.querySelector('#pad')).display,
+      etichetta: document.querySelector('#btnArrivo').textContent,
+    }));
+    expect(modo.telefono, 'da computer la modalità telefono non si attiva').toBe(false);
+    expect(modo.inputmode, 'da computer il campo resta numerico').toBe('numeric');
+    expect(modo.padVisibile, 'da computer il tastierino resta nascosto').toBe('none');
+    expect(modo.etichetta, 'da computer il pulsante resta ARRIVO').toBe('ARRIVO');
+
+    // Col campo pieno, ARRIVO registra il SOLO tempo, come ha sempre fatto:
+    // il pettorale si conferma con Invio.
+    await page.fill('#quickBib', '77');
+    await expect(page.locator('#btnArrivo'), 'e l\'etichetta non cambia col campo pieno')
+      .toHaveText('ARRIVO');
+    await page.click('#btnArrivo');
+    expect(await page.evaluate(() => S.arrivi.map(a => a.pett)),
+      'da computer il pulsante grande non prende il pettorale dal campo').toEqual([null]);
+
+    // Invio invece lo prende, come sempre.
+    await page.fill('#quickBib', '77');
+    await page.press('#quickBib', 'Enter');
+    expect(await page.evaluate(() => S.arrivi.map(a => a.pett))).toEqual([null, 77]);
+
+    // e la barra spaziatrice registra il solo tempo
+    await page.press('#quickBib', ' ');
+    expect(await page.evaluate(() => S.arrivi.map(a => a.pett))).toEqual([null, 77, null]);
+  });
+
   test('STOP ferma il cronometro e Riprendi lo fa ripartire senza perdere tempi', async ({ page }) => {
     await apriApp(page);
     await page.click('nav button:text-is("Arrivi")');
