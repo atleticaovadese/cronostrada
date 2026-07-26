@@ -44,8 +44,12 @@ jobs:
       - name: Installa le dipendenze
         run: npm ci
 
-      - name: Installa il browser per i test
-        run: npx playwright install --with-deps chromium
+      # Servono entrambi: Chromium per i test da computer e per il profilo
+      # Android, WebKit per il profilo iPhone. È il motore di Safari, quello
+      # dove il tastierino di sistema non ha il tasto invio: i test del
+      # telefono devono girare lì, non su un'imitazione.
+      - name: Installa i browser per i test
+        run: npx playwright install --with-deps chromium webkit
 
       - name: Esegui i test
         run: npm test
