@@ -36,7 +36,9 @@ jobs:
       - name: Prepara Node
         uses: actions/setup-node@v4
         with:
-          node-version: '20'
+          # Stessa versione usata in locale: se i test passano sul tuo computer
+          # devono passare anche qui, e viceversa.
+          node-version: '24'
           cache: npm
 
       - name: Installa le dipendenze
