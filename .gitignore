@@ -4,11 +4,12 @@
 # Nota: la cartella dist/ NON va esclusa. Contiene la copia di
 # emergenza della app e deve essere versionata.
 
-# Dipendenze e strumenti di sviluppo (per ora non usati: il sito è statico puro)
+# Dipendenze. Il SITO resta statico puro: node serve solo ai test, non alla app.
 node_modules/
-package-lock.json
 .npm/
 .cache/
+# package-lock.json va invece versionato: senza di lui "npm ci" in GitHub
+# Actions non può installare le stesse versioni esatte di oggi.
 
 # Chiavi e configurazioni private — mai nel repository
 .env
@@ -36,15 +37,19 @@ $RECYCLE.BIN/
 .claude/
 
 # ---------------------------------------------------------------
-# File di test locali con dati reali degli atleti.
-# Restano sul tuo computer: contengono nomi e date di nascita di
-# persone vere e il repository è pubblico.
+# DATI REALI DEGLI ATLETI — non entrano nel repository.
+# Contengono nomi e date di nascita di persone vere, e il
+# repository è pubblico. Restano solo sul tuo computer.
 # ---------------------------------------------------------------
 reference.json
 wise_iscritti.xlsx
 *.xlsx
 *.xlsm
-!esempio_*.xlsx
+
+# I corrispondenti anonimizzati SÌ: sono i dati su cui girano i test,
+# anche in GitHub Actions. Generati da tools/anonimizza.py, che parte
+# dai file veri qui sopra.
+!wise_iscritti_anon.xlsx
 
 # Risultati dei test (serviranno dal passaggio successivo)
 test-results/

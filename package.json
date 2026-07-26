@@ -1,0 +1,17 @@
+{
+  "name": "cronostrada",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Gestione e cronometraggio di gare podistiche su strada. App statica a file singolo.",
+  "_nota_scripts": "Playwright viene invocato via 'node ./node_modules/...' e non con il comando 'playwright': la cartella di lavoro contiene una & (arrives&lives) e lo shim di npm, che non quota il percorso, si spezza in quel punto.",
+  "scripts": {
+    "test": "node ./node_modules/@playwright/test/cli.js test",
+    "test:ui": "node ./node_modules/@playwright/test/cli.js test --ui",
+    "test:report": "node ./node_modules/@playwright/test/cli.js show-report",
+    "browser": "node ./node_modules/@playwright/test/cli.js install chromium",
+    "dati": "python tools/anonimizza.py"
+  },
+  "devDependencies": {
+    "@playwright/test": "1.56.1"
+  }
+}

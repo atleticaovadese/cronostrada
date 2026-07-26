@@ -1,0 +1,5208 @@
+{
+ "_nota": "Dati di test anonimizzati. Nomi e giorno/mese di nascita sono di fantasia; pettorali, sesso, societa, anno di nascita, tempi, categorie e posizioni sono quelli reali della 7a Stradolcetto. Rigenerabile con: python tools/anonimizza.py",
+ "_annoRiferimento": 2025,
+ "iscritti": [
+  {
+   "pett": 1,
+   "cognome": "ROSSI",
+   "nome": "MARCO",
+   "sesso": "M",
+   "societa": "A.S.D. BRANCALEONE  ASTI",
+   "nascita": "1975-01-01",
+   "conferma": "S",
+   "catFidal": "SM50",
+   "catGara": "SM50"
+  },
+  {
+   "pett": 2,
+   "cognome": "FERRARI",
+   "nome": "MARCO",
+   "sesso": "M",
+   "societa": "ATL. NOVESE",
+   "nascita": "1986-02-08",
+   "conferma": "S",
+   "catFidal": "SM35",
+   "catGara": "SM35"
+  },
+  {
+   "pett": 3,
+   "cognome": "ROSSI",
+   "nome": "GIULIA",
+   "sesso": "F",
+   "societa": "ATL. SANTHIA'",
+   "nascita": "1981-03-15",
+   "conferma": "S",
+   "catFidal": "SF40",
+   "catGara": "SF40"
+  },
+  {
+   "pett": 4,
+   "cognome": "ESPOSITO",
+   "nome": "MARCO",
+   "sesso": "M",
+   "societa": "ATL. NOVESE",
+   "nascita": "1969-04-22",
+   "conferma": "S",
+   "catFidal": "SM55",
+   "catGara": "SM55"
+  },
+  {
+   "pett": 5,
+   "cognome": "BIANCHI",
+   "nome": "MARCO",
+   "sesso": "M",
+   "societa": "ATL. OVADESE ORMIG",
+   "nascita": "1962-05-01",
+   "conferma": "S",
+   "catFidal": "SM60",
+   "catGara": "SM60"
+  },
+  {
+   "pett": 6,
+   "cognome": "ROMANO",
+   "nome": "MARCO",
+   "sesso": "M",
+   "societa": "BIO CORRENDO AVIS",
+   "nascita": "2006-06-08",
+   "conferma": "S",
+   "catFidal": "JM",
+   "catGara": "JPSM"
+  },
+  {
+   "pett": 7,
+   "cognome": "COLOMBO",
+   "nome": "MARCO",
+   "sesso": "M",
+   "societa": "ATL. NOVESE",
+   "nascita": "1975-07-15",
+   "conferma": "S",
+   "catFidal": "SM50",
+   "catGara": "SM50"
+  },
+  {
+   "pett": 8,
+   "cognome": "RICCI",
+   "nome": "MARCO",
+   "sesso": "M",
+   "societa": "ATL. NOVESE",
+   "nascita": "1956-08-22",
+   "conferma": "S",
+   "catFidal": "SM65",
+   "catGara": "SM65"
+  },
+  {
+   "pett": 9,
+   "cognome": "MARINO",
+   "nome": "MARCO",
+   "sesso": "M",
+   "societa": "MARATONETI GENOVESI",
+   "nascita": "1968-09-01",
+   "conferma": "S",
+   "catFidal": "SM55",
+   "catGara": "SM55"
+  },
+  {
+   "pett": 10,
+   "cognome": "FERRARI",
+   "nome": "GIULIA",
+   "sesso": "F",
+   "societa": "ATLETICA SALUZZO ",
+   "nascita": "1998-10-08",
+   "conferma": "S",
+   "catFidal": "SF",
+   "catGara": "JPSF"
+  },
+  {
+   "pett": 11,
+   "cognome": "GRECO",
+   "nome": "MARCO",
+   "sesso": "M",
+   "societa": "ATLETICA CAIRO",
+   "nascita": "1961-11-15",
+   "conferma": "S",
+   "catFidal": "SM60",
+   "catGara": "SM60"
+  },
+  {
+   "pett": 12,
+   "cognome": "BRUNO",
+   "nome": "MARCO",
+   "sesso": "M",
+   "societa": "G.S.R. FERRERO A.S.D.",
+   "nascita": "1951-12-22",
+   "conferma": "S",
+   "catFidal": "SM70",
+   "catGara": "SM70+"
+  },
+  {
+   "pett": 13,
+   "cognome": "GALLO",
+   "nome": "MARCO",
+   "sesso": "M",
+   "societa": "ATL. NOVESE",
+   "nascita": "1988-01-01",
+   "conferma": "S",
+   "catFidal": "SM35",
+   "catGara": "SM35"
+  },
+  {
+   "pett": 14,
+   "cognome": "CONTI",
+   "nome": "MARCO",
+   "sesso": "M",
+   "societa": "A.S.D. BRANCALEONE  ASTI",
+   "nascita": "1971-02-08",
+   "conferma": "S",
+   "catFidal": "SM50",
+   "catGara": "SM50"
+  },
+  {
+   "pett": 15,
+   "cognome": "DE LUCA",
+   "nome": "MARCO",
+   "sesso": "M",
+   "societa": "MARATONETI GENOVESI",
+   "nascita": "1956-03-15",
+   "conferma": "S",
+   "catFidal": "SM65",
+   "catGara": "SM65"
+  },
+  {
+   "pett": 16,
+   "cognome": "COSTA",
+   "nome": "MARCO",
+   "sesso": "M",
+   "societa": "ATL. OVADESE ORMIG",
+   "nascita": "1955-04-22",
+   "conferma": "S",
+   "catFidal": "SM70",
+   "catGara": "SM70+"
+  },
+  {
+   "pett": 17,
+   "cognome": "GIORDANO",
+   "nome": "MARCO",
+   "sesso": "M",
+   "societa": "A.S.D. BRANCALEONE  ASTI",
+   "nascita": "1984-05-01",
+   "conferma": "S",
+   "catFidal": "SM40",
+   "catGara": "SM40"
+  },
+  {
+   "pett": 18,
+   "cognome": "ESPOSITO",
+   "nome": "GIULIA",
+   "sesso": "F",
+   "societa": "A.S.D. HAMMER TEAM",
+   "nascita": "2000-06-08",
+   "conferma": "S",
+   "catFidal": "SF",
+   "catGara": "JPSF"
+  },
+  {
+   "pett": 19,
+   "cognome": "MANCINI",
+   "nome": "MARCO",
+   "sesso": "M",
+   "societa": "G.S.R. FERRERO A.S.D.",
+   "nascita": "1964-07-15",
+   "conferma": "S",
+   "catFidal": "SM60",
+   "catGara": "SM60"
+  },
+  {
+   "pett": 20,
+   "cognome": "RIZZO",
+   "nome": "MARCO",
+   "sesso": "M",
+   "societa": "BIO CORRENDO AVIS",
+   "nascita": "1975-08-22",
+   "conferma": "S",
+   "catFidal": "SM50",
+   "catGara": "SM50"
+  },
+  {
+   "pett": 21,
+   "cognome": "LOMBARDI",
+   "nome": "MARCO",
+   "sesso": "M",
+   "societa": "MARATONETI GENOVESI",
+   "nascita": "1956-09-01",
+   "conferma": "S",
+   "catFidal": "SM65",
+   "catGara": "SM65"
+  },
+  {
+   "pett": 22,
+   "cognome": "MORETTI",
+   "nome": "MARCO",
+   "sesso": "M",
+   "societa": "A.S.D. BRANCALEONE  ASTI",
+   "nascita": "1968-10-08",
+   "conferma": "S",
+   "catFidal": "SM55",
+   "catGara": "SM55"
+  },
+  {
+   "pett": 23,
+   "cognome": "BARBIERI",
+   "nome": "MARCO",
+   "sesso": "M",
+   "societa": "ATL. OVADESE ORMIG",
+   "nascita": "1995-11-15",
+   "conferma": "N",
+   "catFidal": "SM",
+   "catGara": "JPSM"
+  },
+  {
+   "pett": 24,
+   "cognome": "BIANCHI",
+   "nome": "GIULIA",
+   "sesso": "F",
+   "societa": "A.S.D. BRANCALEONE  ASTI",
+   "nascita": "1981-12-22",
+   "conferma": "S",
+   "catFidal": "SF40",
+   "catGara": "SF40"
+  },
+  {
+   "pett": 25,
+   "cognome": "FONTANA",
+   "nome": "MARCO",
+   "sesso": "M",
+   "societa": "EMOZIONI SPORT TEAM A.S.D.",
+   "nascita": "1972-01-01",
+   "conferma": "S",
+   "catFidal": "SM50",
+   "catGara": "SM50"
+  },
+  {
+   "pett": 26,
+   "cognome": "SANTORO",
+   "nome": "MARCO",
+   "sesso": "M",
+   "societa": "ASD GIANNONERUNNING CIRCUIT",
+   "nascita": "1996-02-08",
+   "conferma": "S",
+   "catFidal": "SM",
+   "catGara": "JPSM"
+  },
+  {
+   "pett": 27,
+   "cognome": "MARIANI",
+   "nome": "MARCO",
+   "sesso": "M",
+   "societa": "ATLETICA SALUZZO ",
+   "nascita": "1967-03-15",
+   "conferma": "S",
+   "catFidal": "SM55",
+   "catGara": "SM55"
+  },
+  {
+   "pett": 28,
+   "cognome": "RINALDI",
+   "nome": "MARCO",
+   "sesso": "M",
+   "societa": "MARATONETI GENOVESI",
+   "nascita": "1958-04-22",
+   "conferma": "S",
+   "catFidal": "SM65",
+   "catGara": "SM65"
+  },
+  {
+   "pett": 29,
+   "cognome": "CARUSO",
+   "nome": "MARCO",
+   "sesso": "M",
+   "societa": "ATL. NOVESE",
+   "nascita": "1976-05-01",
+   "conferma": "N",
+   "catFidal": "SM45",
+   "catGara": "SM45"
+  },
+  {
+   "pett": 30,
+   "cognome": "FERRARA",
+   "nome": "MARCO",
+   "sesso": "M",
+   "societa": "A.S.D. FRECCE BIANCHE",
+   "nascita": "1972-06-08",
+   "conferma": "S",
+   "catFidal": "SM50",
+   "catGara": "SM50"
+  },
+  {
+   "pett": 31,
+   "cognome": "GALLI",
+   "nome": "MARCO",
+   "sesso": "M",
+   "societa": "ATL. NOVESE",
+   "nascita": "1959-07-15",
+   "conferma": "S",
+   "catFidal": "SM65",
+   "catGara": "SM65"
+  },
+  {
+   "pett": 32,
+   "cognome": "ROMANO",
+   "nome": "GIULIA",
+   "sesso": "F",
+   "societa": "TORINO ROAD RUNNERS A.S.D.",
+   "nascita": "1974-08-22",
+   "conferma": "S",
+   "catFidal": "SF50",
+   "catGara": "SF50"
+  },
+  {
+   "pett": 33,
+   "cognome": "COLOMBO",
+   "nome": "GIULIA",
+   "sesso": "F",
+   "societa": "A.S.D. BRANCALEONE  ASTI",
+   "nascita": "1954-09-01",
+   "conferma": "S",
+   "catFidal": "SF70",
+   "catGara": "SF70+"
+  },
+  {
+   "pett": 34,
+   "cognome": "RICCI",
+   "nome": "GIULIA",
+   "sesso": "F",
+   "societa": "A.S.D. FRECCE BIANCHE",
+   "nascita": "1965-10-08",
+   "conferma": "S",
+   "catFidal": "SF60",
+   "catGara": "SF60"
+  },
+  {
+   "pett": 35,
+   "cognome": "MARTINI",
+   "nome": "MARCO",
+   "sesso": "M",
+   "societa": "ATL. NOVESE",
+   "nascita": "1977-11-15",
+   "conferma": "S",
+   "catFidal": "SM45",
+   "catGara": "SM45"
+  },
+  {
+   "pett": 36,
+   "cognome": "MARINO",
+   "nome": "GIULIA",
+   "sesso": "F",
+   "societa": "BIO CORRENDO AVIS",
+   "nascita": "1982-12-22",
+   "conferma": "N",
+   "catFidal": "SF40",
+   "catGara": "SF40"
+  },
+  {
+   "pett": 37,
+   "cognome": "LEONE",
+   "nome": "MARCO",
+   "sesso": "M",
+   "societa": "TORINO ROAD RUNNERS A.S.D.",
+   "nascita": "1973-01-01",
+   "conferma": "S",
+   "catFidal": "SM50",
+   "catGara": "SM50"
+  },
+  {
+   "pett": 38,
+   "cognome": "LONGO",
+   "nome": "MARCO",
+   "sesso": "M",
+   "societa": "ATL. OVADESE ORMIG",
+   "nascita": "1988-02-08",
+   "conferma": "S",
+   "catFidal": "SM35",
+   "catGara": "SM35"
+  },
+  {
+   "pett": 39,
+   "cognome": "GRECO",
+   "nome": "GIULIA",
+   "sesso": "F",
+   "societa": "A.S.D. OLIMPIA RUNNERS",
+   "nascita": "1979-03-15",
+   "conferma": "S",
+   "catFidal": "SF45",
+   "catGara": "SF45"
+  },
+  {
+   "pett": 40,
+   "cognome": "GENTILE",
+   "nome": "MARCO",
+   "sesso": "M",
+   "societa": "A.S.D. PODISTICA TORINO",
+   "nascita": "1979-04-22",
+   "conferma": "S",
+   "catFidal": "SM45",
+   "catGara": "SM45"
+  },
+  {
+   "pett": 41,
+   "cognome": "MARTINELLI",
+   "nome": "MARCO",
+   "sesso": "M",
+   "societa": "0131RUN OF MADE A.S.D.",
+   "nascita": "1970-05-01",
+   "conferma": "S",
+   "catFidal": "SM55",
+   "catGara": "SM55"
+  },
+  {
+   "pett": 42,
+   "cognome": "BRUNO",
+   "nome": "GIULIA",
+   "sesso": "F",
+   "societa": "DELTA SPEDIZIONI",
+   "nascita": "1963-06-08",
+   "conferma": "S",
+   "catFidal": "SF60",
+   "catGara": "SF60"
+  },
+  {
+   "pett": 43,
+   "cognome": "VITALE",
+   "nome": "MARCO",
+   "sesso": "M",
+   "societa": " ASD GRUPPO CITTA DI GENOVA",
+   "nascita": "1965-07-15",
+   "conferma": "S",
+   "catFidal": "SM60",
+   "catGara": "SM60"
+  },
+  {
+   "pett": 44,
+   "cognome": "LOMBARDO",
+   "nome": "MARCO",
+   "sesso": "M",
+   "societa": "ATL. ALESSANDRIA",
+   "nascita": "2006-08-22",
+   "conferma": "S",
+   "catFidal": "JM",
+   "catGara": "JPSM"
+  },
+  {
+   "pett": 45,
+   "cognome": "SERRA",
+   "nome": "MARCO",
+   "sesso": "M",
+   "societa": "A.S.D. BRANCALEONE  ASTI",
+   "nascita": "1971-09-01",
+   "conferma": "S",
+   "catFidal": "SM50",
+   "catGara": "SM50"
+  },
+  {
+   "pett": 46,
+   "cognome": "GALLO",
+   "nome": "GIULIA",
+   "sesso": "F",
+   "societa": "A.S.D. FRECCE BIANCHE",
+   "nascita": "1965-10-08",
+   "conferma": "S",
+   "catFidal": "SF60",
+   "catGara": "SF60"
+  },
+  {
+   "pett": 47,
+   "cognome": "COPPOLA",
+   "nome": "MARCO",
+   "sesso": "M",
+   "societa": "A.S.D. BRANCALEONE  ASTI",
+   "nascita": "1961-11-15",
+   "conferma": "S",
+   "catFidal": "SM60",
+   "catGara": "SM60"
+  },
+  {
+   "pett": 48,
+   "cognome": "DE SANTIS",
+   "nome": "MARCO",
+   "sesso": "M",
+   "societa": "A.S.D. BRANCALEONE  ASTI",
+   "nascita": "1974-12-22",
+   "conferma": "S",
+   "catFidal": "SM50",
+   "catGara": "SM50"
+  },
+  {
+   "pett": 49,
+   "cognome": "CONTI",
+   "nome": "GIULIA",
+   "sesso": "F",
+   "societa": "ATL. OVADESE ORMIG",
+   "nascita": "1989-01-01",
+   "conferma": "S",
+   "catFidal": "SF35",
+   "catGara": "SF35"
+  },
+  {
+   "pett": 50,
+   "cognome": "D_AMICO",
+   "nome": "MARCO",
+   "sesso": "M",
+   "societa": "A.S.D. ACCADEMIATLETICA",
+   "nascita": "1966-02-08",
+   "conferma": "S",
+   "catFidal": "SM55",
+   "catGara": "SM55"
+  },
+  {
+   "pett": 51,
+   "cognome": "MARCHETTI",
+   "nome": "MARCO",
+   "sesso": "M",
+   "societa": "ATL. OVADESE ORMIG",
+   "nascita": "1982-03-15",
+   "conferma": "S",
+   "catFidal": "SM40",
+   "catGara": "SM40"
+  },
+  {
+   "pett": 52,
+   "cognome": "PARISI",
+   "nome": "MARCO",
+   "sesso": "M",
+   "societa": "G.A.U. GIOVANI AMICI UNITI",
+   "nascita": "1968-04-22",
+   "conferma": "N",
+   "catFidal": "SM55",
+   "catGara": "SM55"
+  },
+  {
+   "pett": 53,
+   "cognome": "VILLA",
+   "nome": "MARCO",
+   "sesso": "M",
+   "societa": "ATL. NOVESE",
+   "nascita": "1973-05-01",
+   "conferma": "S",
+   "catFidal": "SM50",
+   "catGara": "SM50"
+  },
+  {
+   "pett": 54,
+   "cognome": "CONTE",
+   "nome": "MARCO",
+   "sesso": "M",
+   "societa": "ATL. NOVESE",
+   "nascita": "1970-06-08",
+   "conferma": "S",
+   "catFidal": "SM55",
+   "catGara": "SM55"
+  },
+  {
+   "pett": 55,
+   "cognome": "DE LUCA",
+   "nome": "GIULIA",
+   "sesso": "F",
+   "societa": "ATL. NOVESE",
+   "nascita": "1982-07-15",
+   "conferma": "S",
+   "catFidal": "SF40",
+   "catGara": "SF40"
+  },
+  {
+   "pett": 56,
+   "cognome": "FERRI",
+   "nome": "MARCO",
+   "sesso": "M",
+   "societa": "MARATONETI GENOVESI",
+   "nascita": "1953-08-22",
+   "conferma": "N",
+   "catFidal": "SM70",
+   "catGara": "SM70+"
+  },
+  {
+   "pett": 57,
+   "cognome": "FABBRI",
+   "nome": "MARCO",
+   "sesso": "M",
+   "societa": "A.S.D. BRANCALEONE  ASTI",
+   "nascita": "1964-09-01",
+   "conferma": "S",
+   "catFidal": "SM60",
+   "catGara": "SM60"
+  },
+  {
+   "pett": 58,
+   "cognome": "BIANCO",
+   "nome": "MARCO",
+   "sesso": "M",
+   "societa": "A.S.D. FRECCE BIANCHE",
+   "nascita": "1975-10-08",
+   "conferma": "S",
+   "catFidal": "SM50",
+   "catGara": "SM50"
+  },
+  {
+   "pett": 59,
+   "cognome": "MARINI",
+   "nome": "MARCO",
+   "sesso": "M",
+   "societa": "A.S.D. FRECCE BIANCHE",
+   "nascita": "1976-11-15",
+   "conferma": "S",
+   "catFidal": "SM45",
+   "catGara": "SM45"
+  },
+  {
+   "pett": 60,
+   "cognome": "GRASSO",
+   "nome": "MARCO",
+   "sesso": "M",
+   "societa": "RUNCARD",
+   "nascita": "1985-12-22",
+   "conferma": "N",
+   "catFidal": "SM40",
+   "catGara": "SM40"
+  },
+  {
+   "pett": 61,
+   "cognome": "VALENTINI",
+   "nome": "MARCO",
+   "sesso": "M",
+   "societa": "ATL. NOVESE",
+   "nascita": "1952-01-01",
+   "conferma": "S",
+   "catFidal": "SM70",
+   "catGara": "SM70+"
+  },
+  {
+   "pett": 62,
+   "cognome": "MESSINA",
+   "nome": "MARCO",
+   "sesso": "M",
+   "societa": "ATL. NOVESE",
+   "nascita": "1993-02-08",
+   "conferma": "S",
+   "catFidal": "SM",
+   "catGara": "JPSM"
+  },
+  {
+   "pett": 63,
+   "cognome": "COSTA",
+   "nome": "GIULIA",
+   "sesso": "F",
+   "societa": "ATLETICA CAIRO",
+   "nascita": "1966-03-15",
+   "conferma": "S",
+   "catFidal": "SF55",
+   "catGara": "SF55"
+  },
+  {
+   "pett": 64,
+   "cognome": "SALA",
+   "nome": "MARCO",
+   "sesso": "M",
+   "societa": "RUNCARD",
+   "nascita": "1989-04-22",
+   "conferma": "S",
+   "catFidal": "SM35",
+   "catGara": "SM35"
+  },
+  {
+   "pett": 65,
+   "cognome": "PELLEGRINI",
+   "nome": "MARCO",
+   "sesso": "M",
+   "societa": "A.S.D. VIGONECHECORRE",
+   "nascita": "1973-05-01",
+   "conferma": "S",
+   "catFidal": "SM50",
+   "catGara": "SM50"
+  },
+  {
+   "pett": 66,
+   "cognome": "PALUMBO",
+   "nome": "MARCO",
+   "sesso": "M",
+   "societa": "A.S.D. VIGONECHECORRE",
+   "nascita": "1967-06-08",
+   "conferma": "S",
+   "catFidal": "SM55",
+   "catGara": "SM55"
+  },
+  {
+   "pett": 67,
+   "cognome": "SANNA",
+   "nome": "MARCO",
+   "sesso": "M",
+   "societa": "ATL. NOVESE",
+   "nascita": "1967-07-15",
+   "conferma": "S",
+   "catFidal": "SM55",
+   "catGara": "SM55"
+  },
+  {
+   "pett": 68,
+   "cognome": "FARINA",
+   "nome": "MARCO",
+   "sesso": "M",
+   "societa": "ATL. NOVESE",
+   "nascita": "1977-08-22",
+   "conferma": "S",
+   "catFidal": "SM45",
+   "catGara": "SM45"
+  },
+  {
+   "pett": 69,
+   "cognome": "GIORDANO",
+   "nome": "GIULIA",
+   "sesso": "F",
+   "societa": "MARATONETI GENOVESI",
+   "nascita": "1970-09-01",
+   "conferma": "S",
+   "catFidal": "SF55",
+   "catGara": "SF55"
+  },
+  {
+   "pett": 70,
+   "cognome": "RIZZI",
+   "nome": "MARCO",
+   "sesso": "M",
+   "societa": "ATL. OVADESE ORMIG",
+   "nascita": "1963-10-08",
+   "conferma": "S",
+   "catFidal": "SM60",
+   "catGara": "SM60"
+  },
+  {
+   "pett": 71,
+   "cognome": "MONTI",
+   "nome": "MARCO",
+   "sesso": "M",
+   "societa": "G. P. DILETT. TAPPOROSSO",
+   "nascita": "1984-11-15",
+   "conferma": "S",
+   "catFidal": "SM40",
+   "catGara": "SM40"
+  },
+  {
+   "pett": 72,
+   "cognome": "CATTANEO",
+   "nome": "MARCO",
+   "sesso": "M",
+   "societa": "ASD VERDENERO",
+   "nascita": "1972-12-22",
+   "conferma": "S",
+   "catFidal": "SM50",
+   "catGara": "SM50"
+  },
+  {
+   "pett": 73,
+   "cognome": "MORELLI",
+   "nome": "MARCO",
+   "sesso": "M",
+   "societa": "BIO CORRENDO AVIS",
+   "nascita": "1963-01-01",
+   "conferma": "S",
+   "catFidal": "SM60",
+   "catGara": "SM60"
+  },
+  {
+   "pett": 74,
+   "cognome": "AMATO",
+   "nome": "MARCO",
+   "sesso": "M",
+   "societa": "BIO CORRENDO AVIS",
+   "nascita": "1956-02-08",
+   "conferma": "S",
+   "catFidal": "SM65",
+   "catGara": "SM65"
+  },
+  {
+   "pett": 75,
+   "cognome": "SILVESTRI",
+   "nome": "MARCO",
+   "sesso": "M",
+   "societa": "ASD ZENA RUNNERS",
+   "nascita": "1969-03-15",
+   "conferma": "S",
+   "catFidal": "SM55",
+   "catGara": "SM55"
+  },
+  {
+   "pett": 76,
+   "cognome": "MAZZA",
+   "nome": "MARCO",
+   "sesso": "M",
+   "societa": "0131RUN OF MADE A.S.D.",
+   "nascita": "1978-04-22",
+   "conferma": "N",
+   "catFidal": "SM45",
+   "catGara": "SM45"
+  },
+  {
+   "pett": 77,
+   "cognome": "MANCINI",
+   "nome": "GIULIA",
+   "sesso": "F",
+   "societa": "A.S.D. BRANCALEONE  ASTI",
+   "nascita": "1985-05-01",
+   "conferma": "S",
+   "catFidal": "SF40",
+   "catGara": "SF40"
+  },
+  {
+   "pett": 78,
+   "cognome": "TESTA",
+   "nome": "MARCO",
+   "sesso": "M",
+   "societa": "A.S.D. BRANCALEONE  ASTI",
+   "nascita": "1953-06-08",
+   "conferma": "S",
+   "catFidal": "SM70",
+   "catGara": "SM70+"
+  },
+  {
+   "pett": 79,
+   "cognome": "GRANDI",
+   "nome": "MARCO",
+   "sesso": "M",
+   "societa": "BIO CORRENDO AVIS",
+   "nascita": "1967-07-15",
+   "conferma": "S",
+   "catFidal": "SM55",
+   "catGara": "SM55"
+  },
+  {
+   "pett": 80,
+   "cognome": "PAGANO",
+   "nome": "MARCO",
+   "sesso": "M",
+   "societa": "ATL. NOVESE",
+   "nascita": "1982-08-22",
+   "conferma": "S",
+   "catFidal": "SM40",
+   "catGara": "SM40"
+  },
+  {
+   "pett": 81,
+   "cognome": "ROSSI",
+   "nome": "ANDREA",
+   "sesso": "M",
+   "societa": "ACQUIRUNNERS",
+   "nascita": "1949-09-01",
+   "conferma": "S",
+   "catFidal": "SM75",
+   "catGara": "SM70+"
+  },
+  {
+   "pett": 82,
+   "cognome": "FERRARI",
+   "nome": "ANDREA",
+   "sesso": "M",
+   "societa": "ATL. NOVESE",
+   "nascita": "1950-10-08",
+   "conferma": "S",
+   "catFidal": "SM75",
+   "catGara": "SM70+"
+  },
+  {
+   "pett": 83,
+   "cognome": "ESPOSITO",
+   "nome": "ANDREA",
+   "sesso": "M",
+   "societa": "A.S.D. BRANCALEONE  ASTI",
+   "nascita": "1991-11-15",
+   "conferma": "S",
+   "catFidal": "SM",
+   "catGara": "JPSM"
+  },
+  {
+   "pett": 84,
+   "cognome": "RIZZO",
+   "nome": "GIULIA",
+   "sesso": "F",
+   "societa": " ASD GRUPPO CITTA DI GENOVA",
+   "nascita": "1970-12-22",
+   "conferma": "S",
+   "catFidal": "SF55",
+   "catGara": "SF55"
+  },
+  {
+   "pett": 85,
+   "cognome": "LOMBARDI",
+   "nome": "GIULIA",
+   "sesso": "F",
+   "societa": "A.S.D. FRECCE BIANCHE",
+   "nascita": "1965-01-01",
+   "conferma": "S",
+   "catFidal": "SF60",
+   "catGara": "SF60"
+  },
+  {
+   "pett": 86,
+   "cognome": "BIANCHI",
+   "nome": "ANDREA",
+   "sesso": "M",
+   "societa": "ATL. OVADESE ORMIG",
+   "nascita": "1994-02-08",
+   "conferma": "N",
+   "catFidal": "SM",
+   "catGara": "JPSM"
+  },
+  {
+   "pett": 87,
+   "cognome": "ROMANO",
+   "nome": "ANDREA",
+   "sesso": "M",
+   "societa": "ATL. OVADESE ORMIG",
+   "nascita": "1956-03-15",
+   "conferma": "S",
+   "catFidal": "SM65",
+   "catGara": "SM65"
+  },
+  {
+   "pett": 88,
+   "cognome": "COLOMBO",
+   "nome": "ANDREA",
+   "sesso": "M",
+   "societa": "ATL. NOVESE",
+   "nascita": "1963-04-22",
+   "conferma": "S",
+   "catFidal": "SM60",
+   "catGara": "SM60"
+  },
+  {
+   "pett": 89,
+   "cognome": "MORETTI",
+   "nome": "GIULIA",
+   "sesso": "F",
+   "societa": "DELTA SPEDIZIONI",
+   "nascita": "1974-05-01",
+   "conferma": "S",
+   "catFidal": "SF50",
+   "catGara": "SF50"
+  },
+  {
+   "pett": 90,
+   "cognome": "RICCI",
+   "nome": "ANDREA",
+   "sesso": "M",
+   "societa": "ATL. NOVESE",
+   "nascita": "1946-06-08",
+   "conferma": "S",
+   "catFidal": "SM75",
+   "catGara": "SM70+"
+  },
+  {
+   "pett": 91,
+   "cognome": "MARINO",
+   "nome": "ANDREA",
+   "sesso": "M",
+   "societa": "DELTA SPEDIZIONI",
+   "nascita": "1974-07-15",
+   "conferma": "S",
+   "catFidal": "SM50",
+   "catGara": "SM50"
+  },
+  {
+   "pett": 92,
+   "cognome": "BARBIERI",
+   "nome": "GIULIA",
+   "sesso": "F",
+   "societa": "A.S.D. BRANCALEONE  ASTI",
+   "nascita": "1968-08-22",
+   "conferma": "S",
+   "catFidal": "SF55",
+   "catGara": "SF55"
+  },
+  {
+   "pett": 93,
+   "cognome": "GRECO",
+   "nome": "ANDREA",
+   "sesso": "M",
+   "societa": "A.S.D. BRANCALEONE  ASTI",
+   "nascita": "1971-09-01",
+   "conferma": "S",
+   "catFidal": "SM50",
+   "catGara": "SM50"
+  },
+  {
+   "pett": 94,
+   "cognome": "FONTANA",
+   "nome": "GIULIA",
+   "sesso": "F",
+   "societa": "ASD ZENA RUNNERS",
+   "nascita": "1971-10-08",
+   "conferma": "S",
+   "catFidal": "SF50",
+   "catGara": "SF50"
+  },
+  {
+   "pett": 95,
+   "cognome": "SANTORO",
+   "nome": "GIULIA",
+   "sesso": "F",
+   "societa": "ATL. NOVESE",
+   "nascita": "1982-11-15",
+   "conferma": "S",
+   "catFidal": "SF40",
+   "catGara": "SF40"
+  },
+  {
+   "pett": 96,
+   "cognome": "MARIANI",
+   "nome": "GIULIA",
+   "sesso": "F",
+   "societa": "ATL. NOVESE",
+   "nascita": "1967-12-22",
+   "conferma": "S",
+   "catFidal": "SF55",
+   "catGara": "SF55"
+  },
+  {
+   "pett": 97,
+   "cognome": "BRUNO",
+   "nome": "ANDREA",
+   "sesso": "M",
+   "societa": "S.S. VITTORIO ALFIERI ASTI",
+   "nascita": "1997-01-01",
+   "conferma": "S",
+   "catFidal": "SM",
+   "catGara": "JPSM"
+  },
+  {
+   "pett": 98,
+   "cognome": "GALLO",
+   "nome": "ANDREA",
+   "sesso": "M",
+   "societa": "ATL. NOVESE",
+   "nascita": "1962-02-08",
+   "conferma": "S",
+   "catFidal": "SM60",
+   "catGara": "SM60"
+  },
+  {
+   "pett": 99,
+   "cognome": "CONTI",
+   "nome": "ANDREA",
+   "sesso": "M",
+   "societa": "ATL. NOVESE",
+   "nascita": "1951-03-15",
+   "conferma": "S",
+   "catFidal": "SM70",
+   "catGara": "SM70+"
+  },
+  {
+   "pett": 100,
+   "cognome": "DE LUCA",
+   "nome": "ANDREA",
+   "sesso": "M",
+   "societa": "ATL. NOVESE",
+   "nascita": "1990-04-22",
+   "conferma": "S",
+   "catFidal": "SM35",
+   "catGara": "SM35"
+  },
+  {
+   "pett": 101,
+   "cognome": "COSTA",
+   "nome": "ANDREA",
+   "sesso": "M",
+   "societa": "ASD VERDENERO",
+   "nascita": "1954-05-01",
+   "conferma": "S",
+   "catFidal": "SM70",
+   "catGara": "SM70+"
+  },
+  {
+   "pett": 102,
+   "cognome": "GIORDANO",
+   "nome": "ANDREA",
+   "sesso": "M",
+   "societa": "ATL. SANTHIA'",
+   "nascita": "1984-06-08",
+   "conferma": "S",
+   "catFidal": "SM40",
+   "catGara": "SM40"
+  },
+  {
+   "pett": 103,
+   "cognome": "MANCINI",
+   "nome": "ANDREA",
+   "sesso": "M",
+   "societa": "MARATONETI GENOVESI",
+   "nascita": "1960-07-15",
+   "conferma": "S",
+   "catFidal": "SM65",
+   "catGara": "SM65"
+  },
+  {
+   "pett": 104,
+   "cognome": "RINALDI",
+   "nome": "GIULIA",
+   "sesso": "F",
+   "societa": "ATL. NOVESE",
+   "nascita": "1980-08-22",
+   "conferma": "S",
+   "catFidal": "SF45",
+   "catGara": "SF45"
+  },
+  {
+   "pett": 105,
+   "cognome": "RIZZO",
+   "nome": "ANDREA",
+   "sesso": "M",
+   "societa": "MARATONETI GENOVESI",
+   "nascita": "1962-09-01",
+   "conferma": "S",
+   "catFidal": "SM60",
+   "catGara": "SM60"
+  },
+  {
+   "pett": 106,
+   "cognome": "CARUSO",
+   "nome": "GIULIA",
+   "sesso": "F",
+   "societa": "ATL. NOVESE",
+   "nascita": "1992-10-08",
+   "conferma": "S",
+   "catFidal": "SF",
+   "catGara": "JPSF"
+  },
+  {
+   "pett": 107,
+   "cognome": "MORETTI",
+   "nome": "ANDREA",
+   "sesso": "M",
+   "societa": "ATL. OVADESE ORMIG",
+   "nascita": "1990-11-15",
+   "conferma": "S",
+   "catFidal": "SM35",
+   "catGara": "SM35"
+  },
+  {
+   "pett": 108,
+   "cognome": "FERRARA",
+   "nome": "GIULIA",
+   "sesso": "F",
+   "societa": "A.S.D. ATLETICA ROATA CHIUSANI",
+   "nascita": "1983-12-22",
+   "conferma": "S",
+   "catFidal": "SF40",
+   "catGara": "SF40"
+  },
+  {
+   "pett": 109,
+   "cognome": "GALLI",
+   "nome": "GIULIA",
+   "sesso": "F",
+   "societa": "A.S.D. BRANCALEONE  ASTI",
+   "nascita": "1979-01-01",
+   "conferma": "S",
+   "catFidal": "SF45",
+   "catGara": "SF45"
+  },
+  {
+   "pett": 110,
+   "cognome": "MARTINI",
+   "nome": "GIULIA",
+   "sesso": "F",
+   "societa": "ATL. NOVESE",
+   "nascita": "1962-02-08",
+   "conferma": "S",
+   "catFidal": "SF60",
+   "catGara": "SF60"
+  },
+  {
+   "pett": 111,
+   "cognome": "BARBIERI",
+   "nome": "ANDREA",
+   "sesso": "M",
+   "societa": "A.S.D. FRECCE BIANCHE",
+   "nascita": "1956-03-15",
+   "conferma": "N",
+   "catFidal": "SM65",
+   "catGara": "SM65"
+  },
+  {
+   "pett": 112,
+   "cognome": "LEONE",
+   "nome": "GIULIA",
+   "sesso": "F",
+   "societa": "ATL. NOVESE",
+   "nascita": "1981-04-22",
+   "conferma": "S",
+   "catFidal": "SF40",
+   "catGara": "SF40"
+  },
+  {
+   "pett": 113,
+   "cognome": "LONGO",
+   "nome": "GIULIA",
+   "sesso": "F",
+   "societa": "A.S.D. FRECCE BIANCHE",
+   "nascita": "1991-05-01",
+   "conferma": "S",
+   "catFidal": "SF",
+   "catGara": "JPSF"
+  },
+  {
+   "pett": 114,
+   "cognome": "FONTANA",
+   "nome": "ANDREA",
+   "sesso": "M",
+   "societa": "ATL. OVADESE ORMIG",
+   "nascita": "1971-06-08",
+   "conferma": "S",
+   "catFidal": "SM50",
+   "catGara": "SM50"
+  },
+  {
+   "pett": 115,
+   "cognome": "SANTORO",
+   "nome": "ANDREA",
+   "sesso": "M",
+   "societa": "RUNCARD",
+   "nascita": "1994-07-16",
+   "conferma": "S",
+   "catFidal": "SM",
+   "catGara": "JPSM"
+  },
+  {
+   "pett": 116,
+   "cognome": "MARIANI",
+   "nome": "ANDREA",
+   "sesso": "M",
+   "societa": "ASD ZENA RUNNERS",
+   "nascita": "1960-08-22",
+   "conferma": "S",
+   "catFidal": "SM65",
+   "catGara": "SM65"
+  },
+  {
+   "pett": 117,
+   "cognome": "RINALDI",
+   "nome": "ANDREA",
+   "sesso": "M",
+   "societa": "A.S.D. BRANCALEONE  ASTI",
+   "nascita": "1989-09-01",
+   "conferma": "S",
+   "catFidal": "SM35",
+   "catGara": "SM35"
+  },
+  {
+   "pett": 118,
+   "cognome": "CARUSO",
+   "nome": "ANDREA",
+   "sesso": "M",
+   "societa": "MARATONETI GENOVESI",
+   "nascita": "1970-10-08",
+   "conferma": "S",
+   "catFidal": "SM55",
+   "catGara": "SM55"
+  },
+  {
+   "pett": 119,
+   "cognome": "GENTILE",
+   "nome": "GIULIA",
+   "sesso": "F",
+   "societa": "PODISTICA SAVONESE",
+   "nascita": "1964-11-15",
+   "conferma": "S",
+   "catFidal": "SF60",
+   "catGara": "SF60"
+  },
+  {
+   "pett": 120,
+   "cognome": "FERRARA",
+   "nome": "ANDREA",
+   "sesso": "M",
+   "societa": "MARATONETI GENOVESI",
+   "nascita": "1977-12-22",
+   "conferma": "S",
+   "catFidal": "SM45",
+   "catGara": "SM45"
+  },
+  {
+   "pett": 121,
+   "cognome": "GALLI",
+   "nome": "ANDREA",
+   "sesso": "M",
+   "societa": "U.S. SCALO VOGHERA",
+   "nascita": "1975-01-01",
+   "conferma": "S",
+   "catFidal": "SM50",
+   "catGara": "SM50"
+  },
+  {
+   "pett": 122,
+   "cognome": "MARTINI",
+   "nome": "ANDREA",
+   "sesso": "M",
+   "societa": "BIO CORRENDO AVIS",
+   "nascita": "1961-02-08",
+   "conferma": "S",
+   "catFidal": "SM60",
+   "catGara": "SM60"
+  },
+  {
+   "pett": 123,
+   "cognome": "LEONE",
+   "nome": "ANDREA",
+   "sesso": "M",
+   "societa": "ASD VERDENERO",
+   "nascita": "1983-03-15",
+   "conferma": "S",
+   "catFidal": "SM40",
+   "catGara": "SM40"
+  },
+  {
+   "pett": 124,
+   "cognome": "LONGO",
+   "nome": "ANDREA",
+   "sesso": "M",
+   "societa": "G.S.R. FERRERO A.S.D.",
+   "nascita": "1952-04-22",
+   "conferma": "S",
+   "catFidal": "SM70",
+   "catGara": "SM70+"
+  },
+  {
+   "pett": 125,
+   "cognome": "GENTILE",
+   "nome": "ANDREA",
+   "sesso": "M",
+   "societa": "A.S.D. VIGONECHECORRE",
+   "nascita": "1973-05-01",
+   "conferma": "S",
+   "catFidal": "SM50",
+   "catGara": "SM50"
+  },
+  {
+   "pett": 126,
+   "cognome": "MARTINELLI",
+   "nome": "ANDREA",
+   "sesso": "M",
+   "societa": "ATL. SANTHIA'",
+   "nascita": "2000-06-08",
+   "conferma": "S",
+   "catFidal": "SM",
+   "catGara": "JPSM"
+  },
+  {
+   "pett": 127,
+   "cognome": "VITALE",
+   "nome": "ANDREA",
+   "sesso": "M",
+   "societa": "RUNCARD",
+   "nascita": "1992-07-15",
+   "conferma": "S",
+   "catFidal": "SM",
+   "catGara": "JPSM"
+  },
+  {
+   "pett": 128,
+   "cognome": "LOMBARDO",
+   "nome": "ANDREA",
+   "sesso": "M",
+   "societa": "TORINO ROAD RUNNERS A.S.D.",
+   "nascita": "1974-08-22",
+   "conferma": "S",
+   "catFidal": "SM50",
+   "catGara": "SM50"
+  },
+  {
+   "pett": 129,
+   "cognome": "MARTINELLI",
+   "nome": "GIULIA",
+   "sesso": "F",
+   "societa": "MARATONETI GENOVESI",
+   "nascita": "1952-09-01",
+   "conferma": "S",
+   "catFidal": "SF70",
+   "catGara": "SF70+"
+  },
+  {
+   "pett": 130,
+   "cognome": "VITALE",
+   "nome": "GIULIA",
+   "sesso": "F",
+   "societa": "BIO CORRENDO AVIS",
+   "nascita": "1967-10-08",
+   "conferma": "S",
+   "catFidal": "SF55",
+   "catGara": "SF55"
+  },
+  {
+   "pett": 131,
+   "cognome": "SERRA",
+   "nome": "ANDREA",
+   "sesso": "M",
+   "societa": "ATL. NOVESE",
+   "nascita": "1967-11-15",
+   "conferma": "S",
+   "catFidal": "SM55",
+   "catGara": "SM55"
+  },
+  {
+   "pett": 132,
+   "cognome": "LOMBARDO",
+   "nome": "GIULIA",
+   "sesso": "F",
+   "societa": "MARATONETI GENOVESI",
+   "nascita": "1950-12-22",
+   "conferma": "S",
+   "catFidal": "SF75",
+   "catGara": "SF70+"
+  },
+  {
+   "pett": 133,
+   "cognome": "COPPOLA",
+   "nome": "ANDREA",
+   "sesso": "M",
+   "societa": "EMOZIONI SPORT TEAM A.S.D.",
+   "nascita": "1978-01-01",
+   "conferma": "S",
+   "catFidal": "SM45",
+   "catGara": "SM45"
+  },
+  {
+   "pett": 134,
+   "cognome": "DE SANTIS",
+   "nome": "ANDREA",
+   "sesso": "M",
+   "societa": "RUNCARD",
+   "nascita": "1958-02-08",
+   "conferma": "S",
+   "catFidal": "SM65",
+   "catGara": "SM65"
+  },
+  {
+   "pett": 135,
+   "cognome": "D_AMICO",
+   "nome": "ANDREA",
+   "sesso": "M",
+   "societa": "BIO CORRENDO AVIS",
+   "nascita": "1965-03-15",
+   "conferma": "S",
+   "catFidal": "SM60",
+   "catGara": "SM60"
+  },
+  {
+   "pett": 136,
+   "cognome": "MARCHETTI",
+   "nome": "ANDREA",
+   "sesso": "M",
+   "societa": "ATLETICA SALUZZO ",
+   "nascita": "1993-04-22",
+   "conferma": "S",
+   "catFidal": "SM",
+   "catGara": "JPSM"
+  },
+  {
+   "pett": 137,
+   "cognome": "PARISI",
+   "nome": "ANDREA",
+   "sesso": "M",
+   "societa": "ATLETICA SALUZZO ",
+   "nascita": "1960-05-01",
+   "conferma": "S",
+   "catFidal": "SM65",
+   "catGara": "SM65"
+  },
+  {
+   "pett": 138,
+   "cognome": "VILLA",
+   "nome": "ANDREA",
+   "sesso": "M",
+   "societa": "DELTA SPEDIZIONI",
+   "nascita": "1955-06-08",
+   "conferma": "S",
+   "catFidal": "SM70",
+   "catGara": "SM70+"
+  },
+  {
+   "pett": 139,
+   "cognome": "CONTE",
+   "nome": "ANDREA",
+   "sesso": "M",
+   "societa": " ASD GRUPPO CITTA DI GENOVA",
+   "nascita": "1989-07-15",
+   "conferma": "S",
+   "catFidal": "SM35",
+   "catGara": "SM35"
+  },
+  {
+   "pett": 140,
+   "cognome": "FERRI",
+   "nome": "ANDREA",
+   "sesso": "M",
+   "societa": " ASD GRUPPO CITTA DI GENOVA",
+   "nascita": "1989-08-22",
+   "conferma": "S",
+   "catFidal": "SM35",
+   "catGara": "SM35"
+  },
+  {
+   "pett": 141,
+   "cognome": "SERRA",
+   "nome": "GIULIA",
+   "sesso": "F",
+   "societa": "MARATONETI GENOVESI",
+   "nascita": "1977-09-01",
+   "conferma": "S",
+   "catFidal": "SF45",
+   "catGara": "SF45"
+  },
+  {
+   "pett": 142,
+   "cognome": "FABBRI",
+   "nome": "ANDREA",
+   "sesso": "M",
+   "societa": "URBAN RUNNERS",
+   "nascita": "2002-10-08",
+   "conferma": "S",
+   "catFidal": "SM",
+   "catGara": "JPSM"
+  },
+  {
+   "pett": 143,
+   "cognome": "BIANCO",
+   "nome": "ANDREA",
+   "sesso": "M",
+   "societa": "A.S.D. BRANCALEONE  ASTI",
+   "nascita": "1968-11-15",
+   "conferma": "S",
+   "catFidal": "SM55",
+   "catGara": "SM55"
+  },
+  {
+   "pett": 144,
+   "cognome": "MARINI",
+   "nome": "ANDREA",
+   "sesso": "M",
+   "societa": "ASD GRUPPO PODISTI ALBESI",
+   "nascita": "1977-12-22",
+   "conferma": "S",
+   "catFidal": "SM45",
+   "catGara": "SM45"
+  },
+  {
+   "pett": 145,
+   "cognome": "COPPOLA",
+   "nome": "GIULIA",
+   "sesso": "F",
+   "societa": "G.S.R. FERRERO A.S.D.",
+   "nascita": "1963-01-01",
+   "conferma": "S",
+   "catFidal": "SF60",
+   "catGara": "SF60"
+  },
+  {
+   "pett": 146,
+   "cognome": "DE SANTIS",
+   "nome": "GIULIA",
+   "sesso": "F",
+   "societa": " ASD GRUPPO CITTA DI GENOVA",
+   "nascita": "1985-02-08",
+   "conferma": "S",
+   "catFidal": "SF40",
+   "catGara": "SF40"
+  },
+  {
+   "pett": 147,
+   "cognome": "GRASSO",
+   "nome": "ANDREA",
+   "sesso": "M",
+   "societa": " ASD GRUPPO CITTA DI GENOVA",
+   "nascita": "1993-03-15",
+   "conferma": "S",
+   "catFidal": "SM",
+   "catGara": "JPSM"
+  },
+  {
+   "pett": 148,
+   "cognome": "D_AMICO",
+   "nome": "GIULIA",
+   "sesso": "F",
+   "societa": "UISP A.S.D. CORRINVALLESTURA",
+   "nascita": "1988-04-22",
+   "conferma": "S",
+   "catFidal": "SF35",
+   "catGara": "SF35"
+  },
+  {
+   "pett": 149,
+   "cognome": "VALENTINI",
+   "nome": "ANDREA",
+   "sesso": "M",
+   "societa": "BIO CORRENDO AVIS",
+   "nascita": "1980-05-01",
+   "conferma": "S",
+   "catFidal": "SM45",
+   "catGara": "SM45"
+  },
+  {
+   "pett": 150,
+   "cognome": "MESSINA",
+   "nome": "ANDREA",
+   "sesso": "M",
+   "societa": "ATL. NOVESE",
+   "nascita": "1943-06-08",
+   "conferma": "S",
+   "catFidal": "SM80",
+   "catGara": "SM70+"
+  },
+  {
+   "pett": 151,
+   "cognome": "SALA",
+   "nome": "ANDREA",
+   "sesso": "M",
+   "societa": "ATL. NOVESE",
+   "nascita": "1965-07-15",
+   "conferma": "S",
+   "catFidal": "SM60",
+   "catGara": "SM60"
+  },
+  {
+   "pett": 152,
+   "cognome": "PELLEGRINI",
+   "nome": "ANDREA",
+   "sesso": "M",
+   "societa": "MARATONETI GENOVESI",
+   "nascita": "1955-08-22",
+   "conferma": "S",
+   "catFidal": "SM70",
+   "catGara": "SM70+"
+  },
+  {
+   "pett": 153,
+   "cognome": "MARCHETTI",
+   "nome": "GIULIA",
+   "sesso": "F",
+   "societa": "ATL. NOVESE",
+   "nascita": "1972-09-01",
+   "conferma": "S",
+   "catFidal": "SF50",
+   "catGara": "SF50"
+  },
+  {
+   "pett": 154,
+   "cognome": "PARISI",
+   "nome": "GIULIA",
+   "sesso": "F",
+   "societa": "ATL. OVADESE ORMIG",
+   "nascita": "1961-10-08",
+   "conferma": "S",
+   "catFidal": "SF60",
+   "catGara": "SF60"
+  },
+  {
+   "pett": 155,
+   "cognome": "PALUMBO",
+   "nome": "ANDREA",
+   "sesso": "M",
+   "societa": "A.S.D. ATL. SERRAVALLESE",
+   "nascita": "1983-11-15",
+   "conferma": "S",
+   "catFidal": "SM40",
+   "catGara": "SM40"
+  },
+  {
+   "pett": 156,
+   "cognome": "SANNA",
+   "nome": "ANDREA",
+   "sesso": "M",
+   "societa": "MARATONETI GENOVESI",
+   "nascita": "1976-12-22",
+   "conferma": "S",
+   "catFidal": "SM45",
+   "catGara": "SM45"
+  },
+  {
+   "pett": 157,
+   "cognome": "FARINA",
+   "nome": "ANDREA",
+   "sesso": "M",
+   "societa": "BIO CORRENDO AVIS",
+   "nascita": "1960-01-01",
+   "conferma": "S",
+   "catFidal": "SM65",
+   "catGara": "SM65"
+  },
+  {
+   "pett": 158,
+   "cognome": "VILLA",
+   "nome": "GIULIA",
+   "sesso": "F",
+   "societa": "A.S.D. VIGONECHECORRE",
+   "nascita": "1974-02-08",
+   "conferma": "S",
+   "catFidal": "SF50",
+   "catGara": "SF50"
+  },
+  {
+   "pett": 159,
+   "cognome": "RIZZI",
+   "nome": "ANDREA",
+   "sesso": "M",
+   "societa": "TORINO ROAD RUNNERS A.S.D.",
+   "nascita": "1992-03-15",
+   "conferma": "S",
+   "catFidal": "SM",
+   "catGara": "JPSM"
+  },
+  {
+   "pett": 160,
+   "cognome": "MONTI",
+   "nome": "ANDREA",
+   "sesso": "M",
+   "societa": "ASD VERDENERO",
+   "nascita": "1960-04-22",
+   "conferma": "S",
+   "catFidal": "SM65",
+   "catGara": "SM65"
+  },
+  {
+   "pett": 161,
+   "cognome": "CATTANEO",
+   "nome": "ANDREA",
+   "sesso": "M",
+   "societa": "ASD VERDENERO",
+   "nascita": "1964-05-01",
+   "conferma": "S",
+   "catFidal": "SM60",
+   "catGara": "SM60"
+  },
+  {
+   "pett": 162,
+   "cognome": "MORELLI",
+   "nome": "ANDREA",
+   "sesso": "M",
+   "societa": "A.S.D. BRANCALEONE  ASTI",
+   "nascita": "1959-06-08",
+   "conferma": "S",
+   "catFidal": "SM65",
+   "catGara": "SM65"
+  },
+  {
+   "pett": 163,
+   "cognome": "AMATO",
+   "nome": "ANDREA",
+   "sesso": "M",
+   "societa": "TORINO ROAD RUNNERS A.S.D.",
+   "nascita": "1973-07-15",
+   "conferma": "S",
+   "catFidal": "SM50",
+   "catGara": "SM50"
+  },
+  {
+   "pett": 164,
+   "cognome": "CONTE",
+   "nome": "GIULIA",
+   "sesso": "F",
+   "societa": "PODISTICA SAVONESE",
+   "nascita": "1986-08-22",
+   "conferma": "S",
+   "catFidal": "SF35",
+   "catGara": "SF35"
+  },
+  {
+   "pett": 165,
+   "cognome": "SILVESTRI",
+   "nome": "ANDREA",
+   "sesso": "M",
+   "societa": "AZALAI A.S.D.",
+   "nascita": "1974-09-01",
+   "conferma": "S",
+   "catFidal": "SM50",
+   "catGara": "SM50"
+  },
+  {
+   "pett": 166,
+   "cognome": "MAZZA",
+   "nome": "ANDREA",
+   "sesso": "M",
+   "societa": "DERTHONA ATLETICA",
+   "nascita": "2005-10-08",
+   "conferma": "S",
+   "catFidal": "PM",
+   "catGara": "JPSM"
+  },
+  {
+   "pett": 167,
+   "cognome": "TESTA",
+   "nome": "ANDREA",
+   "sesso": "M",
+   "societa": "ATL. OVADESE ORMIG",
+   "nascita": "1972-11-15",
+   "conferma": "S",
+   "catFidal": "SM50",
+   "catGara": "SM50"
+  },
+  {
+   "pett": 168,
+   "cognome": "GRANDI",
+   "nome": "ANDREA",
+   "sesso": "M",
+   "societa": "ATL. NOVESE",
+   "nascita": "1956-12-22",
+   "conferma": "S",
+   "catFidal": "SM65",
+   "catGara": "SM65"
+  },
+  {
+   "pett": 169,
+   "cognome": "PAGANO",
+   "nome": "ANDREA",
+   "sesso": "M",
+   "societa": "ATL. NOVESE",
+   "nascita": "1974-01-01",
+   "conferma": "S",
+   "catFidal": "SM50",
+   "catGara": "SM50"
+  },
+  {
+   "pett": 170,
+   "cognome": "ROSSI",
+   "nome": "ALESSANDRO",
+   "sesso": "M",
+   "societa": "TEAM 42195",
+   "nascita": "1983-02-08",
+   "conferma": "S",
+   "catFidal": "SM40",
+   "catGara": "SM40"
+  },
+  {
+   "pett": 171,
+   "cognome": "FERRARI",
+   "nome": "ALESSANDRO",
+   "sesso": "M",
+   "societa": "A.S.D. FRECCE BIANCHE",
+   "nascita": "1982-03-15",
+   "conferma": "S",
+   "catFidal": "SM40",
+   "catGara": "SM40"
+  },
+  {
+   "pett": 172,
+   "cognome": "ESPOSITO",
+   "nome": "ALESSANDRO",
+   "sesso": "M",
+   "societa": "RUNCARD",
+   "nascita": "1978-04-22",
+   "conferma": "N",
+   "catFidal": "SM45",
+   "catGara": "SM45"
+  },
+  {
+   "pett": 173,
+   "cognome": "BIANCHI",
+   "nome": "ALESSANDRO",
+   "sesso": "M",
+   "societa": "G.S.R. FERRERO A.S.D.",
+   "nascita": "1951-05-01",
+   "conferma": "S",
+   "catFidal": "SM70",
+   "catGara": "SM70+"
+  },
+  {
+   "pett": 174,
+   "cognome": "ROMANO",
+   "nome": "ALESSANDRO",
+   "sesso": "M",
+   "societa": "ATL. NOVESE",
+   "nascita": "1986-06-08",
+   "conferma": "S",
+   "catFidal": "SM35",
+   "catGara": "SM35"
+  },
+  {
+   "pett": 175,
+   "cognome": "FERRI",
+   "nome": "GIULIA",
+   "sesso": "F",
+   "societa": "RUNCARD",
+   "nascita": "1959-07-15",
+   "conferma": "S",
+   "catFidal": "SF65",
+   "catGara": "SF65"
+  },
+  {
+   "pett": 176,
+   "cognome": "COLOMBO",
+   "nome": "ALESSANDRO",
+   "sesso": "M",
+   "societa": "ATL. OVADESE ORMIG",
+   "nascita": "1988-08-22",
+   "conferma": "S",
+   "catFidal": "SM35",
+   "catGara": "SM35"
+  },
+  {
+   "pett": 177,
+   "cognome": "RICCI",
+   "nome": "ALESSANDRO",
+   "sesso": "M",
+   "societa": "RUNCARD",
+   "nascita": "1994-09-01",
+   "conferma": "S",
+   "catFidal": "SM",
+   "catGara": "JPSM"
+  },
+  {
+   "pett": 178,
+   "cognome": "FABBRI",
+   "nome": "GIULIA",
+   "sesso": "F",
+   "societa": "ATL. NOVESE",
+   "nascita": "1988-10-08",
+   "conferma": "S",
+   "catFidal": "SF35",
+   "catGara": "SF35"
+  },
+  {
+   "pett": 179,
+   "cognome": "MARINO",
+   "nome": "ALESSANDRO",
+   "sesso": "M",
+   "societa": "U.S. SCALO VOGHERA",
+   "nascita": "1959-11-15",
+   "conferma": "S",
+   "catFidal": "SM65",
+   "catGara": "SM65"
+  },
+  {
+   "pett": 180,
+   "cognome": "BIANCO",
+   "nome": "GIULIA",
+   "sesso": "F",
+   "societa": "A.S.D. FRECCE BIANCHE",
+   "nascita": "1958-12-22",
+   "conferma": "S",
+   "catFidal": "SF65",
+   "catGara": "SF65"
+  },
+  {
+   "pett": 181,
+   "cognome": "GRECO",
+   "nome": "ALESSANDRO",
+   "sesso": "M",
+   "societa": "ASD VERDENERO",
+   "nascita": "1948-01-01",
+   "conferma": "S",
+   "catFidal": "SM75",
+   "catGara": "SM70+"
+  },
+  {
+   "pett": 182,
+   "cognome": "BRUNO",
+   "nome": "ALESSANDRO",
+   "sesso": "M",
+   "societa": "A.S.D. OLIMPIA RUNNERS",
+   "nascita": "1971-02-08",
+   "conferma": "S",
+   "catFidal": "SM50",
+   "catGara": "SM50"
+  },
+  {
+   "pett": 183,
+   "cognome": "GALLO",
+   "nome": "ALESSANDRO",
+   "sesso": "M",
+   "societa": "ATL. NOVESE",
+   "nascita": "1973-03-15",
+   "conferma": "S",
+   "catFidal": "SM50",
+   "catGara": "SM50"
+  },
+  {
+   "pett": 184,
+   "cognome": "CONTI",
+   "nome": "ALESSANDRO",
+   "sesso": "M",
+   "societa": "ATL. NOVESE",
+   "nascita": "2006-04-22",
+   "conferma": "S",
+   "catFidal": "JM",
+   "catGara": "JPSM"
+  },
+  {
+   "pett": 185,
+   "cognome": "DE LUCA",
+   "nome": "ALESSANDRO",
+   "sesso": "M",
+   "societa": "A.S.D. BRANCALEONE  ASTI",
+   "nascita": "1959-05-01",
+   "conferma": "S",
+   "catFidal": "SM65",
+   "catGara": "SM65"
+  },
+  {
+   "pett": 186,
+   "cognome": "COSTA",
+   "nome": "ALESSANDRO",
+   "sesso": "M",
+   "societa": "ATL. OVADESE ORMIG",
+   "nascita": "1980-06-08",
+   "conferma": "S",
+   "catFidal": "SM45",
+   "catGara": "SM45"
+  },
+  {
+   "pett": 187,
+   "cognome": "GIORDANO",
+   "nome": "ALESSANDRO",
+   "sesso": "M",
+   "societa": "G. P. DILETT. TAPPOROSSO",
+   "nascita": "1986-07-15",
+   "conferma": "S",
+   "catFidal": "SM35",
+   "catGara": "SM35"
+  },
+  {
+   "pett": 188,
+   "cognome": "MANCINI",
+   "nome": "ALESSANDRO",
+   "sesso": "M",
+   "societa": "PODISTICA SAVONESE",
+   "nascita": "1987-08-22",
+   "conferma": "S",
+   "catFidal": "SM35",
+   "catGara": "SM35"
+  },
+  {
+   "pett": 189,
+   "cognome": "RIZZO",
+   "nome": "ALESSANDRO",
+   "sesso": "M",
+   "societa": "ASD GRUPPO PODISTI ALBESI",
+   "nascita": "1990-09-01",
+   "conferma": "N",
+   "catFidal": "SM35",
+   "catGara": "SM35"
+  },
+  {
+   "pett": 190,
+   "cognome": "LOMBARDI",
+   "nome": "ALESSANDRO",
+   "sesso": "M",
+   "societa": "ATL. NOVESE",
+   "nascita": "1963-10-08",
+   "conferma": "S",
+   "catFidal": "SM60",
+   "catGara": "SM60"
+  },
+  {
+   "pett": 191,
+   "cognome": "MORETTI",
+   "nome": "ALESSANDRO",
+   "sesso": "M",
+   "societa": "A.S.D. ACCADEMIATLETICA",
+   "nascita": "1969-11-15",
+   "conferma": "S",
+   "catFidal": "SM55",
+   "catGara": "SM55"
+  },
+  {
+   "pett": 192,
+   "cognome": "BARBIERI",
+   "nome": "ALESSANDRO",
+   "sesso": "M",
+   "societa": "ATL. NOVESE",
+   "nascita": "1963-12-22",
+   "conferma": "S",
+   "catFidal": "SM60",
+   "catGara": "SM60"
+  },
+  {
+   "pett": 193,
+   "cognome": "FONTANA",
+   "nome": "ALESSANDRO",
+   "sesso": "M",
+   "societa": "ATL. NOVESE",
+   "nascita": "1963-01-01",
+   "conferma": "S",
+   "catFidal": "SM60",
+   "catGara": "SM60"
+  },
+  {
+   "pett": 194,
+   "cognome": "SANTORO",
+   "nome": "ALESSANDRO",
+   "sesso": "M",
+   "societa": "ATL. NOVESE",
+   "nascita": "1962-02-08",
+   "conferma": "S",
+   "catFidal": "SM60",
+   "catGara": "SM60"
+  },
+  {
+   "pett": 195,
+   "cognome": "MARINI",
+   "nome": "GIULIA",
+   "sesso": "F",
+   "societa": "ATL. SANTHIA'",
+   "nascita": "1978-03-15",
+   "conferma": "S",
+   "catFidal": "SF45",
+   "catGara": "SF45"
+  },
+  {
+   "pett": 196,
+   "cognome": "MARIANI",
+   "nome": "ALESSANDRO",
+   "sesso": "M",
+   "societa": "MARATONETI GENOVESI",
+   "nascita": "1954-04-22",
+   "conferma": "S",
+   "catFidal": "SM70",
+   "catGara": "SM70+"
+  },
+  {
+   "pett": 197,
+   "cognome": "RINALDI",
+   "nome": "ALESSANDRO",
+   "sesso": "M",
+   "societa": "A.S.D. BRANCALEONE  ASTI",
+   "nascita": "1978-05-01",
+   "conferma": "S",
+   "catFidal": "SM45",
+   "catGara": "SM45"
+  },
+  {
+   "pett": 198,
+   "cognome": "GRASSO",
+   "nome": "GIULIA",
+   "sesso": "F",
+   "societa": "ATL. NOVESE",
+   "nascita": "1968-06-08",
+   "conferma": "S",
+   "catFidal": "SF55",
+   "catGara": "SF55"
+  },
+  {
+   "pett": 199,
+   "cognome": "CARUSO",
+   "nome": "ALESSANDRO",
+   "sesso": "M",
+   "societa": "MARATONETI GENOVESI",
+   "nascita": "1959-07-15",
+   "conferma": "S",
+   "catFidal": "SM65",
+   "catGara": "SM65"
+  },
+  {
+   "pett": 200,
+   "cognome": "FERRARA",
+   "nome": "ALESSANDRO",
+   "sesso": "M",
+   "societa": "A.S.D. BRANCALEONE  ASTI",
+   "nascita": "1955-08-22",
+   "conferma": "S",
+   "catFidal": "SM70",
+   "catGara": "SM70+"
+  },
+  {
+   "pett": 201,
+   "cognome": "VALENTINI",
+   "nome": "GIULIA",
+   "sesso": "F",
+   "societa": "ATLETICA ARCOBALENO SAVONA",
+   "nascita": "2006-09-01",
+   "conferma": "S",
+   "catFidal": "JF",
+   "catGara": "JPSF"
+  },
+  {
+   "pett": 202,
+   "cognome": "GALLI",
+   "nome": "ALESSANDRO",
+   "sesso": "M",
+   "societa": "G. P. DILETT. TAPPOROSSO",
+   "nascita": "1960-10-08",
+   "conferma": "S",
+   "catFidal": "SM65",
+   "catGara": "SM65"
+  },
+  {
+   "pett": 203,
+   "cognome": "MESSINA",
+   "nome": "GIULIA",
+   "sesso": "F",
+   "societa": "A.S.D. BRANCALEONE  ASTI",
+   "nascita": "1963-11-15",
+   "conferma": "S",
+   "catFidal": "SF60",
+   "catGara": "SF60"
+  },
+  {
+   "pett": 204,
+   "cognome": "MARTINI",
+   "nome": "ALESSANDRO",
+   "sesso": "M",
+   "societa": "MARATONETI GENOVESI",
+   "nascita": "1951-12-22",
+   "conferma": "S",
+   "catFidal": "SM70",
+   "catGara": "SM70+"
+  },
+  {
+   "pett": 205,
+   "cognome": "LEONE",
+   "nome": "ALESSANDRO",
+   "sesso": "M",
+   "societa": "MARATONETI GENOVESI",
+   "nascita": "1967-01-01",
+   "conferma": "S",
+   "catFidal": "SM55",
+   "catGara": "SM55"
+  },
+  {
+   "pett": 206,
+   "cognome": "LONGO",
+   "nome": "ALESSANDRO",
+   "sesso": "M",
+   "societa": "A.S.D. VIGONECHECORRE",
+   "nascita": "1973-02-08",
+   "conferma": "S",
+   "catFidal": "SM50",
+   "catGara": "SM50"
+  },
+  {
+   "pett": 207,
+   "cognome": "GENTILE",
+   "nome": "ALESSANDRO",
+   "sesso": "M",
+   "societa": "CSI A.S.D U.S. SCALO VOGHERA",
+   "nascita": "1965-03-15",
+   "conferma": "S",
+   "catFidal": "SM60",
+   "catGara": "SM60"
+  },
+  {
+   "pett": 208,
+   "cognome": "MARTINELLI",
+   "nome": "ALESSANDRO",
+   "sesso": "M",
+   "societa": "A.S.D. BRANCALEONE  ASTI",
+   "nascita": "1959-04-22",
+   "conferma": "S",
+   "catFidal": "SM65",
+   "catGara": "SM65"
+  },
+  {
+   "pett": 209,
+   "cognome": "VITALE",
+   "nome": "ALESSANDRO",
+   "sesso": "M",
+   "societa": "MARATONETI GENOVESI",
+   "nascita": "1955-05-01",
+   "conferma": "S",
+   "catFidal": "SM70",
+   "catGara": "SM70+"
+  },
+  {
+   "pett": 210,
+   "cognome": "SALA",
+   "nome": "GIULIA",
+   "sesso": "F",
+   "societa": "A.S.D. BRANCALEONE  ASTI",
+   "nascita": "1981-06-08",
+   "conferma": "S",
+   "catFidal": "SF40",
+   "catGara": "SF40"
+  },
+  {
+   "pett": 211,
+   "cognome": "PELLEGRINI",
+   "nome": "GIULIA",
+   "sesso": "F",
+   "societa": "BIO CORRENDO AVIS",
+   "nascita": "1972-07-15",
+   "conferma": "S",
+   "catFidal": "SF50",
+   "catGara": "SF50"
+  },
+  {
+   "pett": 212,
+   "cognome": "LOMBARDO",
+   "nome": "ALESSANDRO",
+   "sesso": "M",
+   "societa": "ATL. NOVESE",
+   "nascita": "1989-08-22",
+   "conferma": "S",
+   "catFidal": "SM35",
+   "catGara": "SM35"
+  },
+  {
+   "pett": 213,
+   "cognome": "PALUMBO",
+   "nome": "GIULIA",
+   "sesso": "F",
+   "societa": "G.S.R. FERRERO A.S.D.",
+   "nascita": "1956-09-01",
+   "conferma": "S",
+   "catFidal": "SF65",
+   "catGara": "SF65"
+  },
+  {
+   "pett": 214,
+   "cognome": "SERRA",
+   "nome": "ALESSANDRO",
+   "sesso": "M",
+   "societa": "RUNCARD",
+   "nascita": "1992-10-08",
+   "conferma": "S",
+   "catFidal": "SM",
+   "catGara": "JPSM"
+  },
+  {
+   "pett": 215,
+   "cognome": "SANNA",
+   "nome": "GIULIA",
+   "sesso": "F",
+   "societa": "RUNCARD",
+   "nascita": "1971-11-15",
+   "conferma": "S",
+   "catFidal": "SF50",
+   "catGara": "SF50"
+  },
+  {
+   "pett": 216,
+   "cognome": "COPPOLA",
+   "nome": "ALESSANDRO",
+   "sesso": "M",
+   "societa": "LA MICHETTA",
+   "nascita": "1987-12-22",
+   "conferma": "S",
+   "catFidal": "SM35",
+   "catGara": "SM35"
+  },
+  {
+   "pett": 217,
+   "cognome": "DE SANTIS",
+   "nome": "ALESSANDRO",
+   "sesso": "M",
+   "societa": "ATLETICA VARAZZE",
+   "nascita": "1970-01-01",
+   "conferma": "S",
+   "catFidal": "SM55",
+   "catGara": "SM55"
+  },
+  {
+   "pett": 218,
+   "cognome": "D_AMICO",
+   "nome": "ALESSANDRO",
+   "sesso": "M",
+   "societa": "ATLETICA VARAZZE",
+   "nascita": "1973-02-08",
+   "conferma": "S",
+   "catFidal": "SM50",
+   "catGara": "SM50"
+  },
+  {
+   "pett": 219,
+   "cognome": "FARINA",
+   "nome": "GIULIA",
+   "sesso": "F",
+   "societa": "RUNCARD",
+   "nascita": "1986-03-15",
+   "conferma": "S",
+   "catFidal": "SF35",
+   "catGara": "SF35"
+  },
+  {
+   "pett": 220,
+   "cognome": "RIZZI",
+   "nome": "GIULIA",
+   "sesso": "F",
+   "societa": "RUNCARD",
+   "nascita": "1987-04-22",
+   "conferma": "S",
+   "catFidal": "SF35",
+   "catGara": "SF35"
+  },
+  {
+   "pett": 221,
+   "cognome": "MARCHETTI",
+   "nome": "ALESSANDRO",
+   "sesso": "M",
+   "societa": "RUNCARD",
+   "nascita": "1986-05-01",
+   "conferma": "S",
+   "catFidal": "SM35",
+   "catGara": "SM35"
+  },
+  {
+   "pett": 222,
+   "cognome": "PARISI",
+   "nome": "ALESSANDRO",
+   "sesso": "M",
+   "societa": "RUNCARD",
+   "nascita": "1987-06-08",
+   "conferma": "S",
+   "catFidal": "SM35",
+   "catGara": "SM35"
+  },
+  {
+   "pett": 223,
+   "cognome": "VILLA",
+   "nome": "ALESSANDRO",
+   "sesso": "M",
+   "societa": "CAMBIASO RISSO RUNNING TEAM GE",
+   "nascita": "1962-07-15",
+   "conferma": "S",
+   "catFidal": "SM60",
+   "catGara": "SM60"
+  },
+  {
+   "pett": 224,
+   "cognome": "CONTE",
+   "nome": "ALESSANDRO",
+   "sesso": "M",
+   "societa": "ATL. OVADESE ORMIG",
+   "nascita": "1968-08-22",
+   "conferma": "S",
+   "catFidal": "SM55",
+   "catGara": "SM55"
+  },
+  {
+   "pett": 225,
+   "cognome": "MONTI",
+   "nome": "GIULIA",
+   "sesso": "F",
+   "societa": "A.S.D. FRECCE BIANCHE",
+   "nascita": "1968-09-01",
+   "conferma": "S",
+   "catFidal": "SF55",
+   "catGara": "SF55"
+  },
+  {
+   "pett": 226,
+   "cognome": "FERRI",
+   "nome": "ALESSANDRO",
+   "sesso": "M",
+   "societa": "EMOZIONI SPORT TEAM A.S.D.",
+   "nascita": "1981-10-08",
+   "conferma": "S",
+   "catFidal": "SM40",
+   "catGara": "SM40"
+  },
+  {
+   "pett": 227,
+   "cognome": "FABBRI",
+   "nome": "ALESSANDRO",
+   "sesso": "M",
+   "societa": "RUNNING OLTREPO'",
+   "nascita": "1976-11-15",
+   "conferma": "S",
+   "catFidal": "SM45",
+   "catGara": "SM45"
+  },
+  {
+   "pett": 228,
+   "cognome": "BIANCO",
+   "nome": "ALESSANDRO",
+   "sesso": "M",
+   "societa": "EMOZIONI SPORT TEAM A.S.D.",
+   "nascita": "1978-12-22",
+   "conferma": "S",
+   "catFidal": "SM45",
+   "catGara": "SM45"
+  },
+  {
+   "pett": 229,
+   "cognome": "MARINI",
+   "nome": "ALESSANDRO",
+   "sesso": "M",
+   "societa": "CAMBIASO RISSO RUNNING TEAM GE",
+   "nascita": "1963-01-01",
+   "conferma": "S",
+   "catFidal": "SM60",
+   "catGara": "SM60"
+  },
+  {
+   "pett": 230,
+   "cognome": "VOLPI",
+   "nome": "LUCA",
+   "sesso": "M",
+   "societa": "UISP A.S.D. CORRINVALLESTURA",
+   "nascita": "1968-02-08",
+   "conferma": "S",
+   "catFidal": "SM55",
+   "catGara": "SM55"
+  },
+  {
+   "pett": 231,
+   "cognome": "GRASSO",
+   "nome": "ALESSANDRO",
+   "sesso": "M",
+   "societa": "UISP URBE",
+   "nascita": "1987-03-15",
+   "conferma": "S",
+   "catFidal": "SM35",
+   "catGara": "SM35"
+  },
+  {
+   "pett": 232,
+   "cognome": "VALENTINI",
+   "nome": "ALESSANDRO",
+   "sesso": "M",
+   "societa": "UISP GENOVA",
+   "nascita": "1958-04-22",
+   "conferma": "S",
+   "catFidal": "SM65",
+   "catGara": "SM65"
+  },
+  {
+   "pett": 233,
+   "cognome": "MESSINA",
+   "nome": "ALESSANDRO",
+   "sesso": "M",
+   "societa": "RUNCARD",
+   "nascita": "1972-05-01",
+   "conferma": "S",
+   "catFidal": "SM50",
+   "catGara": "SM50"
+  },
+  {
+   "pett": 234,
+   "cognome": "SALA",
+   "nome": "ALESSANDRO",
+   "sesso": "M",
+   "societa": "ACQUIRUNNERS",
+   "nascita": "1981-06-08",
+   "conferma": "S",
+   "catFidal": "SM40",
+   "catGara": "SM40"
+  },
+  {
+   "pett": 235,
+   "cognome": "PELLEGRINI",
+   "nome": "ALESSANDRO",
+   "sesso": "M",
+   "societa": " ASD GRUPPO CITTA DI GENOVA",
+   "nascita": "1968-07-15",
+   "conferma": "S",
+   "catFidal": "SM55",
+   "catGara": "SM55"
+  },
+  {
+   "pett": 236,
+   "cognome": "PALUMBO",
+   "nome": "ALESSANDRO",
+   "sesso": "M",
+   "societa": "ATLETICA CAIRO",
+   "nascita": "1952-08-22",
+   "conferma": "S",
+   "catFidal": "SM70",
+   "catGara": "SM70+"
+  },
+  {
+   "pett": 237,
+   "cognome": "SANNA",
+   "nome": "ALESSANDRO",
+   "sesso": "M",
+   "societa": "ATLETICA CAIRO",
+   "nascita": "1978-09-01",
+   "conferma": "S",
+   "catFidal": "SM45",
+   "catGara": "SM45"
+  },
+  {
+   "pett": 238,
+   "cognome": "VOLPI",
+   "nome": "LUCA",
+   "sesso": "M",
+   "societa": " ASD GRUPPO CITTA DI GENOVA",
+   "nascita": "1963-10-08",
+   "conferma": "S",
+   "catFidal": "SM60",
+   "catGara": "SM60"
+  },
+  {
+   "pett": 239,
+   "cognome": "FARINA",
+   "nome": "ALESSANDRO",
+   "sesso": "M",
+   "societa": "G.P. BOGGERI ARQUATA SCRIVIA",
+   "nascita": "1980-11-15",
+   "conferma": "S",
+   "catFidal": "SM45",
+   "catGara": "SM45"
+  },
+  {
+   "pett": 240,
+   "cognome": "RIZZI",
+   "nome": "ALESSANDRO",
+   "sesso": "M",
+   "societa": "BIO CORRENDO AVIS",
+   "nascita": "1967-12-22",
+   "conferma": "S",
+   "catFidal": "SM55",
+   "catGara": "SM55"
+  },
+  {
+   "pett": 241,
+   "cognome": "CATTANEO",
+   "nome": "GIULIA",
+   "sesso": "F",
+   "societa": "EMOZIONI SPORT TEAM A.S.D.",
+   "nascita": "1970-01-01",
+   "conferma": "S",
+   "catFidal": "SF55",
+   "catGara": "SF55"
+  },
+  {
+   "pett": 242,
+   "cognome": "MONTI",
+   "nome": "ALESSANDRO",
+   "sesso": "M",
+   "societa": "A.S.D. PODISTICA TORINO",
+   "nascita": "1965-02-08",
+   "conferma": "S",
+   "catFidal": "SM60",
+   "catGara": "SM60"
+  },
+  {
+   "pett": 243,
+   "cognome": "CATTANEO",
+   "nome": "ALESSANDRO",
+   "sesso": "M",
+   "societa": " ASD GRUPPO CITTA DI GENOVA",
+   "nascita": "1993-03-15",
+   "conferma": "S",
+   "catFidal": "SM",
+   "catGara": "JPSM"
+  },
+  {
+   "pett": 244,
+   "cognome": "MORELLI",
+   "nome": "GIULIA",
+   "sesso": "F",
+   "societa": "G.P. TRINESE",
+   "nascita": "1957-04-22",
+   "conferma": "S",
+   "catFidal": "SF65",
+   "catGara": "SF65"
+  },
+  {
+   "pett": 245,
+   "cognome": "MORELLI",
+   "nome": "ALESSANDRO",
+   "sesso": "M",
+   "societa": "G.P. TRINESE",
+   "nascita": "1953-05-01",
+   "conferma": "S",
+   "catFidal": "SM70",
+   "catGara": "SM70+"
+  },
+  {
+   "pett": 246,
+   "cognome": "AMATO",
+   "nome": "ALESSANDRO",
+   "sesso": "M",
+   "societa": "ASD VERDENERO",
+   "nascita": "1973-06-08",
+   "conferma": "S",
+   "catFidal": "SM50",
+   "catGara": "SM50"
+  },
+  {
+   "pett": 247,
+   "cognome": "AMATO",
+   "nome": "GIULIA",
+   "sesso": "F",
+   "societa": "TORINO ROAD RUNNERS A.S.D.",
+   "nascita": "1980-07-15",
+   "conferma": "S",
+   "catFidal": "SF45",
+   "catGara": "SF45"
+  },
+  {
+   "pett": 248,
+   "cognome": "SILVESTRI",
+   "nome": "GIULIA",
+   "sesso": "F",
+   "societa": "TORINO ROAD RUNNERS A.S.D.",
+   "nascita": "1969-08-22",
+   "conferma": "S",
+   "catFidal": "SF55",
+   "catGara": "SF55"
+  },
+  {
+   "pett": 249,
+   "cognome": "SILVESTRI",
+   "nome": "ALESSANDRO",
+   "sesso": "M",
+   "societa": "TORINO ROAD RUNNERS A.S.D.",
+   "nascita": "1968-09-01",
+   "conferma": "S",
+   "catFidal": "SM55",
+   "catGara": "SM55"
+  },
+  {
+   "pett": 250,
+   "cognome": "MAZZA",
+   "nome": "ALESSANDRO",
+   "sesso": "M",
+   "societa": "A.S.D. BRANCALEONE  ASTI",
+   "nascita": "1969-10-08",
+   "conferma": "S",
+   "catFidal": "SM55",
+   "catGara": "SM55"
+  },
+  {
+   "pett": 251,
+   "cognome": "TESTA",
+   "nome": "ALESSANDRO",
+   "sesso": "M",
+   "societa": "ASD VERDENERO",
+   "nascita": "1964-11-15",
+   "conferma": "S",
+   "catFidal": "SM60",
+   "catGara": "SM60"
+  },
+  {
+   "pett": 252,
+   "cognome": "GRANDI",
+   "nome": "ALESSANDRO",
+   "sesso": "M",
+   "societa": " ASD GRUPPO CITTA DI GENOVA",
+   "nascita": "1969-12-22",
+   "conferma": "S",
+   "catFidal": "SM55",
+   "catGara": "SM55"
+  },
+  {
+   "pett": 253,
+   "cognome": "PAGANO",
+   "nome": "ALESSANDRO",
+   "sesso": "M",
+   "societa": " ASD GRUPPO CITTA DI GENOVA",
+   "nascita": "2001-01-01",
+   "conferma": "S",
+   "catFidal": "SM",
+   "catGara": "JPSM"
+  },
+  {
+   "pett": 254,
+   "cognome": "ROSSI",
+   "nome": "FRANCESCO",
+   "sesso": "M",
+   "societa": " ASD GRUPPO CITTA DI GENOVA",
+   "nascita": "2000-02-08",
+   "conferma": "S",
+   "catFidal": "SM",
+   "catGara": "JPSM"
+  },
+  {
+   "pett": 255,
+   "cognome": "MAZZA",
+   "nome": "GIULIA",
+   "sesso": "F",
+   "societa": "UISP A.S.D. CORRINVALLESTURA",
+   "nascita": "1970-03-15",
+   "conferma": "S",
+   "catFidal": "SF55",
+   "catGara": "SF55"
+  },
+  {
+   "pett": 256,
+   "cognome": "FERRARI",
+   "nome": "FRANCESCO",
+   "sesso": "M",
+   "societa": "TEAM MARTÃŒN 10ZEROUNO ASD",
+   "nascita": "1986-04-22",
+   "conferma": "S",
+   "catFidal": "SM35",
+   "catGara": "SM35"
+  },
+  {
+   "pett": 257,
+   "cognome": "ESPOSITO",
+   "nome": "FRANCESCO",
+   "sesso": "M",
+   "societa": "BIO CORRENDO AVIS",
+   "nascita": "1969-05-01",
+   "conferma": "S",
+   "catFidal": "SM55",
+   "catGara": "SM55"
+  },
+  {
+   "pett": 258,
+   "cognome": "BIANCHI",
+   "nome": "FRANCESCO",
+   "sesso": "M",
+   "societa": " ASD GRUPPO CITTA DI GENOVA",
+   "nascita": "1961-06-08",
+   "conferma": "S",
+   "catFidal": "SM60",
+   "catGara": "SM60"
+  },
+  {
+   "pett": 259,
+   "cognome": "TESTA",
+   "nome": "GIULIA",
+   "sesso": "F",
+   "societa": " ASD GRUPPO CITTA DI GENOVA",
+   "nascita": "1967-07-15",
+   "conferma": "S",
+   "catFidal": "SF55",
+   "catGara": "SF55"
+  },
+  {
+   "pett": 260,
+   "cognome": "GRANDI",
+   "nome": "GIULIA",
+   "sesso": "F",
+   "societa": " ASD GRUPPO CITTA DI GENOVA",
+   "nascita": "1965-08-22",
+   "conferma": "S",
+   "catFidal": "SF60",
+   "catGara": "SF60"
+  },
+  {
+   "pett": 261,
+   "cognome": "ROMANO",
+   "nome": "FRANCESCO",
+   "sesso": "M",
+   "societa": "RUNCARD",
+   "nascita": "1992-09-01",
+   "conferma": "S",
+   "catFidal": "SM",
+   "catGara": "JPSM"
+  },
+  {
+   "pett": 262,
+   "cognome": "COLOMBO",
+   "nome": "FRANCESCO",
+   "sesso": "M",
+   "societa": "DELTA SPEDIZIONI",
+   "nascita": "1978-10-08",
+   "conferma": "S",
+   "catFidal": "SM45",
+   "catGara": "SM45"
+  },
+  {
+   "pett": 263,
+   "cognome": "RICCI",
+   "nome": "FRANCESCO",
+   "sesso": "M",
+   "societa": "G.A.U. GIOVANI AMICI UNITI",
+   "nascita": "1983-11-15",
+   "conferma": "S",
+   "catFidal": "SM40",
+   "catGara": "SM40"
+  },
+  {
+   "pett": 264,
+   "cognome": "MARINO",
+   "nome": "FRANCESCO",
+   "sesso": "M",
+   "societa": "AZALAI A.S.D.",
+   "nascita": "1970-12-22",
+   "conferma": "S",
+   "catFidal": "SM55",
+   "catGara": "SM55"
+  },
+  {
+   "pett": 265,
+   "cognome": "GRECO",
+   "nome": "FRANCESCO",
+   "sesso": "M",
+   "societa": "RUNCARD",
+   "nascita": "2003-01-01",
+   "conferma": "S",
+   "catFidal": "PM",
+   "catGara": "JPSM"
+  },
+  {
+   "pett": 266,
+   "cognome": "BRUNO",
+   "nome": "FRANCESCO",
+   "sesso": "M",
+   "societa": "MARATONETI DEL TIGULLIO",
+   "nascita": "1950-02-08",
+   "conferma": "S",
+   "catFidal": "SM75",
+   "catGara": "SM70+"
+  },
+  {
+   "pett": 267,
+   "cognome": "GALLO",
+   "nome": "FRANCESCO",
+   "sesso": "M",
+   "societa": "RUNNERS DESIO",
+   "nascita": "1961-03-15",
+   "conferma": "S",
+   "catFidal": "SM60",
+   "catGara": "SM60"
+  },
+  {
+   "pett": 268,
+   "cognome": "CONTI",
+   "nome": "FRANCESCO",
+   "sesso": "M",
+   "societa": "MARATONETI DEL TIGULLIO",
+   "nascita": "1975-04-22",
+   "conferma": "S",
+   "catFidal": "SM50",
+   "catGara": "SM50"
+  },
+  {
+   "pett": 269,
+   "cognome": "DE LUCA",
+   "nome": "FRANCESCO",
+   "sesso": "M",
+   "societa": "BIO CORRENDO AVIS",
+   "nascita": "1971-05-01",
+   "conferma": "S",
+   "catFidal": "SM50",
+   "catGara": "SM50"
+  },
+  {
+   "pett": 270,
+   "cognome": "PAGANO",
+   "nome": "GIULIA",
+   "sesso": "F",
+   "societa": "BIO CORRENDO AVIS",
+   "nascita": "1975-06-08",
+   "conferma": "S",
+   "catFidal": "SF50",
+   "catGara": "SF50"
+  },
+  {
+   "pett": 271,
+   "cognome": "COSTA",
+   "nome": "FRANCESCO",
+   "sesso": "M",
+   "societa": "ASD ZENA RUNNERS",
+   "nascita": "1984-07-15",
+   "conferma": "S",
+   "catFidal": "SM40",
+   "catGara": "SM40"
+  },
+  {
+   "pett": 272,
+   "cognome": "GIORDANO",
+   "nome": "FRANCESCO",
+   "sesso": "M",
+   "societa": "MARATONETI GENOVESI",
+   "nascita": "1982-08-22",
+   "conferma": "S",
+   "catFidal": "SM40",
+   "catGara": "SM40"
+  },
+  {
+   "pett": 273,
+   "cognome": "MANCINI",
+   "nome": "FRANCESCO",
+   "sesso": "M",
+   "societa": "RUNCARD",
+   "nascita": "1963-09-01",
+   "conferma": "S",
+   "catFidal": "SM60",
+   "catGara": "SM60"
+  },
+  {
+   "pett": 274,
+   "cognome": "RIZZO",
+   "nome": "FRANCESCO",
+   "sesso": "M",
+   "societa": " ASD GRUPPO CITTA DI GENOVA",
+   "nascita": "1993-10-08",
+   "conferma": "S",
+   "catFidal": "SM",
+   "catGara": "JPSM"
+  },
+  {
+   "pett": 275,
+   "cognome": "ROSSI",
+   "nome": "CHIARA",
+   "sesso": "F",
+   "societa": "ATL. NOVESE",
+   "nascita": "1984-11-15",
+   "conferma": "S",
+   "catFidal": "SF40",
+   "catGara": "SF40"
+  },
+  {
+   "pett": 276,
+   "cognome": "FERRARI",
+   "nome": "CHIARA",
+   "sesso": "F",
+   "societa": "0131RUN OF MADE A.S.D.",
+   "nascita": "1987-12-22",
+   "conferma": "S",
+   "catFidal": "SF35",
+   "catGara": "SF35"
+  },
+  {
+   "pett": 277,
+   "cognome": "LOMBARDI",
+   "nome": "FRANCESCO",
+   "sesso": "M",
+   "societa": "ASD VERDENERO",
+   "nascita": "1962-01-01",
+   "conferma": "S",
+   "catFidal": "SM60",
+   "catGara": "SM60"
+  },
+  {
+   "pett": 278,
+   "cognome": "MORETTI",
+   "nome": "FRANCESCO",
+   "sesso": "M",
+   "societa": "ATL. NOVESE",
+   "nascita": "1977-02-08",
+   "conferma": "S",
+   "catFidal": "SM45",
+   "catGara": "SM45"
+  },
+  {
+   "pett": 279,
+   "cognome": "BARBIERI",
+   "nome": "FRANCESCO",
+   "sesso": "M",
+   "societa": "ATL. NOVESE",
+   "nascita": "1973-03-15",
+   "conferma": "S",
+   "catFidal": "SM50",
+   "catGara": "SM50"
+  },
+  {
+   "pett": 280,
+   "cognome": "FONTANA",
+   "nome": "FRANCESCO",
+   "sesso": "M",
+   "societa": "ATL. ALESSANDRIA",
+   "nascita": "1971-04-22",
+   "conferma": "S",
+   "catFidal": "SM50",
+   "catGara": "SM50"
+  }
+ ],
+ "arrivi": [
+  {
+   "pett": 126,
+   "ms": 2039680,
+   "posAss": 1,
+   "posCat": "1 Assoluto",
+   "etich": "1 Assoluto",
+   "cat": "JPSM"
+  },
+  {
+   "pett": 117,
+   "ms": 2057440,
+   "posAss": 2,
+   "posCat": "2 Assoluto",
+   "etich": "2 Assoluto",
+   "cat": "SM35"
+  },
+  {
+   "pett": 170,
+   "ms": 2090310,
+   "posAss": 3,
+   "posCat": "3 Assoluto",
+   "etich": "3 Assoluto",
+   "cat": "SM40"
+  },
+  {
+   "pett": 102,
+   "ms": 2100810,
+   "posAss": 4,
+   "posCat": 1,
+   "etich": "1 SM40",
+   "cat": "SM40"
+  },
+  {
+   "pett": 2,
+   "ms": 2108810,
+   "posAss": 5,
+   "posCat": 1,
+   "etich": "1 SM35",
+   "cat": "SM35"
+  },
+  {
+   "pett": 136,
+   "ms": 2153240,
+   "posAss": 6,
+   "posCat": 1,
+   "etich": "1 JPSM",
+   "cat": "JPSM"
+  },
+  {
+   "pett": 243,
+   "ms": 2172630,
+   "posAss": 7,
+   "posCat": 2,
+   "etich": "2 JPSM",
+   "cat": "JPSM"
+  },
+  {
+   "pett": 147,
+   "ms": 2173680,
+   "posAss": 8,
+   "posCat": 3,
+   "etich": "3 JPSM",
+   "cat": "JPSM"
+  },
+  {
+   "pett": 156,
+   "ms": 2193920,
+   "posAss": 9,
+   "posCat": 1,
+   "etich": "1 SM45",
+   "cat": "SM45"
+  },
+  {
+   "pett": 91,
+   "ms": 2202650,
+   "posAss": 10,
+   "posCat": 1,
+   "etich": "1 SM50",
+   "cat": "SM50"
+  },
+  {
+   "pett": 174,
+   "ms": 2234390,
+   "posAss": 11,
+   "posCat": 2,
+   "etich": "2 SM35",
+   "cat": "SM35"
+  },
+  {
+   "pett": 183,
+   "ms": 2277920,
+   "posAss": 12,
+   "posCat": 2,
+   "etich": "2 SM50",
+   "cat": "SM50"
+  },
+  {
+   "pett": 100,
+   "ms": 2296340,
+   "posAss": 13,
+   "posCat": 3,
+   "etich": "3 SM35",
+   "cat": "SM35"
+  },
+  {
+   "pett": 115,
+   "ms": 2298330,
+   "posAss": 14,
+   "posCat": 4,
+   "etich": "4 JPSM",
+   "cat": "JPSM"
+  },
+  {
+   "pett": 261,
+   "ms": 2362850,
+   "posAss": 15,
+   "posCat": 5,
+   "etich": "5 JPSM",
+   "cat": "JPSM"
+  },
+  {
+   "pett": 123,
+   "ms": 2366170,
+   "posAss": 16,
+   "posCat": 2,
+   "etich": "2 SM40",
+   "cat": "SM40"
+  },
+  {
+   "pett": 120,
+   "ms": 2372710,
+   "posAss": 17,
+   "posCat": 2,
+   "etich": "2 SM45",
+   "cat": "SM45"
+  },
+  {
+   "pett": 142,
+   "ms": 2381230,
+   "posAss": 18,
+   "posCat": 6,
+   "etich": "6 JPSM",
+   "cat": "JPSM"
+  },
+  {
+   "pett": 108,
+   "ms": 2386080,
+   "posAss": 19,
+   "posCat": "1 Assoluta",
+   "etich": "1 Assoluta",
+   "cat": "SF40"
+  },
+  {
+   "pett": 41,
+   "ms": 2396730,
+   "posAss": 20,
+   "posCat": 1,
+   "etich": "1 SM55",
+   "cat": "SM55"
+  },
+  {
+   "pett": 48,
+   "ms": 2403460,
+   "posAss": 21,
+   "posCat": 3,
+   "etich": "3 SM50",
+   "cat": "SM50"
+  },
+  {
+   "pett": 214,
+   "ms": 2407800,
+   "posAss": 22,
+   "posCat": 7,
+   "etich": "7 JPSM",
+   "cat": "JPSM"
+  },
+  {
+   "pett": 272,
+   "ms": 2409190,
+   "posAss": 23,
+   "posCat": 3,
+   "etich": "3 SM40",
+   "cat": "SM40"
+  },
+  {
+   "pett": 263,
+   "ms": 2413570,
+   "posAss": 24,
+   "posCat": 4,
+   "etich": "4 SM40",
+   "cat": "SM40"
+  },
+  {
+   "pett": 234,
+   "ms": 2418360,
+   "posAss": 25,
+   "posCat": 5,
+   "etich": "5 SM40",
+   "cat": "SM40"
+  },
+  {
+   "pett": 271,
+   "ms": 2429280,
+   "posAss": 26,
+   "posCat": 6,
+   "etich": "6 SM40",
+   "cat": "SM40"
+  },
+  {
+   "pett": 227,
+   "ms": 2433460,
+   "posAss": 27,
+   "posCat": 3,
+   "etich": "3 SM45",
+   "cat": "SM45"
+  },
+  {
+   "pett": 253,
+   "ms": 2439880,
+   "posAss": 28,
+   "posCat": 8,
+   "etich": "8 JPSM",
+   "cat": "JPSM"
+  },
+  {
+   "pett": 210,
+   "ms": 2451350,
+   "posAss": 29,
+   "posCat": "2 Assoluta",
+   "etich": "2 Assoluta",
+   "cat": "SF40"
+  },
+  {
+   "pett": 176,
+   "ms": 2459730,
+   "posAss": 30,
+   "posCat": 4,
+   "etich": "4 SM35",
+   "cat": "SM35"
+  },
+  {
+   "pett": 171,
+   "ms": 2464550,
+   "posAss": 31,
+   "posCat": 7,
+   "etich": "7 SM40",
+   "cat": "SM40"
+  },
+  {
+   "pett": 10,
+   "ms": 2469860,
+   "posAss": 32,
+   "posCat": "3 Assoluta",
+   "etich": "3 Assoluta",
+   "cat": "JPSF"
+  },
+  {
+   "pett": 140,
+   "ms": 2481560,
+   "posAss": 33,
+   "posCat": 5,
+   "etich": "5 SM35",
+   "cat": "SM35"
+  },
+  {
+   "pett": 188,
+   "ms": 2488680,
+   "posAss": 34,
+   "posCat": 6,
+   "etich": "6 SM35",
+   "cat": "SM35"
+  },
+  {
+   "pett": 106,
+   "ms": 2508850,
+   "posAss": 35,
+   "posCat": 1,
+   "etich": "1 JPSF",
+   "cat": "JPSF"
+  },
+  {
+   "pett": 27,
+   "ms": 2511910,
+   "posAss": 36,
+   "posCat": 2,
+   "etich": "2 SM55",
+   "cat": "SM55"
+  },
+  {
+   "pett": 262,
+   "ms": 2521610,
+   "posAss": 37,
+   "posCat": 4,
+   "etich": "4 SM45",
+   "cat": "SM45"
+  },
+  {
+   "pett": 184,
+   "ms": 2525110,
+   "posAss": 38,
+   "posCat": 9,
+   "etich": "9 JPSM",
+   "cat": "JPSM"
+  },
+  {
+   "pett": 239,
+   "ms": 2532920,
+   "posAss": 39,
+   "posCat": 5,
+   "etich": "5 SM45",
+   "cat": "SM45"
+  },
+  {
+   "pett": 64,
+   "ms": 2535870,
+   "posAss": 40,
+   "posCat": 7,
+   "etich": "7 SM35",
+   "cat": "SM35"
+  },
+  {
+   "pett": 107,
+   "ms": 2536150,
+   "posAss": 41,
+   "posCat": 8,
+   "etich": "8 SM35",
+   "cat": "SM35"
+  },
+  {
+   "pett": 68,
+   "ms": 2539430,
+   "posAss": 42,
+   "posCat": 6,
+   "etich": "6 SM45",
+   "cat": "SM45"
+  },
+  {
+   "pett": 50,
+   "ms": 2547370,
+   "posAss": 43,
+   "posCat": 3,
+   "etich": "3 SM55",
+   "cat": "SM55"
+  },
+  {
+   "pett": 252,
+   "ms": 2559940,
+   "posAss": 44,
+   "posCat": 4,
+   "etich": "4 SM55",
+   "cat": "SM55"
+  },
+  {
+   "pett": 223,
+   "ms": 2565340,
+   "posAss": 45,
+   "posCat": 1,
+   "etich": "1 SM60",
+   "cat": "SM60"
+  },
+  {
+   "pett": 186,
+   "ms": 2569730,
+   "posAss": 46,
+   "posCat": 7,
+   "etich": "7 SM45",
+   "cat": "SM45"
+  },
+  {
+   "pett": 59,
+   "ms": 2571160,
+   "posAss": 47,
+   "posCat": 8,
+   "etich": "8 SM45",
+   "cat": "SM45"
+  },
+  {
+   "pett": 66,
+   "ms": 2572450,
+   "posAss": 48,
+   "posCat": 5,
+   "etich": "5 SM55",
+   "cat": "SM55"
+  },
+  {
+   "pett": 218,
+   "ms": 2575810,
+   "posAss": 49,
+   "posCat": 4,
+   "etich": "4 SM50",
+   "cat": "SM50"
+  },
+  {
+   "pett": 26,
+   "ms": 2584920,
+   "posAss": 50,
+   "posCat": 10,
+   "etich": "10 JPSM",
+   "cat": "JPSM"
+  },
+  {
+   "pett": 231,
+   "ms": 2587760,
+   "posAss": 51,
+   "posCat": 9,
+   "etich": "9 SM35",
+   "cat": "SM35"
+  },
+  {
+   "pett": 256,
+   "ms": 2596910,
+   "posAss": 52,
+   "posCat": 10,
+   "etich": "10 SM35",
+   "cat": "SM35"
+  },
+  {
+   "pett": 143,
+   "ms": 2604540,
+   "posAss": 53,
+   "posCat": 6,
+   "etich": "6 SM55",
+   "cat": "SM55"
+  },
+  {
+   "pett": 195,
+   "ms": 2605120,
+   "posAss": 54,
+   "posCat": 1,
+   "etich": "1 SF45",
+   "cat": "SF45"
+  },
+  {
+   "pett": 53,
+   "ms": 2611630,
+   "posAss": 55,
+   "posCat": 5,
+   "etich": "5 SM50",
+   "cat": "SM50"
+  },
+  {
+   "pett": 83,
+   "ms": 2619950,
+   "posAss": 56,
+   "posCat": 11,
+   "etich": "11 JPSM",
+   "cat": "JPSM"
+  },
+  {
+   "pett": 109,
+   "ms": 2627650,
+   "posAss": 57,
+   "posCat": 2,
+   "etich": "2 SF45",
+   "cat": "SF45"
+  },
+  {
+   "pett": 62,
+   "ms": 2629140,
+   "posAss": 58,
+   "posCat": 12,
+   "etich": "12 JPSM",
+   "cat": "JPSM"
+  },
+  {
+   "pett": 242,
+   "ms": 2632680,
+   "posAss": 59,
+   "posCat": 2,
+   "etich": "2 SM60",
+   "cat": "SM60"
+  },
+  {
+   "pett": 276,
+   "ms": 2638880,
+   "posAss": 60,
+   "posCat": 1,
+   "etich": "1 SF35",
+   "cat": "SF35"
+  },
+  {
+   "pett": 166,
+   "ms": 2642370,
+   "posAss": 61,
+   "posCat": 13,
+   "etich": "13 JPSM",
+   "cat": "JPSM"
+  },
+  {
+   "pett": 44,
+   "ms": 2650330,
+   "posAss": 62,
+   "posCat": 14,
+   "etich": "14 JPSM",
+   "cat": "JPSM"
+  },
+  {
+   "pett": 229,
+   "ms": 2654990,
+   "posAss": 63,
+   "posCat": 3,
+   "etich": "3 SM60",
+   "cat": "SM60"
+  },
+  {
+   "pett": 144,
+   "ms": 2661250,
+   "posAss": 64,
+   "posCat": 9,
+   "etich": "9 SM45",
+   "cat": "SM45"
+  },
+  {
+   "pett": 58,
+   "ms": 2663330,
+   "posAss": 65,
+   "posCat": 6,
+   "etich": "6 SM50",
+   "cat": "SM50"
+  },
+  {
+   "pett": 137,
+   "ms": 2667800,
+   "posAss": 66,
+   "posCat": 1,
+   "etich": "1 SM65",
+   "cat": "SM65"
+  },
+  {
+   "pett": 13,
+   "ms": 2669520,
+   "posAss": 67,
+   "posCat": 11,
+   "etich": "11 SM35",
+   "cat": "SM35"
+  },
+  {
+   "pett": 51,
+   "ms": 2676520,
+   "posAss": 68,
+   "posCat": 8,
+   "etich": "8 SM40",
+   "cat": "SM40"
+  },
+  {
+   "pett": 187,
+   "ms": 2684290,
+   "posAss": 69,
+   "posCat": 12,
+   "etich": "12 SM35",
+   "cat": "SM35"
+  },
+  {
+   "pett": 206,
+   "ms": 2699440,
+   "posAss": 70,
+   "posCat": 7,
+   "etich": "7 SM50",
+   "cat": "SM50"
+  },
+  {
+   "pett": 274,
+   "ms": 2700330,
+   "posAss": 71,
+   "posCat": 15,
+   "etich": "15 JPSM",
+   "cat": "JPSM"
+  },
+  {
+   "pett": 131,
+   "ms": 2700730,
+   "posAss": 72,
+   "posCat": 7,
+   "etich": "7 SM55",
+   "cat": "SM55"
+  },
+  {
+   "pett": 92,
+   "ms": 2703130,
+   "posAss": 73,
+   "posCat": 1,
+   "etich": "1 SF55",
+   "cat": "SF55"
+  },
+  {
+   "pett": 149,
+   "ms": 2704420,
+   "posAss": 74,
+   "posCat": 10,
+   "etich": "10 SM45",
+   "cat": "SM45"
+  },
+  {
+   "pett": 6,
+   "ms": 2705690,
+   "posAss": 75,
+   "posCat": 16,
+   "etich": "16 JPSM",
+   "cat": "JPSM"
+  },
+  {
+   "pett": 169,
+   "ms": 2729750,
+   "posAss": 76,
+   "posCat": 8,
+   "etich": "8 SM50",
+   "cat": "SM50"
+  },
+  {
+   "pett": 67,
+   "ms": 2732010,
+   "posAss": 77,
+   "posCat": 8,
+   "etich": "8 SM55",
+   "cat": "SM55"
+  },
+  {
+   "pett": 185,
+   "ms": 2744270,
+   "posAss": 78,
+   "posCat": 2,
+   "etich": "2 SM65",
+   "cat": "SM65"
+  },
+  {
+   "pett": 45,
+   "ms": 2747770,
+   "posAss": 79,
+   "posCat": 9,
+   "etich": "9 SM50",
+   "cat": "SM50"
+  },
+  {
+   "pett": 98,
+   "ms": 2759670,
+   "posAss": 80,
+   "posCat": 4,
+   "etich": "4 SM60",
+   "cat": "SM60"
+  },
+  {
+   "pett": 128,
+   "ms": 2764360,
+   "posAss": 81,
+   "posCat": 10,
+   "etich": "10 SM50",
+   "cat": "SM50"
+  },
+  {
+   "pett": 157,
+   "ms": 2771170,
+   "posAss": 82,
+   "posCat": 3,
+   "etich": "3 SM65",
+   "cat": "SM65"
+  },
+  {
+   "pett": 37,
+   "ms": 2773380,
+   "posAss": 83,
+   "posCat": 11,
+   "etich": "11 SM50",
+   "cat": "SM50"
+  },
+  {
+   "pett": 228,
+   "ms": 2787520,
+   "posAss": 84,
+   "posCat": 11,
+   "etich": "11 SM45",
+   "cat": "SM45"
+  },
+  {
+   "pett": 278,
+   "ms": 2790130,
+   "posAss": 85,
+   "posCat": 12,
+   "etich": "12 SM45",
+   "cat": "SM45"
+  },
+  {
+   "pett": 9,
+   "ms": 2792760,
+   "posAss": 86,
+   "posCat": 9,
+   "etich": "9 SM55",
+   "cat": "SM55"
+  },
+  {
+   "pett": 268,
+   "ms": 2794700,
+   "posAss": 87,
+   "posCat": 12,
+   "etich": "12 SM50",
+   "cat": "SM50"
+  },
+  {
+   "pett": 19,
+   "ms": 2799110,
+   "posAss": 88,
+   "posCat": 5,
+   "etich": "5 SM60",
+   "cat": "SM60"
+  },
+  {
+   "pett": 226,
+   "ms": 2799500,
+   "posAss": 89,
+   "posCat": 9,
+   "etich": "9 SM40",
+   "cat": "SM40"
+  },
+  {
+   "pett": 104,
+   "ms": 2802190,
+   "posAss": 90,
+   "posCat": 3,
+   "etich": "3 SF45",
+   "cat": "SF45"
+  },
+  {
+   "pett": 1,
+   "ms": 2803800,
+   "posAss": 91,
+   "posCat": 13,
+   "etich": "13 SM50",
+   "cat": "SM50"
+  },
+  {
+   "pett": 93,
+   "ms": 2807980,
+   "posAss": 92,
+   "posCat": 14,
+   "etich": "14 SM50",
+   "cat": "SM50"
+  },
+  {
+   "pett": 47,
+   "ms": 2815280,
+   "posAss": 93,
+   "posCat": 6,
+   "etich": "6 SM60",
+   "cat": "SM60"
+  },
+  {
+   "pett": 11,
+   "ms": 2825770,
+   "posAss": 94,
+   "posCat": 7,
+   "etich": "7 SM60",
+   "cat": "SM60"
+  },
+  {
+   "pett": 77,
+   "ms": 2831030,
+   "posAss": 95,
+   "posCat": 1,
+   "etich": "1 SF40",
+   "cat": "SF40"
+  },
+  {
+   "pett": 22,
+   "ms": 2834930,
+   "posAss": 96,
+   "posCat": 10,
+   "etich": "10 SM55",
+   "cat": "SM55"
+  },
+  {
+   "pett": 178,
+   "ms": 2837180,
+   "posAss": 97,
+   "posCat": 2,
+   "etich": "2 SF35",
+   "cat": "SF35"
+  },
+  {
+   "pett": 35,
+   "ms": 2838540,
+   "posAss": 98,
+   "posCat": 13,
+   "etich": "13 SM45",
+   "cat": "SM45"
+  },
+  {
+   "pett": 4,
+   "ms": 2842350,
+   "posAss": 99,
+   "posCat": 11,
+   "etich": "11 SM55",
+   "cat": "SM55"
+  },
+  {
+   "pett": 237,
+   "ms": 2853440,
+   "posAss": 100,
+   "posCat": 14,
+   "etich": "14 SM45",
+   "cat": "SM45"
+  },
+  {
+   "pett": 80,
+   "ms": 2855880,
+   "posAss": 101,
+   "posCat": 10,
+   "etich": "10 SM40",
+   "cat": "SM40"
+  },
+  {
+   "pett": 3,
+   "ms": 2857700,
+   "posAss": 102,
+   "posCat": 2,
+   "etich": "2 SF40",
+   "cat": "SF40"
+  },
+  {
+   "pett": 212,
+   "ms": 2861550,
+   "posAss": 103,
+   "posCat": 13,
+   "etich": "13 SM35",
+   "cat": "SM35"
+  },
+  {
+   "pett": 165,
+   "ms": 2869540,
+   "posAss": 104,
+   "posCat": 15,
+   "etich": "15 SM50",
+   "cat": "SM50"
+  },
+  {
+   "pett": 112,
+   "ms": 2875860,
+   "posAss": 105,
+   "posCat": 3,
+   "etich": "3 SF40",
+   "cat": "SF40"
+  },
+  {
+   "pett": 221,
+   "ms": 2894290,
+   "posAss": 106,
+   "posCat": 14,
+   "etich": "14 SM35",
+   "cat": "SM35"
+  },
+  {
+   "pett": 216,
+   "ms": 2894510,
+   "posAss": 107,
+   "posCat": 15,
+   "etich": "15 SM35",
+   "cat": "SM35"
+  },
+  {
+   "pett": 194,
+   "ms": 2898690,
+   "posAss": 108,
+   "posCat": 8,
+   "etich": "8 SM60",
+   "cat": "SM60"
+  },
+  {
+   "pett": 222,
+   "ms": 2899170,
+   "posAss": 109,
+   "posCat": 16,
+   "etich": "16 SM35",
+   "cat": "SM35"
+  },
+  {
+   "pett": 240,
+   "ms": 2899670,
+   "posAss": 110,
+   "posCat": 12,
+   "etich": "12 SM55",
+   "cat": "SM55"
+  },
+  {
+   "pett": 18,
+   "ms": 2900050,
+   "posAss": 111,
+   "posCat": 2,
+   "etich": "2 JPSF",
+   "cat": "JPSF"
+  },
+  {
+   "pett": 209,
+   "ms": 2900480,
+   "posAss": 112,
+   "posCat": 1,
+   "etich": "1 SM70+",
+   "cat": "SM70+"
+  },
+  {
+   "pett": 20,
+   "ms": 2900900,
+   "posAss": 113,
+   "posCat": 16,
+   "etich": "16 SM50",
+   "cat": "SM50"
+  },
+  {
+   "pett": 84,
+   "ms": 2901570,
+   "posAss": 114,
+   "posCat": 2,
+   "etich": "2 SF55",
+   "cat": "SF55"
+  },
+  {
+   "pett": 17,
+   "ms": 2902850,
+   "posAss": 115,
+   "posCat": 11,
+   "etich": "11 SM40",
+   "cat": "SM40"
+  },
+  {
+   "pett": 72,
+   "ms": 2915450,
+   "posAss": 116,
+   "posCat": 17,
+   "etich": "17 SM50",
+   "cat": "SM50"
+  },
+  {
+   "pett": 267,
+   "ms": 2921010,
+   "posAss": 117,
+   "posCat": 9,
+   "etich": "9 SM60",
+   "cat": "SM60"
+  },
+  {
+   "pett": 105,
+   "ms": 2928390,
+   "posAss": 118,
+   "posCat": 10,
+   "etich": "10 SM60",
+   "cat": "SM60"
+  },
+  {
+   "pett": 130,
+   "ms": 2932600,
+   "posAss": 119,
+   "posCat": 3,
+   "etich": "3 SF55",
+   "cat": "SF55"
+  },
+  {
+   "pett": 125,
+   "ms": 2940940,
+   "posAss": 120,
+   "posCat": 18,
+   "etich": "18 SM50",
+   "cat": "SM50"
+  },
+  {
+   "pett": 197,
+   "ms": 2958270,
+   "posAss": 121,
+   "posCat": 15,
+   "etich": "15 SM45",
+   "cat": "SM45"
+  },
+  {
+   "pett": 193,
+   "ms": 2971100,
+   "posAss": 122,
+   "posCat": 11,
+   "etich": "11 SM60",
+   "cat": "SM60"
+  },
+  {
+   "pett": 70,
+   "ms": 2975490,
+   "posAss": 123,
+   "posCat": 12,
+   "etich": "12 SM60",
+   "cat": "SM60"
+  },
+  {
+   "pett": 28,
+   "ms": 2997380,
+   "posAss": 124,
+   "posCat": 4,
+   "etich": "4 SM65",
+   "cat": "SM65"
+  },
+  {
+   "pett": 217,
+   "ms": 3008590,
+   "posAss": 125,
+   "posCat": 13,
+   "etich": "13 SM55",
+   "cat": "SM55"
+  },
+  {
+   "pett": 191,
+   "ms": 3036330,
+   "posAss": 126,
+   "posCat": 14,
+   "etich": "14 SM55",
+   "cat": "SM55"
+  },
+  {
+   "pett": 151,
+   "ms": 3036840,
+   "posAss": 127,
+   "posCat": 13,
+   "etich": "13 SM60",
+   "cat": "SM60"
+  },
+  {
+   "pett": 179,
+   "ms": 3040180,
+   "posAss": 128,
+   "posCat": 5,
+   "etich": "5 SM65",
+   "cat": "SM65"
+  },
+  {
+   "pett": 138,
+   "ms": 3042700,
+   "posAss": 129,
+   "posCat": 2,
+   "etich": "2 SM70+",
+   "cat": "SM70+"
+  },
+  {
+   "pett": 205,
+   "ms": 3050020,
+   "posAss": 130,
+   "posCat": 15,
+   "etich": "15 SM55",
+   "cat": "SM55"
+  },
+  {
+   "pett": 113,
+   "ms": 3057680,
+   "posAss": 131,
+   "posCat": 3,
+   "etich": "3 JPSF",
+   "cat": "JPSF"
+  },
+  {
+   "pett": 127,
+   "ms": 3064970,
+   "posAss": 132,
+   "posCat": 17,
+   "etich": "17 JPSM",
+   "cat": "JPSM"
+  },
+  {
+   "pett": 233,
+   "ms": 3067860,
+   "posAss": 133,
+   "posCat": 19,
+   "etich": "19 SM50",
+   "cat": "SM50"
+  },
+  {
+   "pett": 89,
+   "ms": 3069340,
+   "posAss": 134,
+   "posCat": 1,
+   "etich": "1 SF50",
+   "cat": "SF50"
+  },
+  {
+   "pett": 153,
+   "ms": 3074880,
+   "posAss": 135,
+   "posCat": 2,
+   "etich": "2 SF50",
+   "cat": "SF50"
+  },
+  {
+   "pett": 208,
+   "ms": 3078190,
+   "posAss": 136,
+   "posCat": 6,
+   "etich": "6 SM65",
+   "cat": "SM65"
+  },
+  {
+   "pett": 88,
+   "ms": 3082730,
+   "posAss": 137,
+   "posCat": 14,
+   "etich": "14 SM60",
+   "cat": "SM60"
+  },
+  {
+   "pett": 94,
+   "ms": 3089000,
+   "posAss": 138,
+   "posCat": 3,
+   "etich": "3 SF50",
+   "cat": "SF50"
+  },
+  {
+   "pett": 190,
+   "ms": 3094850,
+   "posAss": 139,
+   "posCat": 15,
+   "etich": "15 SM60",
+   "cat": "SM60"
+  },
+  {
+   "pett": 121,
+   "ms": 3107010,
+   "posAss": 140,
+   "posCat": 20,
+   "etich": "20 SM50",
+   "cat": "SM50"
+  },
+  {
+   "pett": 96,
+   "ms": 3118560,
+   "posAss": 141,
+   "posCat": 4,
+   "etich": "4 SF55",
+   "cat": "SF55"
+  },
+  {
+   "pett": 224,
+   "ms": 3125410,
+   "posAss": 142,
+   "posCat": 16,
+   "etich": "16 SM55",
+   "cat": "SM55"
+  },
+  {
+   "pett": 196,
+   "ms": 3140260,
+   "posAss": 143,
+   "posCat": 3,
+   "etich": "3 SM70+",
+   "cat": "SM70+"
+  },
+  {
+   "pett": 232,
+   "ms": 3143040,
+   "posAss": 144,
+   "posCat": 7,
+   "etich": "7 SM65",
+   "cat": "SM65"
+  },
+  {
+   "pett": 219,
+   "ms": 3153350,
+   "posAss": 145,
+   "posCat": 3,
+   "etich": "3 SF35",
+   "cat": "SF35"
+  },
+  {
+   "pett": 254,
+   "ms": 3155230,
+   "posAss": 146,
+   "posCat": 18,
+   "etich": "18 JPSM",
+   "cat": "JPSM"
+  },
+  {
+   "pett": 163,
+   "ms": 3158020,
+   "posAss": 147,
+   "posCat": 21,
+   "etich": "21 SM50",
+   "cat": "SM50"
+  },
+  {
+   "pett": 199,
+   "ms": 3163520,
+   "posAss": 148,
+   "posCat": 8,
+   "etich": "8 SM65",
+   "cat": "SM65"
+  },
+  {
+   "pett": 24,
+   "ms": 3174420,
+   "posAss": 149,
+   "posCat": 4,
+   "etich": "4 SF40",
+   "cat": "SF40"
+  },
+  {
+   "pett": 14,
+   "ms": 3175390,
+   "posAss": 150,
+   "posCat": 22,
+   "etich": "22 SM50",
+   "cat": "SM50"
+  },
+  {
+   "pett": 264,
+   "ms": 3189690,
+   "posAss": 151,
+   "posCat": 17,
+   "etich": "17 SM55",
+   "cat": "SM55"
+  },
+  {
+   "pett": 152,
+   "ms": 3201470,
+   "posAss": 152,
+   "posCat": 4,
+   "etich": "4 SM70+",
+   "cat": "SM70+"
+  },
+  {
+   "pett": 71,
+   "ms": 3210070,
+   "posAss": 153,
+   "posCat": 12,
+   "etich": "12 SM40",
+   "cat": "SM40"
+  },
+  {
+   "pett": 25,
+   "ms": 3219500,
+   "posAss": 154,
+   "posCat": 23,
+   "etich": "23 SM50",
+   "cat": "SM50"
+  },
+  {
+   "pett": 257,
+   "ms": 3225200,
+   "posAss": 155,
+   "posCat": 18,
+   "etich": "18 SM55",
+   "cat": "SM55"
+  },
+  {
+   "pett": 280,
+   "ms": 3236290,
+   "posAss": 156,
+   "posCat": 24,
+   "etich": "24 SM50",
+   "cat": "SM50"
+  },
+  {
+   "pett": 118,
+   "ms": 3246190,
+   "posAss": 157,
+   "posCat": 19,
+   "etich": "19 SM55",
+   "cat": "SM55"
+  },
+  {
+   "pett": 182,
+   "ms": 3252830,
+   "posAss": 158,
+   "posCat": 25,
+   "etich": "25 SM50",
+   "cat": "SM50"
+  },
+  {
+   "pett": 203,
+   "ms": 3262080,
+   "posAss": 159,
+   "posCat": 1,
+   "etich": "1 SF60",
+   "cat": "SF60"
+  },
+  {
+   "pett": 202,
+   "ms": 3263070,
+   "posAss": 160,
+   "posCat": 9,
+   "etich": "9 SM65",
+   "cat": "SM65"
+  },
+  {
+   "pett": 114,
+   "ms": 3283170,
+   "posAss": 161,
+   "posCat": 26,
+   "etich": "26 SM50",
+   "cat": "SM50"
+  },
+  {
+   "pett": 250,
+   "ms": 3289180,
+   "posAss": 162,
+   "posCat": 20,
+   "etich": "20 SM55",
+   "cat": "SM55"
+  },
+  {
+   "pett": 235,
+   "ms": 3297310,
+   "posAss": 163,
+   "posCat": 21,
+   "etich": "21 SM55",
+   "cat": "SM55"
+  },
+  {
+   "pett": 164,
+   "ms": 3302820,
+   "posAss": 164,
+   "posCat": 4,
+   "etich": "4 SF35",
+   "cat": "SF35"
+  },
+  {
+   "pett": 61,
+   "ms": 3305050,
+   "posAss": 165,
+   "posCat": 5,
+   "etich": "5 SM70+",
+   "cat": "SM70+"
+  },
+  {
+   "pett": 69,
+   "ms": 3307660,
+   "posAss": 166,
+   "posCat": 5,
+   "etich": "5 SF55",
+   "cat": "SF55"
+  },
+  {
+   "pett": 54,
+   "ms": 3309450,
+   "posAss": 167,
+   "posCat": 22,
+   "etich": "22 SM55",
+   "cat": "SM55"
+  },
+  {
+   "pett": 161,
+   "ms": 3321240,
+   "posAss": 168,
+   "posCat": 16,
+   "etich": "16 SM60",
+   "cat": "SM60"
+  },
+  {
+   "pett": 145,
+   "ms": 3322460,
+   "posAss": 169,
+   "posCat": 2,
+   "etich": "2 SF60",
+   "cat": "SF60"
+  },
+  {
+   "pett": 269,
+   "ms": 3324640,
+   "posAss": 170,
+   "posCat": 27,
+   "etich": "27 SM50",
+   "cat": "SM50"
+  },
+  {
+   "pett": 97,
+   "ms": 3341310,
+   "posAss": 171,
+   "posCat": 19,
+   "etich": "19 JPSM",
+   "cat": "JPSM"
+  },
+  {
+   "pett": 148,
+   "ms": 3343460,
+   "posAss": 172,
+   "posCat": 5,
+   "etich": "5 SF35",
+   "cat": "SF35"
+  },
+  {
+   "pett": 139,
+   "ms": 3344200,
+   "posAss": 173,
+   "posCat": 17,
+   "etich": "17 SM35",
+   "cat": "SM35"
+  },
+  {
+   "pett": 168,
+   "ms": 3354520,
+   "posAss": 174,
+   "posCat": 10,
+   "etich": "10 SM65",
+   "cat": "SM65"
+  },
+  {
+   "pett": 5,
+   "ms": 3362570,
+   "posAss": 175,
+   "posCat": 17,
+   "etich": "17 SM60",
+   "cat": "SM60"
+  },
+  {
+   "pett": 40,
+   "ms": 3367610,
+   "posAss": 176,
+   "posCat": 16,
+   "etich": "16 SM45",
+   "cat": "SM45"
+  },
+  {
+   "pett": 279,
+   "ms": 3369260,
+   "posAss": 177,
+   "posCat": 28,
+   "etich": "28 SM50",
+   "cat": "SM50"
+  },
+  {
+   "pett": 277,
+   "ms": 3378380,
+   "posAss": 178,
+   "posCat": 18,
+   "etich": "18 SM60",
+   "cat": "SM60"
+  },
+  {
+   "pett": 215,
+   "ms": 3380200,
+   "posAss": 179,
+   "posCat": 4,
+   "etich": "4 SF50",
+   "cat": "SF50"
+  },
+  {
+   "pett": 122,
+   "ms": 3403500,
+   "posAss": 180,
+   "posCat": 19,
+   "etich": "19 SM60",
+   "cat": "SM60"
+  },
+  {
+   "pett": 79,
+   "ms": 3404610,
+   "posAss": 181,
+   "posCat": 23,
+   "etich": "23 SM55",
+   "cat": "SM55"
+  },
+  {
+   "pett": 251,
+   "ms": 3406440,
+   "posAss": 182,
+   "posCat": 20,
+   "etich": "20 SM60",
+   "cat": "SM60"
+  },
+  {
+   "pett": 273,
+   "ms": 3407470,
+   "posAss": 183,
+   "posCat": 21,
+   "etich": "21 SM60",
+   "cat": "SM60"
+  },
+  {
+   "pett": 211,
+   "ms": 3409070,
+   "posAss": 184,
+   "posCat": 5,
+   "etich": "5 SF50",
+   "cat": "SF50"
+  },
+  {
+   "pett": 103,
+   "ms": 3416330,
+   "posAss": 185,
+   "posCat": 11,
+   "etich": "11 SM65",
+   "cat": "SM65"
+  },
+  {
+   "pett": 146,
+   "ms": 3428910,
+   "posAss": 186,
+   "posCat": 5,
+   "etich": "5 SF40",
+   "cat": "SF40"
+  },
+  {
+   "pett": 85,
+   "ms": 3429410,
+   "posAss": 187,
+   "posCat": 3,
+   "etich": "3 SF60",
+   "cat": "SF60"
+  },
+  {
+   "pett": 82,
+   "ms": 3433060,
+   "posAss": 188,
+   "posCat": 6,
+   "etich": "6 SM70+",
+   "cat": "SM70+"
+  },
+  {
+   "pett": 255,
+   "ms": 3434830,
+   "posAss": 189,
+   "posCat": 6,
+   "etich": "6 SF55",
+   "cat": "SF55"
+  },
+  {
+   "pett": 34,
+   "ms": 3437140,
+   "posAss": 190,
+   "posCat": 4,
+   "etich": "4 SF60",
+   "cat": "SF60"
+  },
+  {
+   "pett": 207,
+   "ms": 3439120,
+   "posAss": 191,
+   "posCat": 22,
+   "etich": "22 SM60",
+   "cat": "SM60"
+  },
+  {
+   "pett": 116,
+   "ms": 3442760,
+   "posAss": 192,
+   "posCat": 12,
+   "etich": "12 SM65",
+   "cat": "SM65"
+  },
+  {
+   "pett": 198,
+   "ms": 3445640,
+   "posAss": 193,
+   "posCat": 7,
+   "etich": "7 SF55",
+   "cat": "SF55"
+  },
+  {
+   "pett": 155,
+   "ms": 3449970,
+   "posAss": 194,
+   "posCat": 13,
+   "etich": "13 SM40",
+   "cat": "SM40"
+  },
+  {
+   "pett": 266,
+   "ms": 3485600,
+   "posAss": 195,
+   "posCat": 7,
+   "etich": "7 SM70+",
+   "cat": "SM70+"
+  },
+  {
+   "pett": 230,
+   "ms": 3486100,
+   "posAss": 196,
+   "posCat": 24,
+   "etich": "24 SM55",
+   "cat": "SM55"
+  },
+  {
+   "pett": 181,
+   "ms": 3486510,
+   "posAss": 197,
+   "posCat": 8,
+   "etich": "8 SM70+",
+   "cat": "SM70+"
+  },
+  {
+   "pett": 7,
+   "ms": 3487100,
+   "posAss": 198,
+   "posCat": 29,
+   "etich": "29 SM50",
+   "cat": "SM50"
+  },
+  {
+   "pett": 167,
+   "ms": 3492630,
+   "posAss": 199,
+   "posCat": 30,
+   "etich": "30 SM50",
+   "cat": "SM50"
+  },
+  {
+   "pett": 32,
+   "ms": 3506450,
+   "posAss": 200,
+   "posCat": 6,
+   "etich": "6 SF50",
+   "cat": "SF50"
+  },
+  {
+   "pett": 158,
+   "ms": 3509440,
+   "posAss": 201,
+   "posCat": 7,
+   "etich": "7 SF50",
+   "cat": "SF50"
+  },
+  {
+   "pett": 30,
+   "ms": 3514570,
+   "posAss": 202,
+   "posCat": 31,
+   "etich": "31 SM50",
+   "cat": "SM50"
+  },
+  {
+   "pett": 244,
+   "ms": 3516720,
+   "posAss": 203,
+   "posCat": 1,
+   "etich": "1 SF65",
+   "cat": "SF65"
+  },
+  {
+   "pett": 38,
+   "ms": 3517540,
+   "posAss": 204,
+   "posCat": 18,
+   "etich": "18 SM35",
+   "cat": "SM35"
+  },
+  {
+   "pett": 81,
+   "ms": 3522280,
+   "posAss": 205,
+   "posCat": 9,
+   "etich": "9 SM70+",
+   "cat": "SM70+"
+  },
+  {
+   "pett": 160,
+   "ms": 3549030,
+   "posAss": 206,
+   "posCat": 13,
+   "etich": "13 SM65",
+   "cat": "SM65"
+  },
+  {
+   "pett": 42,
+   "ms": 3556240,
+   "posAss": 207,
+   "posCat": 5,
+   "etich": "5 SF60",
+   "cat": "SF60"
+  },
+  {
+   "pett": 238,
+   "ms": 3558480,
+   "posAss": 208,
+   "posCat": 23,
+   "etich": "23 SM60",
+   "cat": "SM60"
+  },
+  {
+   "pett": 162,
+   "ms": 3560710,
+   "posAss": 209,
+   "posCat": 14,
+   "etich": "14 SM65",
+   "cat": "SM65"
+  },
+  {
+   "pett": 65,
+   "ms": 3574470,
+   "posAss": 210,
+   "posCat": 32,
+   "etich": "32 SM50",
+   "cat": "SM50"
+  },
+  {
+   "pett": 236,
+   "ms": 3577490,
+   "posAss": 211,
+   "posCat": 10,
+   "etich": "10 SM70+",
+   "cat": "SM70+"
+  },
+  {
+   "pett": 12,
+   "ms": 3580520,
+   "posAss": 212,
+   "posCat": 11,
+   "etich": "11 SM70+",
+   "cat": "SM70+"
+  },
+  {
+   "pett": 49,
+   "ms": 3618110,
+   "posAss": 213,
+   "posCat": 6,
+   "etich": "6 SF35",
+   "cat": "SF35"
+  },
+  {
+   "pett": 133,
+   "ms": 3618680,
+   "posAss": 214,
+   "posCat": 17,
+   "etich": "17 SM45",
+   "cat": "SM45"
+  },
+  {
+   "pett": 8,
+   "ms": 3629360,
+   "posAss": 215,
+   "posCat": 15,
+   "etich": "15 SM65",
+   "cat": "SM65"
+  },
+  {
+   "pett": 258,
+   "ms": 3646340,
+   "posAss": 216,
+   "posCat": 24,
+   "etich": "24 SM60",
+   "cat": "SM60"
+  },
+  {
+   "pett": 265,
+   "ms": 3650920,
+   "posAss": 217,
+   "posCat": 20,
+   "etich": "20 JPSM",
+   "cat": "JPSM"
+  },
+  {
+   "pett": 154,
+   "ms": 3661390,
+   "posAss": 218,
+   "posCat": 6,
+   "etich": "6 SF60",
+   "cat": "SF60"
+  },
+  {
+   "pett": 159,
+   "ms": 3679290,
+   "posAss": 219,
+   "posCat": 21,
+   "etich": "21 JPSM",
+   "cat": "JPSM"
+  },
+  {
+   "pett": 177,
+   "ms": 3686520,
+   "posAss": 220,
+   "posCat": 22,
+   "etich": "22 JPSM",
+   "cat": "JPSM"
+  },
+  {
+   "pett": 63,
+   "ms": 3692250,
+   "posAss": 221,
+   "posCat": 8,
+   "etich": "8 SF55",
+   "cat": "SF55"
+  },
+  {
+   "pett": 141,
+   "ms": 3694610,
+   "posAss": 222,
+   "posCat": 4,
+   "etich": "4 SF45",
+   "cat": "SF45"
+  },
+  {
+   "pett": 173,
+   "ms": 3734610,
+   "posAss": 223,
+   "posCat": 12,
+   "etich": "12 SM70+",
+   "cat": "SM70+"
+  },
+  {
+   "pett": 21,
+   "ms": 3738530,
+   "posAss": 224,
+   "posCat": 16,
+   "etich": "16 SM65",
+   "cat": "SM65"
+  },
+  {
+   "pett": 75,
+   "ms": 3756410,
+   "posAss": 225,
+   "posCat": 25,
+   "etich": "25 SM55",
+   "cat": "SM55"
+  },
+  {
+   "pett": 119,
+   "ms": 3761940,
+   "posAss": 226,
+   "posCat": 7,
+   "etich": "7 SF60",
+   "cat": "SF60"
+  },
+  {
+   "pett": 270,
+   "ms": 3780080,
+   "posAss": 227,
+   "posCat": 8,
+   "etich": "8 SF50",
+   "cat": "SF50"
+  },
+  {
+   "pett": 95,
+   "ms": 3781620,
+   "posAss": 228,
+   "posCat": 6,
+   "etich": "6 SF40",
+   "cat": "SF40"
+  },
+  {
+   "pett": 220,
+   "ms": 3851320,
+   "posAss": 229,
+   "posCat": 7,
+   "etich": "7 SF35",
+   "cat": "SF35"
+  },
+  {
+   "pett": 134,
+   "ms": 3871240,
+   "posAss": 230,
+   "posCat": 17,
+   "etich": "17 SM65",
+   "cat": "SM65"
+  },
+  {
+   "pett": 225,
+   "ms": 3907810,
+   "posAss": 231,
+   "posCat": 9,
+   "etich": "9 SF55",
+   "cat": "SF55"
+  },
+  {
+   "pett": 78,
+   "ms": 3917510,
+   "posAss": 232,
+   "posCat": 13,
+   "etich": "13 SM70+",
+   "cat": "SM70+"
+  },
+  {
+   "pett": 175,
+   "ms": 3921640,
+   "posAss": 233,
+   "posCat": 2,
+   "etich": "2 SF65",
+   "cat": "SF65"
+  },
+  {
+   "pett": 73,
+   "ms": 3922010,
+   "posAss": 234,
+   "posCat": 25,
+   "etich": "25 SM60",
+   "cat": "SM60"
+  },
+  {
+   "pett": 150,
+   "ms": 3922320,
+   "posAss": 235,
+   "posCat": 14,
+   "etich": "14 SM70+",
+   "cat": "SM70+"
+  },
+  {
+   "pett": 15,
+   "ms": 3929920,
+   "posAss": 236,
+   "posCat": 18,
+   "etich": "18 SM65",
+   "cat": "SM65"
+  },
+  {
+   "pett": 260,
+   "ms": 3953190,
+   "posAss": 237,
+   "posCat": 8,
+   "etich": "8 SF60",
+   "cat": "SF60"
+  },
+  {
+   "pett": 275,
+   "ms": 3956230,
+   "posAss": 238,
+   "posCat": 7,
+   "etich": "7 SF40",
+   "cat": "SF40"
+  },
+  {
+   "pett": 135,
+   "ms": 3972830,
+   "posAss": 239,
+   "posCat": 26,
+   "etich": "26 SM60",
+   "cat": "SM60"
+  },
+  {
+   "pett": 90,
+   "ms": 3983980,
+   "posAss": 240,
+   "posCat": 15,
+   "etich": "15 SM70+",
+   "cat": "SM70+"
+  },
+  {
+   "pett": 204,
+   "ms": 3986040,
+   "posAss": 241,
+   "posCat": 16,
+   "etich": "16 SM70+",
+   "cat": "SM70+"
+  },
+  {
+   "pett": 31,
+   "ms": 4001140,
+   "posAss": 242,
+   "posCat": 19,
+   "etich": "19 SM65",
+   "cat": "SM65"
+  },
+  {
+   "pett": 246,
+   "ms": 4016410,
+   "posAss": 243,
+   "posCat": 33,
+   "etich": "33 SM50",
+   "cat": "SM50"
+  },
+  {
+   "pett": 87,
+   "ms": 4035640,
+   "posAss": 244,
+   "posCat": 20,
+   "etich": "20 SM65",
+   "cat": "SM65"
+  },
+  {
+   "pett": 46,
+   "ms": 4071490,
+   "posAss": 245,
+   "posCat": 9,
+   "etich": "9 SF60",
+   "cat": "SF60"
+  },
+  {
+   "pett": 192,
+   "ms": 4103290,
+   "posAss": 246,
+   "posCat": 27,
+   "etich": "27 SM60",
+   "cat": "SM60"
+  },
+  {
+   "pett": 16,
+   "ms": 4136350,
+   "posAss": 247,
+   "posCat": 17,
+   "etich": "17 SM70+",
+   "cat": "SM70+"
+  },
+  {
+   "pett": 132,
+   "ms": 4148470,
+   "posAss": 248,
+   "posCat": 1,
+   "etich": "1 SF70+",
+   "cat": "SF70+"
+  },
+  {
+   "pett": 241,
+   "ms": 4206390,
+   "posAss": 249,
+   "posCat": 10,
+   "etich": "10 SF55",
+   "cat": "SF55"
+  },
+  {
+   "pett": 180,
+   "ms": 4274600,
+   "posAss": 250,
+   "posCat": 3,
+   "etich": "3 SF65",
+   "cat": "SF65"
+  },
+  {
+   "pett": 39,
+   "ms": 4299100,
+   "posAss": 251,
+   "posCat": 5,
+   "etich": "5 SF45",
+   "cat": "SF45"
+  },
+  {
+   "pett": 101,
+   "ms": 4319110,
+   "posAss": 252,
+   "posCat": 18,
+   "etich": "18 SM70+",
+   "cat": "SM70+"
+  },
+  {
+   "pett": 249,
+   "ms": 4324460,
+   "posAss": 253,
+   "posCat": 26,
+   "etich": "26 SM55",
+   "cat": "SM55"
+  },
+  {
+   "pett": 248,
+   "ms": 4324950,
+   "posAss": 254,
+   "posCat": 11,
+   "etich": "11 SF55",
+   "cat": "SF55"
+  },
+  {
+   "pett": 259,
+   "ms": 4373410,
+   "posAss": 255,
+   "posCat": 12,
+   "etich": "12 SF55",
+   "cat": "SF55"
+  },
+  {
+   "pett": 213,
+   "ms": 4421720,
+   "posAss": 256,
+   "posCat": 4,
+   "etich": "4 SF65",
+   "cat": "SF65"
+  },
+  {
+   "pett": 99,
+   "ms": 4503260,
+   "posAss": 257,
+   "posCat": 19,
+   "etich": "19 SM70+",
+   "cat": "SM70+"
+  },
+  {
+   "pett": 247,
+   "ms": 4849720,
+   "posAss": 258,
+   "posCat": 6,
+   "etich": "6 SF45",
+   "cat": "SF45"
+  },
+  {
+   "pett": 245,
+   "ms": 4931230,
+   "posAss": 259,
+   "posCat": 20,
+   "etich": "20 SM70+",
+   "cat": "SM70+"
+  },
+  {
+   "pett": 200,
+   "ms": 5018180,
+   "posAss": 260,
+   "posCat": 21,
+   "etich": "21 SM70+",
+   "cat": "SM70+"
+  },
+  {
+   "pett": 33,
+   "ms": 5021780,
+   "posAss": 261,
+   "posCat": 2,
+   "etich": "2 SF70+",
+   "cat": "SF70+"
+  },
+  {
+   "pett": 129,
+   "ms": 5051720,
+   "posAss": 262,
+   "posCat": 3,
+   "etich": "3 SF70+",
+   "cat": "SF70+"
+  },
+  {
+   "pett": 110,
+   "ms": 5185120,
+   "posAss": 263,
+   "posCat": 10,
+   "etich": "10 SF60",
+   "cat": "SF60"
+  },
+  {
+   "pett": 43,
+   "ms": 5238730,
+   "posAss": 264,
+   "posCat": 28,
+   "etich": "28 SM60",
+   "cat": "SM60"
+  },
+  {
+   "pett": 201,
+   "ms": 5239180,
+   "posAss": 265,
+   "posCat": 4,
+   "etich": "4 JPSF",
+   "cat": "JPSF"
+  }
+ ]
+}

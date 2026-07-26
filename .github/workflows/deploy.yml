@@ -1,11 +1,13 @@
-name: Pubblica su GitHub Pages
+name: Test e pubblicazione su GitHub Pages
 
-# Pubblica il contenuto della radice del repository a ogni push su main.
-# Nessun passaggio di build: il sito è statico puro, i file vengono
-# caricati così come sono.
+# A ogni push su main: prima girano i test sui dati della gara reale, e SOLO
+# se passano tutti il sito viene pubblicato. Se un test fallisce il sito resta
+# alla versione precedente — quella che funzionava.
 
 on:
   push:
+    branches: [main]
+  pull_request:
     branches: [main]
   # Permette di ripubblicare a mano dalla scheda Actions, senza fare un push.
   workflow_dispatch:
@@ -15,14 +17,58 @@ permissions:
   pages: write
   id-token: write
 
-# Se arrivano due push ravvicinati, lascia finire quello in corso e poi
-# pubblica il più recente: non si interrompe una pubblicazione a metà.
 concurrency:
   group: pages
   cancel-in-progress: false
 
 jobs:
+  # ---------------------------------------------------------------------
+  # 1. La rete di sicurezza. Verifica che la app sia ancora d'accordo con
+  #    i risultati veri della 7a Stradolcetto.
+  # ---------------------------------------------------------------------
+  test:
+    name: Test sui dati della gara reale
+    runs-on: ubuntu-latest
+    steps:
+      - name: Scarica il repository
+        uses: actions/checkout@v4
+
+      - name: Prepara Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: npm
+
+      - name: Installa le dipendenze
+        run: npm ci
+
+      - name: Installa il browser per i test
+        run: npx playwright install --with-deps chromium
+
+      - name: Esegui i test
+        run: npm test
+
+      # Se qualcosa fallisce, il rapporto resta scaricabile dalla pagina
+      # della esecuzione: dice quale atleta e quale valore non torna.
+      - name: Conserva il rapporto dei test
+        if: ${{ !cancelled() }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: rapporto-test
+          path: |
+            playwright-report/
+            test-results/
+          retention-days: 14
+          if-no-files-found: ignore
+
+  # ---------------------------------------------------------------------
+  # 2. La pubblicazione. "needs: test" e' il blocco: senza test verdi
+  #    questo lavoro non parte nemmeno.
+  # ---------------------------------------------------------------------
   pubblica:
+    name: Pubblica il sito
+    needs: test
+    if: github.event_name != 'pull_request'
     runs-on: ubuntu-latest
     environment:
       name: github-pages

@@ -18,6 +18,7 @@ da ricaricare su WISE.
 - [Quando qualcosa va storto](#quando-qualcosa-va-storto)
 - [La copia di emergenza su chiavetta USB](#la-copia-di-emergenza-su-chiavetta-usb)
 - [Come si aggiorna il sito](#come-si-aggiorna-il-sito)
+- [La rete di sicurezza: i test automatici](#la-rete-di-sicurezza-i-test-automatici)
 - [Com'è fatto il progetto](#comè-fatto-il-progetto)
 
 ---
@@ -276,11 +277,13 @@ if ((Get-FileHash .\index.html).Hash -eq (Get-FileHash .\dist\CronoStrada.html).
 git add -A; git commit -m "Descrivi qui cosa hai cambiato"; git push
 ```
 
-Da qui GitHub fa il resto: entro un minuto o due il sito è aggiornato. Puoi
-seguire la pubblicazione dalla scheda **Actions** del repository — pallino verde
-significa fatto, pallino rosso significa che qualcosa non è andato e il sito è
-rimasto alla versione precedente (che è il comportamento giusto: non pubblica
-qualcosa di rotto).
+Da qui GitHub fa il resto: prima fa girare i 17 test sui dati della gara reale,
+e **solo se passano tutti** pubblica il sito. Entro due o tre minuti è online.
+
+Puoi seguire tutto dalla scheda **Actions** del repository — pallino verde
+significa fatto, pallino rosso significa che un test ha trovato un problema e il
+sito è rimasto alla versione precedente, quella che funzionava. Cliccando sul
+pallino rosso leggi quale atleta e quale valore non torna.
 
 ### Il browser mi mostra ancora la versione vecchia
 
@@ -300,13 +303,93 @@ semplicemente: apri la chiavetta USB, che ha la versione che funzionava.
 
 ---
 
+## La rete di sicurezza: i test automatici
+
+Ogni volta che si manda una modifica su GitHub, **17 test verificano da soli**
+che la app dia ancora gli stessi risultati di una gara vera già disputata: la
+7ª Stradolcetto, 280 iscritti e 265 arrivi, con categorie e posizioni prese dal
+foglio Excel.
+
+Se un solo valore non torna, **il sito non viene pubblicato** e resta alla
+versione precedente — quella che funzionava. Non è possibile mettere online una
+versione che sbaglia i conti.
+
+Cosa controllano, in breve:
+
+- le 280 categorie FIDAL e le 280 fasce di premiazione
+- le 265 posizioni assolute e le 265 posizioni di categoria, compresa
+  l'esclusione dei primi tre assoluti maschili e femminili dalla loro fascia
+- i conteggi: 269 confermati, 11 DNS, 4 DNF, 51 società
+- che i tempi si **troncino**: il primo arrivato deve risultare `33:59` e non `34:00`
+- che l'omonimia presente nei dati venga segnalata (due atleti diversi con lo
+  stesso cognome e nome, che devono restare entrambi in classifica)
+- i gesti del traguardo: importazione da WISE, arrivo con e senza pettorale,
+  STOP e ripresa, spostamento dell'orario di partenza, azzeramento, e i dati
+  che sopravvivono a un ricaricamento della pagina
+- che `dist/CronoStrada.html` sia ancora identica a `index.html`
+
+Quando un test fallisce dice **quale atleta** e **quale valore** non torna:
+
+```
+categoria FIDAL: 1 valori su 280 non corrispondono ai risultati della gara reale.
+
+  pettorale 265 — GRECO FRANCESCO (M, 2003, RUNCARD)
+      categoria FIDAL atteso dal foglio Excel: PM
+      categoria FIDAL calcolato dalla app:     SM
+```
+
+### Farli girare sul tuo computer
+
+Serve Node.js. La prima volta:
+
+```bash
+npm install; npm run browser
+```
+
+Poi, ogni volta che vuoi:
+
+```bash
+npm test
+```
+
+### I dati su cui girano
+
+I test **non** usano i dati veri. Usano `reference_anon.json` e
+`wise_iscritti_anon.xlsx`: nomi e giorno/mese di nascita sono di fantasia,
+mentre pettorali, sesso, società, **anno** di nascita, tempi, categorie e
+posizioni sono quelli autentici della gara.
+
+Funziona perché la categoria dipende solo dall'anno di nascita, non dal giorno:
+cambiando giorno e mese ma non l'anno, tutti i risultati attesi restano identici.
+
+I file veri (`reference.json`, `wise_iscritti.xlsx`) restano sul tuo computer e
+non entrano nel repository. Per rigenerare gli anonimizzati:
+
+```bash
+npm run dati
+```
+
+Lo script si autoverifica e si rifiuta di produrre dati sbagliati: controlla che
+le categorie ricalcolate coincidano, che nessun nome vero sopravviva, e che
+l'omonimia voluta sia conservata.
+
+---
+
 ## Com'è fatto il progetto
 
 ```
 index.html                    la app pubblicata sul sito
 dist/CronoStrada.html         copia identica, per la chiavetta USB (offline)
 README.md                     questo file
-.github/workflows/deploy.yml  pubblica il sito a ogni modifica
+
+reference_anon.json           dati di test anonimizzati (280 iscritti, 265 arrivi)
+wise_iscritti_anon.xlsx       export WISE anonimizzato, per il test di importazione
+test/                         i test automatici
+tools/anonimizza.py           genera i dati anonimi da quelli veri
+tools/serve.js                server statico minimo, usato solo dai test
+package.json                  comandi npm (npm test)
+
+.github/workflows/deploy.yml  test + pubblicazione a ogni modifica
 .gitignore                    cosa non finisce nel repository
 ```
 
