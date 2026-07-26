@@ -95,7 +95,7 @@ dicendo che qualcosa non sta salvando.
 |---|---|
 | **Gara** | Nome, data, località, distanza. Quanti atleti premi. Quali categorie FIDAL accorpare in ogni fascia di premiazione. Backup. |
 | **Iscritti** | L'elenco degli atleti. Si importa da WISE o si scrive a mano. Ogni riga è modificabile direttamente. |
-| **Traguardo** | Il cronometro e la registrazione degli arrivi. È la schermata della gara. |
+| **Arrivi** | Il cronometro e la registrazione degli arrivi. È la schermata della gara. |
 | **Classifiche** | Generale, per categoria, per società. Si stampa. |
 | **Premiazioni** | Chi va premiato, fascia per fascia. Compaiono solo le fasce con almeno un premiato. Si stampa. |
 | **Società** | Classifica a squadre, per iscritti confermati o per arrivati. |
@@ -144,7 +144,7 @@ segnalalo.
 7. Apri la app **quando hai ancora rete**, e da quel momento non chiudere la
    scheda del browser. Se prevedi di non avere campo, aprila da casa e porta il
    dispositivo con la scheda già aperta.
-8. Vai sulla scheda **Traguardo** e lasciala lì.
+8. Vai sulla scheda **Arrivi** e lasciala lì.
 9. Se il dispositivo è un telefono, mettilo in carica o parti con la batteria
    piena, e disattiva lo spegnimento automatico dello schermo.
 
