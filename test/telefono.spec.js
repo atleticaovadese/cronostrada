@@ -11,7 +11,7 @@
  */
 
 const { test, expect, devices } = require('@playwright/test');
-const { apriApp, confrontaNumero } = require('./aiuto');
+const { apriApp, confrontaNumero, iniettaRiferimento } = require('./aiuto');
 
 const ISCRITTI_FINTI = Array.from({ length: 12 }, (_, i) => ({
   id: 'x' + i, pett: 120 + i, cognome: 'ROSSI', nome: 'ATLETA' + i,
@@ -385,6 +385,75 @@ test.describe('Layout verticale', () => {
     expect(dopo.cronoVisibile, 'il cronometro non deve sparire scorrendo').toBe(true);
     expect(dopo.padVisibile, 'il tastierino non deve sparire scorrendo').toBe(true);
     expect(dopo.bottoneVisibile, 'il pulsante ARRIVO non deve sparire scorrendo').toBe(true);
+  });
+
+  test('nessuna delle otto schede scorre in orizzontale, con la gara vera dentro', async ({ page }) => {
+    // Con i dati veri (280 iscritti, 265 arrivi) le tabelle raggiungono la
+    // loro larghezza massima: è lì che il problema si vede. Due schede
+    // scorrevano di lato — Gara per la matrice delle categorie, Classifiche
+    // per le sue nove colonne — e nessun test le copriva.
+    await apriApp(page);
+    await iniettaRiferimento(page);
+
+    const problemi = [];
+    const controlla = async etichetta => {
+      await page.waitForTimeout(150);
+      const m = await page.evaluate(() => ({
+        doc: document.documentElement.scrollWidth,
+        schermo: window.innerWidth,
+      }));
+      if (m.doc > m.schermo + 1) {
+        problemi.push(`  ${etichetta}: documento ${m.doc}px contro schermo ${m.schermo}px`);
+      }
+    };
+
+    const schede = ['gara', 'iscritti', 'traguardo', 'classifiche',
+      'premiazioni', 'societa', 'stati', 'export'];
+    for (const v of schede) {
+      await page.evaluate(x => go(x), v);
+      if (v === 'classifiche') {
+        for (const modo of ['gen', 'cat', 'soc']) {
+          await page.evaluate(x => { ui.clsMode = x; render(); }, modo);
+          await controlla(`scheda Classifiche, vista "${modo}"`);
+        }
+      } else {
+        await controlla(`scheda ${v}`);
+      }
+    }
+
+    if (problemi.length) {
+      throw new Error(
+        `\n${problemi.length} schede scorrono in orizzontale sul telefono:\n` +
+        problemi.join('\n') +
+        `\n\n  Una tabella troppo larga deve scorrere dentro il suo riquadro\n` +
+        `  (classe .tw), non trascinarsi dietro tutta la pagina.\n`);
+    }
+  });
+
+  test('la matrice delle categorie diventa un elenco di riquadri', async ({ page }) => {
+    await apriApp(page);
+    await page.evaluate(() => go('gara'));
+
+    const m = await page.evaluate(() => {
+      const t = document.querySelector('.matrix');
+      const primaRiga = t.querySelector('tbody tr');
+      const celle = [...primaRiga.children];
+      return {
+        intestazioneNascosta: getComputedStyle(t.querySelector('thead')).display === 'none',
+        rigaImpilata: getComputedStyle(primaRiga).display === 'block',
+        etichette: celle.map(c => c.getAttribute('data-col')),
+        // ogni riquadro sta dentro lo schermo
+        larghezzaRiga: Math.round(primaRiga.getBoundingClientRect().width),
+        schermo: window.innerWidth,
+      };
+    });
+
+    expect(m.intestazioneNascosta, "su telefono l'intestazione della tabella sparisce").toBe(true);
+    expect(m.rigaImpilata, 'ogni fascia diventa un riquadro').toBe(true);
+    expect(m.etichette.slice(0, 4), 'le etichette prendono il posto delle intestazioni')
+      .toEqual(['Fascia', 'Categorie FIDAL accorpate', 'Premi', 'Iscritti']);
+    expect(m.larghezzaRiga, 'il riquadro sta dentro lo schermo')
+      .toBeLessThanOrEqual(m.schermo);
   });
 
   test('il pettorale nell\'elenco non viene mai tagliato', async ({ page }) => {

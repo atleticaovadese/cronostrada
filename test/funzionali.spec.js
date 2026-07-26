@@ -152,6 +152,28 @@ test.describe('Cronometro e registrazione arrivi', () => {
     expect(await page.evaluate(() => S.arrivi.map(a => a.pett))).toEqual([null, 77, null]);
   });
 
+  test('da computer la matrice delle categorie resta una tabella', async ({ page }) => {
+    // L'impilamento in riquadri vale solo su schermo stretto: da computer la
+    // tabella a cinque colonne è più comoda e non deve cambiare.
+    await apriApp(page);
+    await page.click('nav button:text-is("Gara")');
+
+    const m = await page.evaluate(() => {
+      const t = document.querySelector('.matrix');
+      const riga = t.querySelector('tbody tr');
+      return {
+        intestazioneVisibile: getComputedStyle(t.querySelector('thead')).display !== 'none',
+        rigaTabellare: getComputedStyle(riga).display === 'table-row',
+        colonne: t.querySelectorAll('thead th').length,
+        fasce: t.querySelectorAll('tbody tr').length,
+      };
+    });
+    expect(m.intestazioneVisibile, "da computer l'intestazione resta").toBe(true);
+    expect(m.rigaTabellare, 'da computer le righe restano righe di tabella').toBe(true);
+    confrontaNumero('colonne della matrice', 5, m.colonne);
+    confrontaNumero('fasce standard', 18, m.fasce);
+  });
+
   test('STOP ferma il cronometro e Riprendi lo fa ripartire senza perdere tempi', async ({ page }) => {
     await apriApp(page);
     await page.click('nav button:text-is("Arrivi")');
