@@ -48,6 +48,11 @@ a{color:var(--accent)}
 .dot{width:7px;height:7px;border-radius:50%;background:var(--go);flex:none}
 .dot.off{background:var(--ink-3)}
 .dot.err{background:var(--bad)}
+.dot.attesa{background:var(--warn)}
+/* stato della sincronizzazione: deve essere sempre chiaro se i dati sono
+   solo qui, in viaggio, o allineati — e quante modifiche restano in coda */
+.syncstate{font-size:11.5px;color:var(--ink-3);display:flex;align-items:center;gap:6px;white-space:nowrap}
+.syncstate.nascosta{display:none}
 
 nav{display:flex;gap:2px;padding:0 10px;overflow-x:auto;scrollbar-width:thin}
 nav button{background:none;border:0;padding:9px 13px 11px;font-size:13.5px;font-weight:550;color:var(--ink-2);cursor:pointer;border-bottom:2.5px solid transparent;white-space:nowrap;border-radius:6px 6px 0 0}
@@ -445,6 +450,7 @@ html,body{overscroll-behavior-y:contain}
     <div class="racename" id="raceName">Nuova gara</div>
     <div class="topspace"></div>
     <div class="savestate"><span class="dot" id="saveDot"></span><span id="saveTxt">Salvato in locale</span></div>
+    <div class="syncstate" id="syncState" title=""><span class="dot" id="syncDot"></span><span id="syncTxt"></span></div>
     <button class="btn sm" id="btnBackup">Backup file</button>
   </div>
   <nav id="nav"></nav>
@@ -455,6 +461,7 @@ html,body{overscroll-behavior-y:contain}
 <!-- ============ GARA ============ -->
 <section class="view" data-v="gara"><div class="wrap">
   <div id="installBox"></div>
+  <div id="syncBox"></div>
 
   <div class="card"><header><h2>Dati della gara</h2></header><div class="body">
     <div class="grid g3">
@@ -794,9 +801,45 @@ const MATRICE_STD = [
   { nome: 'SM70+', fidal: ['SM70', 'SM75', 'SM80', 'SM85', 'SM90'], premi: 3 },
 ];
 
+/* Identificativi: UUID generati dal dispositivo.
+   Servono alla sincronizzazione — due dispositivi che registrano nello stesso
+   istante devono produrre due righe diverse, e rimandare due volte la stessa
+   riga non deve creare doppioni. Il ripiego non è mai stato necessario nei
+   browser di oggi, ma su file:// molto vecchi crypto.randomUUID può mancare. */
+const nid = () => {
+  try { if (crypto && crypto.randomUUID) return crypto.randomUUID(); } catch (e) { }
+  const b = new Uint8Array(16);
+  (crypto && crypto.getRandomValues ? crypto : { getRandomValues: a => { for (let i = 0; i < a.length; i++) a[i] = Math.random() * 256 | 0; return a; } }).getRandomValues(b);
+  b[6] = (b[6] & 0x0f) | 0x40; b[8] = (b[8] & 0x3f) | 0x80;
+  const h = [...b].map(x => x.toString(16).padStart(2, '0')).join('');
+  return `${h.slice(0, 8)}-${h.slice(8, 12)}-${h.slice(12, 16)}-${h.slice(16, 20)}-${h.slice(20)}`;
+};
+const eUuid = v => typeof v === 'string' &&
+  /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(v);
+
 /* ---------- stato ---------- */
 const VUOTO = () => ({
-  v: 1,
+  v: 2,
+  // Identificativo della gara, generato qui. Serve alla sincronizzazione e
+  // non cambia mai: è il filo che lega questo dispositivo alla riga sul
+  // server e, un domani, agli altri dispositivi sulla stessa gara.
+  garaId: nid(),
+
+  /* Spostamento della partenza, in millisecondi, con segno.
+     Sul server gli arrivi sono immutabili e il loro `ms` è misurato rispetto
+     alla partenza ORIGINALE. Qui invece la app continua a fare come ha sempre
+     fatto: riscrive i propri `ms` rispetto alla partenza corrente, così
+     calcola() e i test di riferimento restano quelli di prima. È il livello
+     di sincronizzazione a convertire, sommando o sottraendo questo numero. */
+  scartoPartenza: 0,
+
+  /* Contatore degli azzeramenti. "Azzera" cancella gli arrivi qui, ma sul
+     server non si cancella niente: si incrementa questo, e le righe delle
+     sessioni precedenti smettono di contare restando come traccia di cosa è
+     stato scartato — per esempio dopo una falsa partenza. */
+  sessione: 1,
+
+  pubblicata: false,   // visibile nella pagina Live pubblica
   cfg: {
     nome: '', data: new Date().toISOString().slice(0, 10), luogo: '', km: null,
     anno: new Date().getFullYear(), org: '',
@@ -812,7 +855,6 @@ const VUOTO = () => ({
 });
 let S = VUOTO();
 let ui = { view: 'gara', clsMode: 'gen', socMode: 'conf', iscQ: '', iscF: '', arrQ: '', clsQ: '', stQ: '', stF: 'tutti' };
-let uid = 1; const nid = () => 'x' + (uid++) + Date.now().toString(36).slice(-4);
 
 /* ---------- persistenza ---------- */
 const KEY = 'cronostrada.v1';
@@ -871,9 +913,41 @@ const saveRitardato = debounce(scriviTutto, 350);
 function load() {
   try {
     const raw = localStorage.getItem(KEY);
-    if (raw) { const d = JSON.parse(raw); if (d && d.cfg) { S = Object.assign(VUOTO(), d); S.cfg = Object.assign(VUOTO().cfg, d.cfg); return true; } }
+    if (raw) {
+      const d = JSON.parse(raw);
+      if (d && d.cfg) {
+        S = Object.assign(VUOTO(), d);
+        S.cfg = Object.assign(VUOTO().cfg, d.cfg);
+        aggiornaFormato();
+        return true;
+      }
+    }
   } catch (e) { }
   return false;
+}
+
+/* Porta una gara salvata col formato vecchio a quello nuovo.
+   Gli identificativi erano del tipo "x12abc": vanno bene finché la gara vive
+   in un browser solo, ma per la sincronizzazione servono UUID. Si convertono
+   una volta sola, all'apertura. Nessun dato si perde: quegli identificativi
+   servono solo a ritrovare una riga dentro la app. */
+function aggiornaFormato() {
+  if (!S.garaId || !eUuid(S.garaId)) S.garaId = nid();
+  if (typeof S.scartoPartenza !== 'number') S.scartoPartenza = 0;
+  if (typeof S.sessione !== 'number') S.sessione = 1;
+  if (typeof S.pubblicata !== 'boolean') S.pubblicata = false;
+
+  const rifatti = new Map();
+  for (const elenco of [S.iscritti, S.arrivi]) {
+    for (const r of elenco) {
+      if (!eUuid(r.id)) { const vecchio = r.id; r.id = nid(); rifatti.set(vecchio, r.id); }
+    }
+  }
+  // se qualcosa puntava a un identificativo vecchio, lo si segue
+  if (rifatti.size && padBersaglio && rifatti.has(padBersaglio)) {
+    padBersaglio = rifatti.get(padBersaglio);
+  }
+  S.v = 2;
 }
 
 /* ---------- motore ---------- */
@@ -1111,7 +1185,81 @@ function renderGara() {
       `Le categorie vengono calcolate su ${c.anno} mentre la gara è del ${y}. `,
       el('button', { class: 'btn sm', style: 'margin-left:6px', onclick: () => { c.anno = y; touched(); } }, `Usa ${y}`))));
   renderInstalla();
+  renderSincronia();
   renderMatrice();
+}
+
+/* Accesso e pubblicazione, nella scheda Gara.
+   Non all'avvio e non al traguardo: la app funziona senza account, e chi
+   cronometra non deve mai vedere un invito ad accedere. */
+function renderSincronia() {
+  const box = $('#syncBox');
+  if (!box) return;
+  box.innerHTML = '';
+  if (!sincroniaPossibile()) return;      // da chiavetta USB non compare nulla
+
+  if (!collegato()) {
+    const email = el('input', { type: 'email', autocomplete: 'username', placeholder: 'you@esempio.it' });
+    const pw = el('input', { type: 'password', autocomplete: 'current-password', placeholder: 'password' });
+    const esito = el('div');
+    const entra = async () => {
+      if (!email.value || !pw.value) return;
+      esito.innerHTML = ''; esito.append(el('p', { class: 'hint' }, 'Accesso in corso…'));
+      const r = await accedi(email.value.trim(), pw.value);
+      if (r.ok) { toast('Collegato', 'go'); impronte.clear(); render(); programmaSincronia(); }
+      else {
+        esito.innerHTML = '';
+        esito.append(el('div', { class: 'banner bad', style: 'margin-top:10px' }, el('div', {}, r.errore)));
+      }
+    };
+    pw.onkeydown = e => { if (e.key === 'Enter') entra(); };
+
+    box.append(el('div', { class: 'card' },
+      el('header', {}, el('h2', {}, 'Sincronizzazione')),
+      el('div', { class: 'body' },
+        el('p', { class: 'hint', style: 'margin:0 0 12px' },
+          'La app funziona benissimo senza accedere: i dati restano su questo ',
+          'dispositivo. L\'accesso serve solo a tenerne una copia sul server e a ',
+          'pubblicare le classifiche in diretta.'),
+        el('div', { class: 'grid g2' },
+          el('label', { class: 'f' }, 'Email', email),
+          el('label', { class: 'f' }, 'Password', pw)),
+        el('div', { class: 'btnrow', style: 'margin-top:12px' },
+          el('button', { class: 'btn primary', onclick: entra }, 'Accedi')),
+        esito)));
+    return;
+  }
+
+  const pubblica = el('input', {
+    type: 'checkbox', checked: S.pubblicata || null,
+    onchange: async e => {
+      S.pubblicata = e.target.checked;
+      touched();
+      // Prima la riga della gara, poi la classifica: al contrario il pubblico
+      // vedrebbe per qualche secondo una gara che non risulta ancora pubblicata.
+      await sincronizzaSubito();
+      if (S.pubblicata) await pubblicaClassifica(true);
+      toast(S.pubblicata ? 'Gara pubblicata in Live' : 'Gara ritirata da Live', S.pubblicata ? 'go' : 'bad');
+    }
+  });
+
+  box.append(el('div', { class: 'card' },
+    el('header', {}, el('h2', {}, 'Sincronizzazione'), el('div', { class: 'topspace' }),
+      el('span', { class: 'hint' }, sessione.email || '')),
+    el('div', { class: 'body' },
+      el('label', { class: 'f', style: 'flex-direction:row;align-items:center;gap:9px' },
+        pubblica, 'Pubblica questa gara in Live (classifiche visibili a tutti)'),
+      el('p', { class: 'hint', style: 'margin:8px 0 0' },
+        'In Live si vedono solo posizione, pettorale, cognome, nome, società, ',
+        'fascia e tempo. Le date di nascita non escono mai da questo dispositivo. ',
+        'Puoi ritirare la gara in qualsiasi momento togliendo la spunta.'),
+      el('div', { class: 'btnrow', style: 'margin-top:12px' },
+        el('button', { class: 'btn', onclick: () => { pubblicaClassifica(true); toast('Classifica inviata'); } },
+          'Pubblica ora'),
+        el('button', { class: 'btn', onclick: () => { inviaCoda(); toast('Invio avviato'); } },
+          'Sincronizza ora'),
+        el('div', { class: 'topspace' }),
+        el('button', { class: 'btn danger', onclick: scollega }, 'Esci')))));
 }
 const plur = (n, s, p) => n + ' ' + (n === 1 ? s : p);
 
@@ -1317,7 +1465,11 @@ function tickClock() {
 
 async function fermaCrono() {
   S.stop = Date.now();
-  touched(); toast('Cronometro fermato · ' + fmtHMS(elapsedOra()), 'bad');
+  touched();
+  // Allo STOP la classifica è quella definitiva: si pubblica subito, senza
+  // aspettare il giro dei venti secondi.
+  pubblicaClassifica(true);
+  toast('Cronometro fermato · ' + fmtHMS(elapsedOra()), 'bad');
   const att = C.stati.filter(s => s.stato === 'Atteso').length;
   if (att && await confirmDlg('Atleti non arrivati', att + ' atleti confermati non sono arrivati. Dichiararli ritirati (DNF) adesso? Puoi comunque farlo dopo dalla scheda DNS / DNF.')) {
     S.dnf = [...new Set([...S.dnf, ...C.stati.filter(s => s.stato === 'Atteso').map(s => s.pett)])];
@@ -1333,7 +1485,13 @@ async function azzeraCrono() {
     : 'Il cronometro torna a zero e la gara risulta non partita. Gli iscritti restano.';
   if (!await confirmDlg('Azzera cronometro', msg)) return;
   S.arrivi = []; S.start = null; S.stop = null; S.dnf = [];
-  touched(); toast('Cronometro azzerato', 'bad');
+  /* Sul server gli arrivi non si cancellano: si passa a una sessione nuova e
+     quelli di prima smettono di contare, restando come traccia di cosa è
+     stato scartato — per esempio dopo una falsa partenza. */
+  S.sessione = (S.sessione || 1) + 1;
+  S.scartoPartenza = 0;
+  touched(); segnalaClassificaCambiata(); pubblicaClassifica(true);
+  toast('Cronometro azzerato', 'bad');
 }
 
 /* --- modifica orario di partenza --- */
@@ -1389,6 +1547,11 @@ function applicaStart() {
   if (S.start) {
     const delta = stNew - S.start;
     if (delta) for (const a of S.arrivi) a.ms -= delta;
+    /* Qui i tempi si traslano, come hanno sempre fatto. Sul server invece
+       non si tocca niente: gli arrivi sono immutabili e il loro `ms` resta
+       misurato rispetto alla partenza originale. Si aggiorna un numero solo,
+       e la conversione in invio (grezzo = locale + scarto) torna a quadrare. */
+    S.scartoPartenza = (S.scartoPartenza || 0) + delta;
   }
   S.start = stNew;
   $('#dlgStart').close();
@@ -1686,7 +1849,14 @@ function render() {
 }
 // touched: salva SUBITO e ridisegna. È quello che usa tutto ciò che riguarda
 // la gara — arrivi, partenza, stop, ritirati — e per questo è il predefinito.
-function touched() { save(); render(); }
+function touched() {
+  save();      // sincrono, immediato: è questo che mette al sicuro l'arrivo
+  render();
+  // Solo dopo, e senza fretta: la coda si aggiorna in un altro giro
+  // dell'orologio e non fa aspettare nessuno.
+  segnalaClassificaCambiata();
+  programmaSincronia();
+}
 // touchedSoft: salvataggio ritardato, senza ridisegno. Solo per la digitazione.
 function touchedSoft() { saveRitardato(); }
 // touchedTesto: salvataggio ritardato con ridisegno. Per i campi di testo
@@ -2274,6 +2444,444 @@ window.addEventListener('beforeinstallprompt', e => {
 window.addEventListener('appinstalled', () => { promptInstalla = null; render(); });
 
 /* ============================================================
+   SINCRONIZZAZIONE
+
+   Il principio, che non si tradisce mai: il dispositivo al traguardo è la
+   fonte di verità. Ogni arrivo si scrive prima qui, in modo sincrono, e solo
+   dopo — quando e se c'è rete — parte verso il server. Nessuna operazione
+   della app aspetta una risposta, e nessuna fallisce perché la rete manca.
+   La sincronizzazione è uno specchio, non una dipendenza.
+
+   Da qui discendono tre scelte:
+
+   1. NIENTE LIBRERIA. La app resta un file solo, che si apre da chiavetta con
+      un doppio clic. PostgREST è HTTP e JSON: basta fetch.
+
+   2. NIENTE SUL PERCORSO CRITICO. segnaArrivo scrive in localStorage e
+      finisce lì. La scansione della coda è rimandata e raggruppata: gira
+      dopo, in un altro giro dell'orologio, e se ci mette un secondo non
+      se ne accorge nessuno.
+
+   3. IL TRAGUARDO NON ASCOLTA. Questo dispositivo solo invia, non si iscrive
+      a niente in tempo reale. Il tempo reale serve alla pagina Live, che è
+      un altro dispositivo: il traguardo non paga nulla per il pubblico.
+   ============================================================ */
+
+const SUPA = {
+  url: 'https://bevisqihflqsbqvafmup.supabase.co',
+  // La chiave pubblicabile è pubblica per progetto: sta nel codice del sito,
+  // è previsto che si veda, e da sola non apre niente. È l'RLS a decidere.
+  chiave: 'sb_publishable_lWjLReXn12tsKqCYo8GOHw_OBmDCExe',
+  schema: 'cronostrada',
+};
+const sincroniaPossibile = () =>
+  !!(SUPA.url && SUPA.chiave) &&
+  (location.protocol === 'http:' || location.protocol === 'https:');
+
+/* ---------------- sessione ---------------- */
+const KEY_SESSIONE = 'cronostrada.sessione';
+let sessione = null;
+
+function caricaSessione() {
+  try {
+    const raw = localStorage.getItem(KEY_SESSIONE);
+    if (raw) sessione = JSON.parse(raw);
+  } catch (e) { sessione = null; }
+}
+function salvaSessione(s) {
+  sessione = s;
+  try {
+    if (s) localStorage.setItem(KEY_SESSIONE, JSON.stringify(s));
+    else localStorage.removeItem(KEY_SESSIONE);
+  } catch (e) { }
+}
+const collegato = () => !!(sessione && sessione.access_token);
+
+async function accedi(email, password) {
+  const r = await fetch(`${SUPA.url}/auth/v1/token?grant_type=password`, {
+    method: 'POST',
+    headers: { apikey: SUPA.chiave, 'Content-Type': 'application/json' },
+    body: JSON.stringify({ email, password }),
+  });
+  const d = await r.json().catch(() => ({}));
+  if (!r.ok || !d.access_token) {
+    return { ok: false, errore: d.error_description || d.msg || 'Accesso non riuscito' };
+  }
+  salvaSessione({
+    access_token: d.access_token, refresh_token: d.refresh_token,
+    scade: Date.now() + (d.expires_in || 3600) * 1000,
+    email: (d.user && d.user.email) || email, utente: d.user && d.user.id,
+  });
+  return { ok: true };
+}
+
+async function rinnovaSessione() {
+  if (!sessione || !sessione.refresh_token) return false;
+  try {
+    const r = await fetch(`${SUPA.url}/auth/v1/token?grant_type=refresh_token`, {
+      method: 'POST',
+      headers: { apikey: SUPA.chiave, 'Content-Type': 'application/json' },
+      body: JSON.stringify({ refresh_token: sessione.refresh_token }),
+    });
+    const d = await r.json().catch(() => ({}));
+    if (!r.ok || !d.access_token) return false;
+    salvaSessione(Object.assign({}, sessione, {
+      access_token: d.access_token, refresh_token: d.refresh_token || sessione.refresh_token,
+      scade: Date.now() + (d.expires_in || 3600) * 1000,
+    }));
+    return true;
+  } catch (e) { return false; }   // offline: si riproverà, senza rumore
+}
+
+function scollega() {
+  salvaSessione(null);
+  statoSincronia = { fase: 'locale', coda: 0 };
+  render();
+}
+
+/* ---------------- chiamate ---------------- */
+async function chiamaRest(percorso, opzioni = {}) {
+  const testa = {
+    apikey: SUPA.chiave,
+    Authorization: 'Bearer ' + (collegato() ? sessione.access_token : SUPA.chiave),
+    'Accept-Profile': SUPA.schema,
+    'Content-Profile': SUPA.schema,
+    'Content-Type': 'application/json',
+  };
+  if (opzioni.prefer) testa.Prefer = opzioni.prefer;
+  const r = await fetch(SUPA.url + percorso, {
+    method: opzioni.metodo || 'GET',
+    headers: testa,
+    body: opzioni.corpo ? JSON.stringify(opzioni.corpo) : undefined,
+  });
+  return r;
+}
+
+/* ---------------- coda di uscita (IndexedDB) ----------------
+   Una riga per operazione, con chiave l'identificativo dell'operazione:
+   rimandare due volte la stessa cosa non crea doppioni, perché è la stessa
+   chiave. Per gli arrivi l'identificativo è quello dell'arrivo; per le
+   entità che cambiano nel tempo è "tipo:id", così due modifiche successive
+   allo stesso iscritto collassano in una sola operazione con l'ultimo valore.
+
+   Vive in IndexedDB e non in localStorage perché deve sopravvivere a tutto:
+   chiusura del browser, riavvio del telefono, giornate intere senza rete. */
+const DB_NOME = 'cronostrada';
+let dbPromessa = null;
+
+function apriDb() {
+  if (dbPromessa) return dbPromessa;
+  dbPromessa = new Promise((risolvi, rifiuta) => {
+    if (!self.indexedDB) { rifiuta(new Error('IndexedDB non disponibile')); return; }
+    const req = indexedDB.open(DB_NOME, 1);
+    req.onupgradeneeded = () => {
+      const db = req.result;
+      if (!db.objectStoreNames.contains('coda')) db.createObjectStore('coda', { keyPath: 'id' });
+      if (!db.objectStoreNames.contains('inviati')) db.createObjectStore('inviati', { keyPath: 'id' });
+    };
+    req.onsuccess = () => risolvi(req.result);
+    req.onerror = () => rifiuta(req.error);
+  }).catch(e => { dbPromessa = null; throw e; });
+  return dbPromessa;
+}
+
+function conNegozio(nome, modo, azione) {
+  return apriDb().then(db => new Promise((risolvi, rifiuta) => {
+    const t = db.transaction(nome, modo);
+    const esito = azione(t.objectStore(nome));
+    t.oncomplete = () => risolvi(esito && esito.result !== undefined ? esito.result : esito);
+    t.onerror = () => rifiuta(t.error);
+    t.onabort = () => rifiuta(t.error);
+  }));
+}
+
+const accoda = op => conNegozio('coda', 'readwrite', n => n.put(op));
+const togliDallaCoda = id => conNegozio('coda', 'readwrite', n => n.delete(id));
+const leggiCoda = () => conNegozio('coda', 'readonly', n => n.getAll());
+const contaCoda = () => conNegozio('coda', 'readonly', n => n.count());
+const segnaInviato = id => conNegozio('inviati', 'readwrite', n => n.put({ id, quando: Date.now() }));
+const leggiInviati = () => conNegozio('inviati', 'readonly', n => n.getAllKeys());
+
+/* ---------------- che cosa mandare ----------------
+   Le "impronte" sono in memoria e non su disco: al primo giro dopo l'avvio
+   tutto risulta cambiato, e va bene — la coda scarta da sola ciò che il
+   server ha già, perché ogni operazione porta con sé la propria chiave. */
+const impronte = new Map();
+const cambiata = (chiave, valore) => {
+  const s = JSON.stringify(valore);
+  if (impronte.get(chiave) === s) return false;
+  impronte.set(chiave, s);
+  return true;
+};
+
+/** Le operazioni che descrivono lo stato attuale della gara. */
+function operazioniDaMandare(inviati) {
+  const ops = [];
+  const G = S.garaId;
+  const dispositivo = nomeDispositivo();
+
+  const gara = {
+    id: G, nome: S.cfg.nome || '', data: S.cfg.data || null,
+    luogo: S.cfg.luogo || '', km: S.cfg.km, anno: S.cfg.anno,
+    organizzatore: S.cfg.org || '',
+    pubblicata: !!S.pubblicata,
+    in_corso: !!S.start && !S.stop,
+  };
+  if (cambiata('gara', gara)) ops.push({ id: 'gara:' + G, gara: G, tipo: 'gara', corpo: gara });
+
+  const conf = {
+    gara_id: G,
+    premi_ass_f: S.cfg.premAssF, premi_ass_m: S.cfg.premAssM,
+    premi_cat: S.cfg.premCat, premi_soc: S.cfg.premSoc,
+    societa_escluse: S.cfg.socEscluse || [],
+    partenza_ms: S.start, stop_ms: S.stop,
+    scarto_partenza_ms: S.scartoPartenza || 0,
+    sessione: S.sessione || 1,
+    dispositivo,
+  };
+  if (cambiata('conf', conf)) ops.push({ id: 'conf:' + G, gara: G, tipo: 'configurazione', corpo: conf });
+
+  S.matrice.forEach((f, i) => {
+    if (!f.idRiga) f.idRiga = nid();
+    const riga = {
+      id: f.idRiga, gara_id: G, nome: f.nome || '', fidal: f.fidal || [],
+      premi: f.premi ?? null, ordine: i, eliminata: false, dispositivo,
+    };
+    if (cambiata('fascia:' + f.idRiga, riga))
+      ops.push({ id: 'fascia:' + f.idRiga, gara: G, tipo: 'fasce', corpo: riga });
+  });
+
+  for (const i of S.iscritti) {
+    const riga = {
+      id: i.id, gara_id: G, pett: i.pett ?? null,
+      cognome: i.cognome || '', nome: i.nome || '', sesso: i.sesso || null,
+      societa: i.societa || '', nascita: i.nascita || null,
+      conferma: String(i.conferma || '').toUpperCase().startsWith('S'),
+      eliminato: false, dispositivo,
+    };
+    if (cambiata('iscritto:' + i.id, riga))
+      ops.push({ id: 'iscritto:' + i.id, gara: G, tipo: 'iscritti', corpo: riga });
+  }
+
+  /* GLI ARRIVI. Il `ms` che va sul server è quello GREZZO, misurato rispetto
+     alla partenza originale: qui dentro la app lavora sui tempi già traslati,
+     quindi si risomma lo scarto. Così la riga sul server non cambia mai,
+     nemmeno spostando la partenza. */
+  const scarto = S.scartoPartenza || 0;
+  for (const a of S.arrivi) {
+    if (inviati.has(a.id)) continue;          // già sul server: è immutabile
+    ops.push({
+      id: a.id, gara: G, tipo: 'arrivi', immutabile: true,
+      corpo: { id: a.id, gara_id: G, sessione: S.sessione || 1, ms: a.ms + scarto, dispositivo },
+    });
+  }
+
+  /* Correzioni: pettorale assegnato dopo, secondi di correzione, nota.
+     L'identificativo della correzione è legato al suo CONTENUTO e vive dentro
+     l'arrivo, quindi sopravvive a un ricaricamento. Rimandare la stessa
+     correzione due volte è la stessa riga e non crea doppioni; solo un
+     contenuto davvero diverso genera una riga nuova.
+     Con un identificativo basato sull'ora, come avevo fatto prima, ogni
+     risincronizzazione avrebbe scritto una correzione in più per ogni
+     arrivo: 265 righe inutili a ogni ritorno della rete. */
+  let corrCambiate = false;
+  for (const a of S.arrivi) {
+    const stato = { pett: a.pett ?? null, corr_s: a.corr || 0, nota: a.nota || null };
+    if (stato.pett === null && !stato.corr_s && !stato.nota) continue;  // niente da correggere
+    const chiave = JSON.stringify(stato);
+    if (a.corrKey === chiave && a.corrId) continue;                     // già mandata, identica
+    a.corrId = nid();
+    a.corrKey = chiave;
+    corrCambiate = true;
+    ops.push({
+      id: 'corr:' + a.corrId, gara: G, tipo: 'arrivi_correzioni', immutabile: true,
+      corpo: Object.assign({ id: a.corrId, gara_id: G, arrivo_id: a.id, annullato: false, dispositivo }, stato),
+    });
+  }
+  // Il legame fra correzione e contenuto va messo al sicuro subito: se la app
+  // muore adesso, al riavvio non deve rimandare la stessa correzione da capo.
+  if (corrCambiate) save();
+
+  for (const pett of (S.dnf || [])) {
+    const riga = { gara_id: G, pett, ritirato: true, dispositivo };
+    if (cambiata('ritiro:' + pett, riga))
+      ops.push({ id: 'ritiro:' + G + ':' + pett, gara: G, tipo: 'ritiri', corpo: riga });
+  }
+
+  return ops;
+}
+
+function nomeDispositivo() {
+  let n = null;
+  try { n = localStorage.getItem('cronostrada.dispositivo'); } catch (e) { }
+  if (!n) {
+    n = (/iPhone|iPad|Android/i.test(navigator.userAgent) ? 'telefono' : 'computer') + '-' + nid().slice(0, 4);
+    try { localStorage.setItem('cronostrada.dispositivo', n); } catch (e) { }
+  }
+  return n;
+}
+
+/* ---------------- invio ---------------- */
+let statoSincronia = { fase: 'locale', coda: 0 };
+let invioInCorso = false;
+
+const PERCORSI = {
+  gara: '/rest/v1/gare',
+  configurazione: '/rest/v1/configurazione',
+  fasce: '/rest/v1/fasce',
+  iscritti: '/rest/v1/iscritti',
+  arrivi: '/rest/v1/arrivi',
+  arrivi_correzioni: '/rest/v1/arrivi_correzioni',
+  ritiri: '/rest/v1/ritiri',
+};
+
+async function inviaCoda() {
+  if (invioInCorso || !sincroniaPossibile() || !collegato()) return;
+  if (!navigator.onLine) { aggiornaStato('offline'); return; }
+  invioInCorso = true;
+  try {
+    const coda = (await leggiCoda()).sort((a, b) => (a.creato || 0) - (b.creato || 0));
+    if (!coda.length) { aggiornaStato('allineato'); return; }
+    aggiornaStato('invio', coda.length);
+
+    for (const op of coda) {
+      if (op.bloccata) continue;
+      // Le righe immutabili si ignorano se già presenti; le altre si
+      // sovrascrivono con l'ultimo valore. In entrambi i casi rimandare la
+      // stessa operazione non produce doppioni.
+      const prefer = op.immutabile
+        ? 'resolution=ignore-duplicates,return=minimal'
+        : 'resolution=merge-duplicates,return=minimal';
+      let r;
+      try {
+        r = await chiamaRest(PERCORSI[op.tipo], { metodo: 'POST', corpo: op.corpo, prefer });
+      } catch (e) {
+        aggiornaStato('offline', coda.length);      // rete caduta: si riprova dopo
+        return;
+      }
+      if (r.ok || r.status === 409) {
+        await togliDallaCoda(op.id);
+        if (op.immutabile) await segnaInviato(op.id);
+      } else if (r.status === 401) {
+        if (await rinnovaSessione()) { invioInCorso = false; return inviaCoda(); }
+        aggiornaStato('scollegato', coda.length);
+        return;
+      } else if (r.status >= 500) {
+        aggiornaStato('attesa', coda.length);        // problema del server: si riprova
+        return;
+      } else {
+        // Rifiutata dal server: non si perde, si mette da parte e si va avanti
+        // con le altre invece di bloccare tutta la coda.
+        op.bloccata = true;
+        op.motivo = r.status + ' ' + (await r.text().catch(() => '')).slice(0, 120);
+        await accoda(op);
+      }
+    }
+    aggiornaStato(await contaCoda() ? 'attesa' : 'allineato');
+  } catch (e) {
+    aggiornaStato('attesa');
+  } finally {
+    invioInCorso = false;
+  }
+}
+
+function aggiornaStato(fase, coda) {
+  // "allineato" significa coda vuota: senza questo il numero resterebbe
+  // quello di prima e l'indicatore direbbe una cosa non vera.
+  const n = fase === 'allineato' ? 0 : (coda === undefined ? statoSincronia.coda : coda);
+  statoSincronia = { fase, coda: n };
+  disegnaStatoSincronia();
+}
+
+function disegnaStatoSincronia() {
+  const box = $('#syncState'), punto = $('#syncDot'), testo = $('#syncTxt');
+  if (!box) return;
+  if (!sincroniaPossibile()) { box.classList.add('nascosta'); return; }
+  box.classList.remove('nascosta');
+  const n = statoSincronia.coda || 0;
+  const mappa = {
+    locale: ['off', 'Solo in locale', 'I dati sono solo su questo dispositivo. Accedi dalla scheda Gara per sincronizzarli.'],
+    scollegato: ['off', 'Solo in locale', 'Accesso scaduto: i dati restano qui finché non rientri.'],
+    offline: ['attesa', n ? `In attesa di rete (${n})` : 'In attesa di rete', 'Senza rete. Le modifiche partiranno da sole quando torna.'],
+    attesa: ['attesa', n ? `Da inviare (${n})` : 'Da inviare', 'Alcune modifiche non sono ancora arrivate al server.'],
+    invio: ['attesa', `Invio… (${n})`, 'Invio in corso.'],
+    allineato: ['', 'Allineato', 'Tutto quello che c\'è qui è anche sul server.'],
+  };
+  const [classe, etichetta, spiega] = mappa[statoSincronia.fase] || mappa.locale;
+  punto.className = 'dot' + (classe ? ' ' + classe : '');
+  testo.textContent = etichetta;
+  box.title = spiega;
+}
+
+/* ---------------- il motore, rimandato e raggruppato ----------------
+   Non gira mai dentro segnaArrivo: parte dopo, e se il telefono è occupato a
+   registrare arrivi aspetta il suo turno senza disturbare nessuno. */
+/** Scansione e invio senza attendere il raggruppamento. Solo per i gesti
+    espliciti — pubblicare, ritirare, "Sincronizza ora" — mai dal traguardo. */
+async function sincronizzaSubito() {
+  if (!sincroniaPossibile() || !collegato()) return;
+  try {
+    const inviati = new Set(await leggiInviati());
+    for (const op of operazioniDaMandare(inviati)) {
+      await accoda(Object.assign({ creato: Date.now() }, op));
+    }
+  } catch (e) { }
+  await inviaCoda();
+}
+
+const programmaSincronia = debounce(async () => {
+  if (!sincroniaPossibile()) { disegnaStatoSincronia(); return; }
+  if (!collegato()) { aggiornaStato('locale'); return; }
+  try {
+    const inviati = new Set(await leggiInviati());
+    const ops = operazioniDaMandare(inviati);
+    for (const op of ops) await accoda(Object.assign({ creato: Date.now() }, op));
+    aggiornaStato(statoSincronia.fase === 'allineato' && !ops.length ? 'allineato' : 'attesa',
+      await contaCoda());
+  } catch (e) { /* IndexedDB non disponibile: la app funziona lo stesso */ }
+  inviaCoda();
+}, 400);
+
+/* ---------------- pubblicazione della classifica ----------------
+   A tempo fisso e fuori dal percorso critico: registrare un arrivo alza solo
+   una bandierina. Se l'invio precedente non è finito, il giro si salta. */
+const PUBBLICA_OGNI_MS = 20000;
+let daRipubblicare = false;
+let pubblicazioneInCorso = false;
+let orologioPubblicazione = null;
+
+function segnalaClassificaCambiata() { daRipubblicare = true; }
+
+async function pubblicaClassifica(forzata) {
+  if (!sincroniaPossibile() || !collegato() || !S.pubblicata) return;
+  if (pubblicazioneInCorso) return;                 // il giro precedente non è finito
+  if (!forzata && !daRipubblicare) return;
+  if (!navigator.onLine) return;
+  pubblicazioneInCorso = true;
+  daRipubblicare = false;
+  try {
+    const righe = C.ris.filter(r => r.pos).map(r => ({
+      pett: r.pett, pos: r.pos,
+      cognome: r.cognome || '', nome: r.nome || '', societa: r.societa || '',
+      fascia: r.catGara || '', etichetta: r.etichetta || '', tempo_ms: r.tempo,
+    }));
+    const r = await chiamaRest('/rest/v1/rpc/pubblica_risultati', {
+      metodo: 'POST', corpo: { p_gara: S.garaId, p_righe: righe },
+    });
+    if (!r.ok) daRipubblicare = true;               // riproverà al giro dopo
+  } catch (e) {
+    daRipubblicare = true;
+  } finally {
+    pubblicazioneInCorso = false;
+  }
+}
+
+function avviaOrologioPubblicazione() {
+  if (orologioPubblicazione) return;
+  orologioPubblicazione = setInterval(() => pubblicaClassifica(false), PUBBLICA_OGNI_MS);
+}
+
+/* ============================================================
    Eventi
    ============================================================ */
 function wire() {
@@ -2453,8 +3061,17 @@ function renderFsHint() {
   window.addEventListener('resize', misuraTop);
   render();
   markSaved(trovato ? 'Gara ripresa dalla memoria locale' : 'Pronto');
-  // Ultima cosa: la app è già in piedi e funzionante prima che questa parta.
+
+  /* Da qui in giù nulla è indispensabile: la app è già in piedi, salva e
+     cronometra. Se una di queste fallisce, non se ne accorge nessuno. */
   registraServiceWorker();
+  caricaSessione();
+  disegnaStatoSincronia();
+  avviaOrologioPubblicazione();
+  programmaSincronia();
+  // Quando torna la rete la coda riparte da sola, senza che nessuno prema niente.
+  window.addEventListener('online', () => { aggiornaStato('attesa'); inviaCoda(); });
+  window.addEventListener('offline', () => aggiornaStato('offline'));
   window.addEventListener('beforeunload', e => {
     if (S.arrivi.length && !fsHandle) { e.preventDefault(); e.returnValue = ''; }
   });
