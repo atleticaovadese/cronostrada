@@ -20,6 +20,7 @@ const path = require('path');
 const crypto = require('crypto');
 const { spawn } = require('child_process');
 const { RADICE } = require('./aiuto');
+const { versioneAttesa } = require('../tools/versione');
 
 const FILE_APP = [
   'index.html', 'sw.js', 'manifest.webmanifest',
@@ -93,23 +94,60 @@ test.describe('Installabilità', () => {
     }
   });
 
-  test('la versione del service worker è allineata alla app', async () => {
-    // Se si modifica index.html e sw.js resta identico, il browser non si
-    // accorge di niente e chi ha la app installata usa la versione vecchia
-    // per sempre, senza nessun avviso. È un guasto silenzioso.
-    const impronta = crypto.createHash('sha256')
-      .update(fs.readFileSync(path.join(RADICE, 'index.html'))).digest('hex');
-    const attesa = 'i-' + impronta.slice(0, 12);
+  test('la versione del service worker è allineata a tutto il guscio', async () => {
+    // Se si modifica un file che finisce in cache e sw.js resta identico, il
+    // browser non si accorge di niente e chi ha la app installata usa la
+    // versione vecchia per sempre, senza nessun avviso. È un guasto
+    // silenzioso. Vale per index.html, ma anche per il manifest e per le
+    // icone: quelle si rigenerano da sole con `npm run icone`, ed è proprio
+    // il caso in cui è facile dimenticarsene.
+    //
+    // Il calcolo è rifatto qui a mano, apposta: se il test si limitasse a
+    // chiamare tools/versione.js, un errore lì dentro passerebbe inosservato
+    // perché entrambe le parti sbaglierebbero allo stesso modo.
     const sw = fs.readFileSync(path.join(RADICE, 'sw.js'), 'utf8');
+
+    const blocco = /const GUSCIO = \[([\s\S]*?)\]/.exec(sw);
+    expect(blocco, "in sw.js deve esserci l'elenco GUSCIO").not.toBeNull();
+    const guscio = [...new Set([...blocco[1].matchAll(/'([^']+)'/g)]
+      .map(m => m[1].replace(/^\.\//, ''))
+      .map(v => (v === '' ? 'index.html' : v)))].sort();
+
+    // Se domani qualcuno aggiunge un file al guscio, deve entrare anche
+    // nell'impronta: l'elenco è uno solo e viene letto da sw.js, ma questo
+    // controllo si accorge se il guscio si svuota per sbaglio.
+    expect(guscio, 'nel guscio ci vanno la pagina, il manifest e le icone')
+      .toEqual(['icone/icona-192.png', 'icone/icona-512.png',
+        'icone/icona-ios-180.png', 'icone/icona-maskable-512.png',
+        'index.html', 'manifest.webmanifest']);
+
+    const mancanti = guscio.filter(f => !fs.existsSync(path.join(RADICE, f)));
+    if (mancanti.length) {
+      throw new Error('\nIn GUSCIO ci sono file che non esistono:\n' +
+        mancanti.map(f => '  ' + f).join('\n') + '\n');
+    }
+
+    const combinata = crypto.createHash('sha256');
+    for (const f of guscio) {
+      combinata.update(f + '\n');
+      combinata.update(crypto.createHash('sha256')
+        .update(fs.readFileSync(path.join(RADICE, f))).digest('hex') + '\n');
+    }
+    const attesa = 'g-' + combinata.digest('hex').slice(0, 12);
     const scritta = (/const VERSIONE = '([^']+)'/.exec(sw) || [])[1];
 
     if (scritta !== attesa) {
+      // Dire QUALE file è cambiato: senza, si va a tentativi.
+      const righe = guscio.map(f => '  ' + crypto.createHash('sha256')
+        .update(fs.readFileSync(path.join(RADICE, f))).digest('hex').slice(0, 12) + '  ' + f);
       throw new Error(
-        `\nLa versione in sw.js non corrisponde a index.html.\n` +
+        `\nLa versione in sw.js non corrisponde ai file del guscio.\n` +
         `  sw.js dice     ${scritta}\n` +
         `  dovrebbe dire  ${attesa}\n\n` +
+        `  Impronte dei file che finiscono in cache:\n` + righe.join('\n') + '\n\n' +
         `  Senza questo il browser non si accorge dell'aggiornamento e chi ha la\n` +
-        `  app installata resta alla versione vecchia senza saperlo.\n\n` +
+        `  app installata resta alla versione vecchia senza saperlo: pagina,\n` +
+        `  manifest e icone comprese.\n\n` +
         `  Sistemala con:  npm run versione\n`);
     }
   });
@@ -316,10 +354,13 @@ test.describe('Aggiornamenti', () => {
       : testo.replace('</head>', marchio + '\n</head>');
     fs.writeFileSync(app, testo, 'utf8');
 
-    const impronta = crypto.createHash('sha256').update(fs.readFileSync(app)).digest('hex');
+    // La versione si ricalcola con lo stesso strumento che si usa davvero,
+    // puntato sulla copia temporanea: qui interessa che la pubblicazione sia
+    // fedele, non ricontrollare la formula (a quello pensa il test sopra).
     const sw = path.join(cartella, 'sw.js');
-    fs.writeFileSync(sw, fs.readFileSync(sw, 'utf8')
-      .replace(/const VERSIONE = '[^']+'/, `const VERSIONE = 'i-${impronta.slice(0, 12)}'`), 'utf8');
+    const testoSw = fs.readFileSync(sw, 'utf8');
+    fs.writeFileSync(sw, testoSw.replace(/const VERSIONE = '[^']+'/,
+      `const VERSIONE = '${versioneAttesa(testoSw, cartella)}'`), 'utf8');
     return etichetta;
   }
 

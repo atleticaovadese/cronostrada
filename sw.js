@@ -9,9 +9,12 @@
  * LA VERSIONE
  * Il browser si accorge che c'è un aggiornamento solo se questo file cambia,
  * byte per byte. Siccome il sito è statico e non c'è nessun passaggio di
- * build che possa iniettare un numero, la versione è l'impronta di
- * index.html, scritta qui sotto e tenuta allineata da un test: se qualcuno
- * modifica la app e si dimentica di aggiornarla, `npm test` fallisce e dice
+ * build che possa iniettare un numero, la versione è l'impronta combinata di
+ * TUTTI i file elencati in GUSCIO qui sotto — non solo index.html: sono
+ * quelli che finiscono in cache e ci restano finché la versione non cambia,
+ * quindi cambiare un'icona o il manifest deve bastare a farla cambiare.
+ * È scritta qui sotto e tenuta allineata da un test: se qualcuno modifica un
+ * file del guscio e si dimentica di aggiornarla, `npm test` fallisce e dice
  * cosa lanciare.
  *
  *     npm run versione
@@ -24,7 +27,7 @@
  * passa dalla rete e non viene mai conservato.
  */
 
-const VERSIONE = 'i-4d0eff4b611b';
+const VERSIONE = 'g-999a51a3f7a9';
 const CACHE = 'cronostrada-' + VERSIONE;
 
 // Tutto ciò che serve alla app per partire da sola, e nient'altro.
