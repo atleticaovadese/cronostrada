@@ -71,6 +71,137 @@ test.describe('La app non dipende dalla sincronizzazione', () => {
   });
 });
 
+test.describe('L\'indicatore non può mentire', () => {
+  /*
+   * "Allineato" vuol dire una cosa sola: sul server c'è tutto quello che c'è
+   * qui. È il momento in cui uno legge quella parola e chiude la app che fa
+   * il danno, quindi non basta che chi aggiorna lo stato si comporti bene:
+   * la parola deve essere impossibile da scrivere con la coda piena, da
+   * qualunque parte arrivi la richiesta.
+   */
+
+  test('"Allineato" è impossibile con anche una sola operazione in coda', async ({ page }) => {
+    await apriApp(page);
+
+    const casi = await page.evaluate(() => {
+      const prova = (fase, coda) => {
+        statoSincronia = { fase, coda };
+        disegnaStatoSincronia();
+        return { chiesto: fase, coda, mostrato: document.querySelector('#syncTxt').textContent };
+      };
+      return [
+        prova('allineato', 0),
+        prova('allineato', 1),
+        prova('allineato', 7),
+        prova('allineato', 265),
+      ];
+    });
+
+    expect(casi[0].mostrato, 'con la coda vuota "Allineato" è lecito').toBe('Allineato');
+
+    const bugie = casi.slice(1).filter(c => /allineat/i.test(c.mostrato));
+    if (bugie.length) {
+      throw new Error(
+        `\nL'indicatore ha scritto "Allineato" con la coda piena:\n` +
+        bugie.map(c => `  richiesto "${c.chiesto}" con ${c.coda} in coda -> mostrato "${c.mostrato}"`).join('\n') +
+        `\n\n  È il momento in cui uno legge quella parola e chiude la app: se non\n` +
+        `  è vero, quello che ha registrato resta solo lì.\n`);
+    }
+    for (const c of casi.slice(1)) {
+      expect(c.mostrato, `con ${c.coda} in coda deve comparire il numero`).toContain(String(c.coda));
+    }
+  });
+
+  test('il numero mostrato è quello vero della coda, non quello dichiarato', async ({ page }) => {
+    await apriApp(page);
+    // si dichiara una coda vuota mentre su disco ce ne sono tre: deve vincere
+    // il disco, e l'indicatore correggersi da solo
+    const r = await page.evaluate(async () => {
+      for (const n of [1, 2, 3]) {
+        await accoda({ id: 'finta:' + n, gara: S.garaId, tipo: 'iscritti', corpo: {}, creato: Date.now() });
+      }
+      // si dichiara il falso: coda vuota
+      aggiornaStato('allineato', 0);
+      await new Promise(r => setTimeout(r, 400));      // il tempo della verifica
+
+      const rilevate = statoSincronia.coda;            // quante ne ha trovate da sola
+      const vere = await contaCoda();
+
+      // e con quel numero, "Allineato" non deve più essere scrivibile
+      statoSincronia = { fase: 'allineato', coda: rilevate };
+      disegnaStatoSincronia();
+      const mostrato = document.querySelector('#syncTxt').textContent;
+
+      for (const n of [1, 2, 3]) await togliDallaCoda('finta:' + n);
+      return { rilevate, vere, mostrato };
+    });
+
+    expect(r.vere, 'in coda ci sono davvero tre operazioni').toBe(3);
+    expect(r.rilevate, 'la verifica le conta guardando il disco, non chi ha dichiarato 0').toBe(3);
+    expect(r.mostrato, 'e con quel numero "Allineato" non è scrivibile').not.toMatch(/allineat/i);
+    expect(r.mostrato, 'mostrando il numero vero').toContain('3');
+  });
+});
+
+test.describe('Chiudere la app avvisa se qualcosa vive in un posto solo', () => {
+  test('avvisa quando la coda non è vuota', async ({ page }) => {
+    await apriApp(page);
+
+    const casi = await page.evaluate(() => {
+      const stato = (arrivi, file, coll, coda) => {
+        S.arrivi = Array.from({ length: arrivi }, () => ({ id: nid(), pett: null, ms: 1, corr: 0 }));
+        fsHandle = file ? {} : null;
+        sessione = coll ? { access_token: 'finto', refresh_token: 'x', email: 'a@b.c' } : null;
+        statoSincronia = { fase: 'attesa', coda };
+        return serveAvvisoChiusura();
+      };
+      return {
+        nienteDaSalvare: stato(0, false, false, 0),
+        arriviSenzaFile: stato(3, false, false, 0),
+        arriviConFile: stato(3, true, false, 0),
+        // il caso che mancava: tutto su file, ma la coda non è vuota
+        codaPienaConFile: stato(3, true, true, 5),
+        codaPienaSenzaArrivi: stato(0, false, true, 2),
+        collegatoECodaVuota: stato(0, false, true, 0),
+      };
+    });
+
+    expect(casi.nienteDaSalvare, 'senza niente da salvare non si avvisa').toBe(false);
+    expect(casi.arriviSenzaFile, 'con arrivi solo nella memoria del browser si avvisa').toBe(true);
+    expect(casi.arriviConFile, 'con un file di salvataggio collegato non serve').toBe(false);
+    expect(casi.collegatoECodaVuota, 'collegati e allineati non serve').toBe(false);
+
+    if (!casi.codaPienaConFile || !casi.codaPienaSenzaArrivi) {
+      throw new Error(
+        `\nChiudendo la app con operazioni ancora in coda non compare nessun avviso.\n\n` +
+        `  con file di salvataggio e 5 in coda: avviso = ${casi.codaPienaConFile}\n` +
+        `  senza arrivi ma con 2 in coda:      avviso = ${casi.codaPienaSenzaArrivi}\n\n` +
+        `  È il momento in cui uno crede che sia tutto al sicuro e chiude.\n`);
+    }
+  });
+
+  test('l\'avviso compare davvero alla chiusura, non solo nella funzione', async ({ page }) => {
+    await apriApp(page);
+    await page.evaluate(() => {
+      S.arrivi = [{ id: nid(), pett: null, ms: 1, corr: 0 }];
+      fsHandle = null;
+      window.__avvisato = false;
+    });
+    // Playwright accetta da solo le finestre di conferma: qui si intercetta
+    // per sapere che il browser l'ha davvero chiesta.
+    page.once('dialog', d => { d.accept().catch(() => { }); });
+    const chiesto = await page.evaluate(() => {
+      let visto = false;
+      const spia = e => { if (e.defaultPrevented || e.returnValue) visto = true; };
+      window.addEventListener('beforeunload', spia);
+      window.dispatchEvent(new Event('beforeunload', { cancelable: true }));
+      window.removeEventListener('beforeunload', spia);
+      return visto;
+    });
+    expect(chiesto, 'il gestore di beforeunload deve chiedere conferma').toBe(true);
+  });
+});
+
 test.describe('Gli arrivi restano immutabili sul server', () => {
   test('spostare la partenza non cambia un solo valore grezzo', async ({ page }) => {
     /*

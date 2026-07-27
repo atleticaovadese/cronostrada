@@ -2786,12 +2786,26 @@ async function inviaCoda() {
 }
 
 function aggiornaStato(fase, coda) {
-  // "allineato" significa coda vuota: senza questo il numero resterebbe
-  // quello di prima e l'indicatore direbbe una cosa non vera.
-  const n = fase === 'allineato' ? 0 : (coda === undefined ? statoSincronia.coda : coda);
-  statoSincronia = { fase, coda: n };
+  statoSincronia = { fase, coda: coda === undefined ? statoSincronia.coda : coda };
   disegnaStatoSincronia();
+  // Il numero vero è quello della coda su disco, non quello passato da chi ha
+  // chiamato. Si va a guardare, e se non torna si corregge.
+  verificaCoda();
 }
+
+/* Conta le operazioni davvero in coda e allinea l'indicatore.
+   Serve anche a tenere aggiornato il numero che l'avviso di chiusura legge:
+   beforeunload è sincrono e non può interrogare IndexedDB al momento. */
+const verificaCoda = debounce(async () => {
+  if (!sincroniaPossibile()) return;
+  try {
+    const n = await contaCoda();
+    if (n !== statoSincronia.coda) {
+      statoSincronia = { fase: statoSincronia.fase, coda: n };
+      disegnaStatoSincronia();
+    }
+  } catch (e) { }
+}, 150);
 
 function disegnaStatoSincronia() {
   const box = $('#syncState'), punto = $('#syncDot'), testo = $('#syncTxt');
@@ -2799,6 +2813,14 @@ function disegnaStatoSincronia() {
   if (!sincroniaPossibile()) { box.classList.add('nascosta'); return; }
   box.classList.remove('nascosta');
   const n = statoSincronia.coda || 0;
+
+  /* L'INVARIANTE, applicato qui e non altrove.
+     "Allineato" vuol dire una cosa sola: sul server c'è tutto quello che c'è
+     qui. Se anche una sola operazione è ancora in coda, quella parola non si
+     può scrivere — chiunque l'abbia chiesta e per qualunque motivo. È il
+     momento in cui uno legge "allineato" e chiude la app che fa il danno,
+     quindi la regola sta nel punto in cui si disegna, non in chi chiama. */
+  if (statoSincronia.fase === 'allineato' && n > 0) statoSincronia.fase = 'attesa';
   const mappa = {
     locale: ['off', 'Solo in locale', 'I dati sono solo su questo dispositivo. Accedi dalla scheda Gara per sincronizzarli.'],
     scollegato: ['off', 'Solo in locale', 'Accesso scaduto: i dati restano qui finché non rientri.'],
@@ -2879,6 +2901,23 @@ async function pubblicaClassifica(forzata) {
 function avviaOrologioPubblicazione() {
   if (orologioPubblicazione) return;
   orologioPubblicazione = setInterval(() => pubblicaClassifica(false), PUBBLICA_OGNI_MS);
+}
+
+/* Chiudere la app va avvisato quando c'è qualcosa che vive in un posto solo.
+   Due casi, non uno:
+
+   1. Ci sono arrivi e non è collegato nessun file di salvataggio: esistono
+      soltanto nella memoria del browser.
+   2. La coda non è vuota: c'è roba registrata qui che il server non ha
+      ancora. È il caso che mi era sfuggito, ed è il peggiore — uno legge
+      l'indicatore, crede che sia tutto al sicuro, e chiude.
+
+   Il numero della coda è quello tenuto aggiornato da verificaCoda(), perché
+   beforeunload è sincrono e non può interrogare IndexedDB al momento. */
+function serveAvvisoChiusura() {
+  if (S.arrivi.length && !fsHandle) return true;
+  if (collegato() && (statoSincronia.coda || 0) > 0) return true;
+  return false;
 }
 
 /* ============================================================
@@ -3073,7 +3112,7 @@ function renderFsHint() {
   window.addEventListener('online', () => { aggiornaStato('attesa'); inviaCoda(); });
   window.addEventListener('offline', () => aggiornaStato('offline'));
   window.addEventListener('beforeunload', e => {
-    if (S.arrivi.length && !fsHandle) { e.preventDefault(); e.returnValue = ''; }
+    if (serveAvvisoChiusura()) { e.preventDefault(); e.returnValue = ''; }
   });
 })();
 </script>
