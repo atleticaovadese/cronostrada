@@ -447,6 +447,9 @@ body.inMenu #top,body.inMenu main{display:none!important}
 .porta.on .portaTitolo{color:var(--accent-ink)}
 .portaSotto{font-size:12.5px;color:var(--ink-2);font-weight:500}
 #menuCorpo{margin-top:16px}
+/* intestazione delle pagine interne del menu: un passo indietro e un titolo */
+.testapagina{display:flex;align-items:center;gap:12px;padding:0 2px 16px}
+.testapagina h1{font-size:22px;font-weight:700;letter-spacing:-.02em;margin:0}
 
 /* elenco delle gare, sia locali sia pubbliche */
 .garariga{display:flex;align-items:center;gap:12px;padding:13px 14px;border-bottom:1px solid var(--line-2);
@@ -1383,35 +1386,22 @@ function renderSincronia() {
   box.innerHTML = '';
   if (!sincroniaPossibile()) return;      // da chiavetta USB non compare nulla
 
+  /* L'accesso non si fa più qui dentro: è all'ingresso della porta
+     Organizzatore, nel menu. Qui resta solo la nota di cosa comporta non
+     averlo fatto, senza inviti a registrarsi mentre si sta lavorando. */
   if (!collegato()) {
-    const email = el('input', { type: 'email', autocomplete: 'username', placeholder: 'you@esempio.it' });
-    const pw = el('input', { type: 'password', autocomplete: 'current-password', placeholder: 'password' });
-    const esito = el('div');
-    const entra = async () => {
-      if (!email.value || !pw.value) return;
-      esito.innerHTML = ''; esito.append(el('p', { class: 'hint' }, 'Accesso in corso…'));
-      const r = await accedi(email.value.trim(), pw.value);
-      if (r.ok) { toast('Collegato', 'go'); impronte.clear(); render(); programmaSincronia(); }
-      else {
-        esito.innerHTML = '';
-        esito.append(el('div', { class: 'banner bad', style: 'margin-top:10px' }, el('div', {}, r.errore)));
-      }
-    };
-    pw.onkeydown = e => { if (e.key === 'Enter') entra(); };
-
     box.append(el('div', { class: 'card' },
       el('header', {}, el('h2', {}, 'Sincronizzazione')),
       el('div', { class: 'body' },
-        el('p', { class: 'hint', style: 'margin:0 0 12px' },
-          'La app funziona benissimo senza accedere: i dati restano su questo ',
-          'dispositivo. L\'accesso serve solo a tenerne una copia sul server e a ',
-          'pubblicare le classifiche in diretta.'),
-        el('div', { class: 'grid g2' },
-          el('label', { class: 'f' }, 'Email', email),
-          el('label', { class: 'f' }, 'Password', pw)),
+        el('p', { class: 'hint', style: 'margin:0' },
+          'Non hai fatto l\'accesso: questa gara vive solo su questo dispositivo, ',
+          'e va benissimo così. Se vuoi tenerne una copia sul server o pubblicare ',
+          'le classifiche in diretta, l\'accesso si fa dal menu, nella porta ',
+          el('b', {}, 'Organizzatore'), '.'),
         el('div', { class: 'btnrow', style: 'margin-top:12px' },
-          el('button', { class: 'btn primary', onclick: entra }, 'Accedi')),
-        esito)));
+          el('button', {
+            class: 'btn', onclick: () => { scegliSenzaAccount(false); tornaAlMenu('organizzatore'); }
+          }, 'Vai all\'accesso')))));
     return;
   }
 
@@ -2661,25 +2651,67 @@ function entraNellaApp(vista) {
   render();
 }
 
-function tornaAlMenu(porta) {
+function tornaAlMenu(pagina) {
   riponiGaraAttiva();
   ui.schermata = 'menu';
-  if (porta) ui.porta = porta;
+  ui.porta = pagina || 'porte';
+  if (ui.porta !== 'live' && ui.porta !== 'liveGara') fermaOrologioLive();
   document.body.classList.add('inMenu');
   render();
 }
 
+/* Il menu è una sequenza di pagine, non una schermata sola:
+     porte  ->  organizzatore  ->  (elenco delle tue gare)
+     porte  ->  live           ->  liveGara (classifica)
+   Ognuna occupa tutto lo schermo e ha il suo passo indietro. */
 function renderMenu() {
   document.body.classList.add('inMenu');
-  $$('#porte .porta').forEach(b => b.classList.toggle('on', b.dataset.p === ui.porta));
-  if (ui.porta === 'live') renderPortaLive();
+  const box = $('#menuCorpo');
+  box.innerHTML = '';
+  const porte = $('#porte');
+
+  if (ui.porta === 'porte') { porte.style.display = ''; return; }
+  porte.style.display = 'none';        // dentro una porta le caselle spariscono
+
+  if (ui.porta === 'live' || ui.porta === 'liveGara') renderPortaLive();
   else renderPortaOrganizzatore();
 }
 
-/* ---------------- porta Organizzatore ---------------- */
+/** L'intestazione comune alle pagine interne: un passo indietro e un titolo. */
+function testaPagina(titolo, indietro, dove) {
+  return el('div', { class: 'testapagina' },
+    el('button', { class: 'btn sm', type: 'button', onclick: dove }, '‹ ' + indietro),
+    el('h1', {}, titolo));
+}
+
+/* ---------------- porta Organizzatore ----------------
+   Prima l'account, poi le gare. L'accesso vive qui e non più dentro una gara
+   già aperta: è una cosa che si fa una volta, all'ingresso.
+
+   Ma NON è un cancello. La app deve continuare a cronometrare senza account,
+   senza rete e da chiavetta: se una password dimenticata potesse bloccare una
+   gara, avremmo costruito una trappola. Per questo accanto all'accesso c'è
+   sempre "Continua senza account". */
+const KEY_SENZA_ACCOUNT = 'cronostrada.senzaAccount';
+const haSceltoSenzaAccount = () => {
+  try { return localStorage.getItem(KEY_SENZA_ACCOUNT) === '1'; } catch (e) { return false; }
+};
+function scegliSenzaAccount(v) {
+  try { localStorage.setItem(KEY_SENZA_ACCOUNT, v ? '1' : '0'); } catch (e) { }
+  renderMenu();
+}
+
 function renderPortaOrganizzatore() {
   const box = $('#menuCorpo');
-  box.innerHTML = '';
+  box.append(testaPagina('Organizzatore', 'Menu', () => tornaAlMenu('porte')));
+
+  // Chiede l'account, a meno che non si sia già collegati o si sia scelto di
+  // farne a meno. Da chiavetta non si chiede: lì non c'è nessun server.
+  if (sincroniaPossibile() && !collegato() && !haSceltoSenzaAccount()) {
+    renderAccessoOrganizzatore(box);
+    return;
+  }
+
   const gare = elencoGare();
 
   const testa = el('div', { class: 'card' },
@@ -2687,6 +2719,14 @@ function renderPortaOrganizzatore() {
       el('h2', {}, 'Le tue gare'),
       el('span', { class: 'tag' }, String(gare.length)),
       el('div', { class: 'topspace' }),
+      collegato()
+        ? el('span', { class: 'hint', title: 'Collegato' }, sessione.email || '')
+        : (sincroniaPossibile()
+          ? el('button', { class: 'btn sm', onclick: () => scegliSenzaAccount(false) }, 'Accedi')
+          : null),
+      collegato()
+        ? el('button', { class: 'btn sm', onclick: () => { scollega(); renderMenu(); } }, 'Esci')
+        : null,
       el('button', { class: 'btn primary', id: 'btnNuovaGara', onclick: nuovaGara }, '+ Nuova gara')));
 
   if (!gare.length) {
@@ -2717,6 +2757,57 @@ function renderPortaOrganizzatore() {
     elenco.append(riga);
   }
   box.append(testa, el('div', { style: 'margin-top:14px' }, elenco));
+}
+
+/** La schermata di accesso dell'organizzatore, all'ingresso della sua porta. */
+function renderAccessoOrganizzatore(box) {
+  const email = el('input', { type: 'email', autocomplete: 'username', placeholder: 'you@esempio.it' });
+  const pw = el('input', { type: 'password', autocomplete: 'current-password', placeholder: 'password' });
+  const esito = el('div');
+
+  const entra = async () => {
+    if (!email.value || !pw.value) return;
+    esito.innerHTML = '';
+    esito.append(el('p', { class: 'hint', style: 'margin-top:10px' }, 'Accesso in corso…'));
+    const r = await accedi(email.value.trim(), pw.value);
+    if (r.ok) {
+      impronte.clear();
+      scegliSenzaAccount(false);
+      toast('Collegato', 'go');
+      renderMenu();
+      programmaSincronia();
+    } else {
+      esito.innerHTML = '';
+      esito.append(el('div', { class: 'banner bad', style: 'margin-top:12px' }, el('div', {}, r.errore)));
+    }
+  };
+  pw.onkeydown = e => { if (e.key === 'Enter') entra(); };
+
+  box.append(el('div', { class: 'card', id: 'accessoOrganizzatore' },
+    el('header', {}, el('h2', {}, 'Accedi')),
+    el('div', { class: 'body' },
+      el('p', { class: 'hint', style: 'margin:0 0 14px' },
+        'Con l\'accesso le tue gare vengono tenute anche sul server e puoi ',
+        'pubblicare le classifiche in diretta.'),
+      el('div', { class: 'grid g2' },
+        el('label', { class: 'f' }, 'Email', email),
+        el('label', { class: 'f' }, 'Password', pw)),
+      el('div', { class: 'btnrow', style: 'margin-top:14px' },
+        el('button', { class: 'btn primary', id: 'btnAccedi', onclick: entra }, 'Accedi')),
+      esito)));
+
+  box.append(el('div', { class: 'card', style: 'margin-top:14px' },
+    el('div', { class: 'body' },
+      el('div', { class: 'btnrow' },
+        el('button', {
+          class: 'btn', id: 'btnSenzaAccount',
+          onclick: () => scegliSenzaAccount(true)
+        }, 'Continua senza account')),
+      el('p', { class: 'hint', style: 'margin:10px 0 0' },
+        'La app cronometra, salva e stampa senza account e senza rete: i dati ',
+        'restano su questo dispositivo. Serve solo se vuoi la copia sul server ',
+        'o le classifiche pubbliche. ',
+        el('b', {}, 'Una password dimenticata non deve mai fermare una gara.')))));
 }
 
 /* Eliminare una gara deve costare fatica e dire cosa si sta buttando via. */
@@ -2794,7 +2885,7 @@ async function caricaLive() {
   } catch (e) {
     liveErrore = 'server'; liveGare = null;
   }
-  if (ui.schermata === 'menu' && ui.porta === 'live') renderMenu();
+  if (ui.schermata === 'menu' && (ui.porta === 'live' || ui.porta === 'liveGara')) renderMenu();
 }
 
 async function caricaClassificaPubblica(id) {
@@ -2804,12 +2895,19 @@ async function caricaClassificaPubblica(id) {
     liveRisultati = await chiediPubblico(
       `live_risultati?gara_id=eq.${encodeURIComponent(id)}&select=pos,pett,cognome,nome,societa,fascia,etichetta,tempo_ms&order=pos`);
   } catch (e) { liveErrore = 'server'; }
-  if (ui.schermata === 'menu' && ui.porta === 'live') renderMenu();
+  if (ui.schermata === 'menu' && (ui.porta === 'live' || ui.porta === 'liveGara')) renderMenu();
 }
 
 function renderPortaLive() {
   const box = $('#menuCorpo');
-  box.innerHTML = '';
+  const dentroUnaGara = ui.porta === 'liveGara' && liveGaraAperta;
+
+  box.append(dentroUnaGara
+    ? testaPagina(liveGaraAperta.nome || 'Gara', 'Live', () => {
+      liveGaraAperta = null; liveRisultati = null; fermaOrologioLive();
+      tornaAlMenu('live');
+    })
+    : testaPagina('Live', 'Menu', () => { fermaOrologioLive(); tornaAlMenu('porte'); }));
 
   if (liveErrore === 'rete') {
     fermaOrologioLive();
@@ -2833,13 +2931,12 @@ function renderPortaLive() {
     return;
   }
 
-  // dentro una gara
-  if (liveGaraAperta) {
+  // dentro una gara: la sua classifica
+  if (dentroUnaGara) {
     const g = liveGaraAperta;
     box.append(el('div', { class: 'card' },
       el('header', {},
-        el('button', { class: 'btn sm', onclick: () => { liveGaraAperta = null; liveRisultati = null; fermaOrologioLive(); renderMenu(); } }, '‹ Gare'),
-        el('h2', {}, g.nome || 'Gara'),
+        el('h2', {}, [g.luogo, g.data ? new Date(g.data + 'T00:00').toLocaleDateString('it-IT', { day: 'numeric', month: 'long', year: 'numeric' }) : null].filter(Boolean).join(' · ') || 'Classifica'),
         g.in_corso ? el('span', { class: 'garacorsa' }, el('span', { class: 'dot' }), 'in corso') : null,
         el('div', { class: 'topspace' }),
         el('span', { class: 'hint' }, liveRisultati ? plur(liveRisultati.length, 'arrivato', 'arrivati') : 'caricamento…')),
@@ -2891,7 +2988,7 @@ function renderPortaLive() {
   for (const g of liveGare) {
     elenco.append(el('button', {
       class: 'garariga', type: 'button', 'data-live': g.id,
-      onclick: () => { liveGaraAperta = g; liveRisultati = null; renderMenu(); caricaClassificaPubblica(g.id); }
+      onclick: () => { liveGaraAperta = g; liveRisultati = null; ui.porta = 'liveGara'; renderMenu(); caricaClassificaPubblica(g.id); }
     },
       el('div', {},
         el('div', { class: 'gnome' }, g.nome || 'Gara'),
@@ -3395,9 +3492,10 @@ function wire() {
   $('#btnMenu').addEventListener('click', () => tornaAlMenu('organizzatore'));
   $$('#porte .porta').forEach(b => b.addEventListener('click', () => {
     ui.porta = b.dataset.p;
-    if (ui.porta === 'live') { liveGaraAperta = null; liveRisultati = null; caricaLive(); }
-    else fermaOrologioLive();
-    renderMenu();
+    if (ui.porta === 'live') {
+      liveGaraAperta = null; liveRisultati = null; liveGare = null; liveErrore = null;
+      renderMenu(); caricaLive();
+    } else { fermaOrologioLive(); renderMenu(); }
   }));
 
   // --- traguardo
@@ -3579,13 +3677,10 @@ function renderFsHint() {
   if (S.start && !S.stop) {
     ui.schermata = 'app';
     ui.view = 'traguardo';
-  } else if (trovato || elencoGare().length) {
-    ui.schermata = 'menu';
-    ui.porta = 'organizzatore';
   } else {
-    // prima apertura in assoluto: si comincia dai dati della gara
+    // Altrimenti si comincia sempre dalle due caselle.
     ui.schermata = 'menu';
-    ui.porta = 'organizzatore';
+    ui.porta = 'porte';
   }
   document.body.classList.toggle('inMenu', ui.schermata === 'menu');
   renderFsHint();

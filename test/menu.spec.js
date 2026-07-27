@@ -22,6 +22,16 @@ async function apriAlMenu(page) {
   await page.waitForFunction(() => typeof S !== 'undefined' && C !== null);
 }
 
+/** Percorre il menu fino all'elenco delle gare, passando dall'accesso.
+ *  È la strada che fa chiunque: casella Organizzatore, poi si sceglie se
+ *  accedere o continuare senza account. */
+async function vaiAllElencoGare(page) {
+  await page.evaluate(() => { tornaAlMenu('porte'); });
+  await page.click('#porte .porta[data-p="organizzatore"]');
+  const accesso = await page.locator('#btnSenzaAccount').count();
+  if (accesso) await page.click('#btnSenzaAccount');
+}
+
 test.describe('Il menu non si mette fra chi cronometra e il traguardo', () => {
   test('con una gara IN CORSO la app si apre sugli Arrivi, saltando il menu', async ({ page }) => {
     // È il vincolo che conta più di tutti: allo sparo non si tocca niente
@@ -93,6 +103,97 @@ test.describe('Il menu non si mette fra chi cronometra e il traguardo', () => {
   });
 });
 
+test.describe('La struttura: due caselle, poi le pagine', () => {
+  test('il menu ha soltanto le due caselle, niente altro', async ({ page }) => {
+    await apriAlMenu(page);
+    const r = await page.evaluate(() => ({
+      pagina: ui.porta,
+      caselle: [...document.querySelectorAll('#porte .portaTitolo')].map(x => x.textContent),
+      casellevisibili: getComputedStyle(document.querySelector('#porte')).display !== 'none',
+      corpo: document.querySelector('#menuCorpo').textContent.trim(),
+      elenchi: document.querySelectorAll('#elencoGare, #elencoLive').length,
+      barraApp: getComputedStyle(document.querySelector('#top')).display,
+    }));
+    expect(r.caselle, 'due caselle, in questo ordine').toEqual(['Organizzatore', 'Live']);
+    expect(r.casellevisibili).toBe(true);
+    expect(r.corpo, 'e sotto non c\'è nient\'altro').toBe('');
+    expect(r.elenchi, 'nessun elenco di gare nel menu principale').toBe(0);
+    expect(r.barraApp, 'e la app resta dietro').toBe('none');
+  });
+
+  test('Organizzatore chiede l\'account, e da lì si arriva alle gare', async ({ page }) => {
+    await apriAlMenu(page);
+    await page.click('#porte .porta[data-p="organizzatore"]');
+
+    const accesso = await page.evaluate(() => ({
+      pagina: ui.porta,
+      caselle: getComputedStyle(document.querySelector('#porte')).display !== 'none',
+      form: !!document.querySelector('#accessoOrganizzatore'),
+      campi: document.querySelectorAll('#accessoOrganizzatore input').length,
+      senzaAccount: !!document.querySelector('#btnSenzaAccount'),
+      elencoGia: !!document.querySelector('#elencoGare'),
+    }));
+    expect(accesso.pagina).toBe('organizzatore');
+    expect(accesso.caselle, 'le caselle spariscono: è una pagina a sé').toBe(false);
+    expect(accesso.form, "chiede l'account").toBe(true);
+    expect(accesso.campi, 'email e password').toBe(2);
+    expect(accesso.elencoGia, 'e le gare non si vedono prima di decidere').toBe(false);
+
+    /* La via d'uscita che non deve mancare mai: una password dimenticata non
+       può fermare una gara, e la app deve funzionare da chiavetta e senza
+       rete come ha sempre fatto. */
+    expect(accesso.senzaAccount, 'con una via per continuare senza account').toBe(true);
+
+    await page.click('#btnSenzaAccount');
+    const dopo = await page.evaluate(() => ({
+      pagina: ui.porta,
+      form: !!document.querySelector('#accessoOrganizzatore'),
+      nuova: !!document.querySelector('#btnNuovaGara'),
+      testo: document.querySelector('#menuCorpo').textContent,
+    }));
+    expect(dopo.form, "l'accesso non si ripresenta").toBe(false);
+    expect(dopo.nuova, 'e si può aggiungere una gara').toBe(true);
+    expect(dopo.testo).toContain('Le tue gare');
+
+    // e senza account si cronometra davvero
+    await page.click('#btnNuovaGara');
+    expect(await page.evaluate(() => ui.schermata), 'la nuova gara apre la app').toBe('app');
+    await page.click('nav button:text-is("Arrivi")');
+    await page.click('#btnStart');
+    await page.click('#btnArrivo');
+    confrontaNumero('arrivo registrato senza alcun account', 1,
+      await page.evaluate(() => S.arrivi.length));
+  });
+
+  test('Live è una pagina a sé, con il suo passo indietro', async ({ page }) => {
+    await apriAlMenu(page);
+    await page.click('#porte .porta[data-p="live"]');
+    await page.waitForTimeout(1200);
+
+    const dentro = await page.evaluate(() => ({
+      pagina: ui.porta,
+      caselle: getComputedStyle(document.querySelector('#porte')).display !== 'none',
+      titolo: document.querySelector('.testapagina h1').textContent,
+      indietro: document.querySelector('.testapagina button').textContent,
+      // nessun pulsante che modifichi qualcosa
+      modifiche: document.querySelectorAll('#menuCorpo [data-elimina], #menuCorpo #btnNuovaGara').length,
+    }));
+    expect(dentro.pagina, 'Live ha una pagina sua').toBe('live');
+    expect(dentro.caselle, 'le caselle spariscono').toBe(false);
+    expect(dentro.titolo).toBe('Live');
+    expect(dentro.indietro, 'con il passo indietro al menu').toContain('Menu');
+    expect(dentro.modifiche, 'in Live non si modifica niente').toBe(0);
+
+    await page.click('.testapagina button');
+    const fuori = await page.evaluate(() => ({
+      pagina: ui.porta,
+      caselle: getComputedStyle(document.querySelector('#porte')).display !== 'none',
+    }));
+    expect(fuori.pagina, 'e si torna alle due caselle').toBe('porte');
+    expect(fuori.caselle).toBe(true);
+  });
+});
+
 test.describe('Il menu non aspetta la rete', () => {
   test('l\'elenco locale compare anche in modalità aereo', async ({ page, context }) => {
     await apriApp(page);
@@ -101,8 +202,8 @@ test.describe('Il menu non aspetta la rete', () => {
       S.iscritti = [{ id: nid(), pett: 1, cognome: 'A', nome: 'B', sesso: 'M', societa: 'X', nascita: '1990-01-01', conferma: 'S' }];
       S.arrivi = [{ id: nid(), pett: 1, ms: 1000, corr: 0 }];
       touched();
-      tornaAlMenu('organizzatore');
     });
+    await vaiAllElencoGare(page);
 
     await context.setOffline(true);
     const t0 = Date.now();
@@ -124,15 +225,15 @@ test.describe('Il menu non aspetta la rete', () => {
     await apriApp(page);
     await context.setOffline(true);
     await page.evaluate(async () => { tornaAlMenu('live'); await caricaLive(); });
-    await page.waitForTimeout(300);
+    await page.waitForTimeout(400);
 
     const testo = await page.evaluate(() => document.querySelector('#menuCorpo').textContent);
     expect(testo, 'deve spiegare che serve la connessione').toContain('serve la connessione');
     expect(testo, 'e ricordare che il resto funziona lo stesso').toContain('senza rete');
     expect(testo, 'senza mostrare un errore tecnico').not.toMatch(/error|failed|undefined|\[object/i);
 
-    // e da lì si torna all'elenco locale, che funziona
-    await page.evaluate(() => { tornaAlMenu('organizzatore'); });
+    // e da lì si torna indietro e l'altra porta funziona lo stesso
+    await vaiAllElencoGare(page);
     expect(await page.evaluate(() => document.querySelector('#menuCorpo').textContent),
       "l'altra porta continua a funzionare").toContain('Le tue gare');
     await context.setOffline(false);
@@ -193,8 +294,8 @@ test.describe('Più gare in locale', () => {
       S.iscritti = Array.from({ length: 40 }, () => ({ id: nid(), pett: 1, cognome: 'A', nome: 'B', sesso: 'M', societa: '', nascita: '1990-01-01', conferma: 'S' }));
       S.arrivi = Array.from({ length: 37 }, () => ({ id: nid(), pett: null, ms: 1, corr: 0 }));
       touched();
-      tornaAlMenu('organizzatore');
     });
+    await vaiAllElencoGare(page);
 
     await page.click('#elencoGare .garariga [data-elimina]');
 
