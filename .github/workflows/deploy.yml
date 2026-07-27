@@ -53,6 +53,14 @@ jobs:
 
       - name: Esegui i test
         run: npm test
+        env:
+          # Servono al controllo di convivenza con l'app presenze, che divide
+          # con CronoStrada lo stesso progetto Supabase: un account senza
+          # alcun legame con quell'app prova a leggerne i dati e non deve
+          # riuscirci. Vanno aggiunti fra i Secrets del repository; senza,
+          # quel controllo fallisce in CI invece di passare in silenzio.
+          SUPABASE_TEST_EMAIL: ${{ secrets.SUPABASE_TEST_EMAIL }}
+          SUPABASE_TEST_PASSWORD: ${{ secrets.SUPABASE_TEST_PASSWORD }}
 
       # Se qualcosa fallisce, il rapporto resta scaricabile dalla pagina
       # della esecuzione: dice quale atleta e quale valore non torna.
