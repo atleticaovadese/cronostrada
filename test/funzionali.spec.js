@@ -302,6 +302,38 @@ test.describe('Azzeramento', () => {
 });
 
 test.describe('Persistenza', () => {
+  test('gli arrivi si scrivono subito, la digitazione resta ritardata', async ({ page }) => {
+    await apriApp(page);
+    await page.click('nav button:text-is("Arrivi")');
+    await page.click('#btnStart');
+
+    // Un arrivo: deve essere su disco nello stesso istante.
+    const arrivo = await page.evaluate(() => {
+      segnaArrivo(55);
+      const d = JSON.parse(localStorage.getItem('cronostrada.v1') || '{}');
+      return (d.arrivi || []).map(a => a.pett);
+    });
+    expect(arrivo, "l'arrivo deve essere salvato all'istante").toEqual([55]);
+
+    // Digitare il nome della gara: qui il ritardo va bene e serve, perché
+    // altrimenti si scriverebbe su disco a ogni tasto premuto.
+    await page.click('nav button:text-is("Gara")');
+    const subito = await page.evaluate(() => {
+      const campo = document.querySelector('#cfgNome');
+      campo.value = 'Prova ritardo';
+      campo.dispatchEvent(new Event('input'));
+      const d = JSON.parse(localStorage.getItem('cronostrada.v1') || '{}');
+      return (d.cfg || {}).nome;
+    });
+    expect(subito, 'la digitazione non scrive a ogni tasto').not.toBe('Prova ritardo');
+
+    await expect.poll(async () => page.evaluate(() =>
+      (JSON.parse(localStorage.getItem('cronostrada.v1') || '{}').cfg || {}).nome),
+      { message: 'ma entro poco il nome deve comunque essere salvato', timeout: 3000 })
+      .toBe('Prova ritardo');
+  });
+
+
   test('i dati sopravvivono a un ricaricamento della pagina', async ({ page }) => {
     await apriApp(page);
     await iniettaRiferimento(page);

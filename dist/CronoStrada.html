@@ -124,6 +124,12 @@ td input.cell.mono{font-family:var(--mono);font-variant-numeric:tabular-nums}
 .finish{display:grid;grid-template-columns:minmax(300px,1fr) minmax(340px,1.3fr);gap:16px;align-items:start}
 @media(max-width:900px){.finish{grid-template-columns:1fr}}
 .clockcard{background:var(--ink);color:#fff;border-radius:var(--radius);padding:20px;box-shadow:var(--shadow-lg);position:sticky;top:96px}
+/* pulsante per comprimere il pannello in una barra sottile (solo su telefono) */
+.compbtn{position:absolute;top:6px;right:6px;width:44px;height:44px;border-radius:9px;
+  border:1px solid #3b444f;background:#2a313b;color:#d3d9e0;font-size:15px;line-height:1;
+  cursor:pointer;padding:0;align-items:center;justify-content:center;
+  touch-action:manipulation;-webkit-tap-highlight-color:transparent}
+.compbtn:active{background:#454f5c}
 .clockcard .lbl{font-size:11px;text-transform:uppercase;letter-spacing:.09em;color:#8e99a8;font-weight:650}
 .clock{font-family:var(--mono);font-size:clamp(38px,7vw,60px);font-weight:600;letter-spacing:-.02em;line-height:1.05;margin:4px 0 2px;font-variant-numeric:tabular-nums}
 .clock .ms{font-size:.44em;color:#7f8b9b}
@@ -250,6 +256,13 @@ html,body{overscroll-behavior-y:contain}
 .padmodo button{border:1px solid #6b5a2a;background:#2a313b;color:#ffd484;border-radius:7px;
   padding:6px 12px;font-size:12.5px;font-weight:650;cursor:pointer;min-height:34px;
   touch-action:manipulation}
+/* su telefono l'avviso sta su una riga sola: ogni riga qui è una riga di
+   elenco arrivi in meno, e sono quelle che si stanno cercando */
+@media (max-width:700px){
+  .padmodo{margin-top:7px;padding:5px 6px 5px 10px;font-size:11.5px;gap:6px;flex-wrap:nowrap}
+  .padmodo span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .padmodo button{padding:5px 10px;font-size:11.5px;min-height:30px;flex:0 0 auto}
+}
 
 @media (max-width:700px){
   main{padding:10px 10px 34px}
@@ -275,8 +288,38 @@ html,body{overscroll-behavior-y:contain}
     padding:10px;border-radius:12px;
   }
   .clock{font-size:clamp(22px,7.5vw,30px);margin:0}
-  .clockcard .lbl{font-size:9.5px;letter-spacing:.07em}
-  .startrow{font-size:11px;gap:6px;min-height:18px;margin-top:2px}
+  .clockcard .lbl{font-size:9.5px;letter-spacing:.07em;padding-right:50px}
+  .startrow{font-size:11px;gap:6px;min-height:18px;margin-top:2px;padding-right:50px}
+  .compbtn{display:inline-flex}
+
+  /* ---- pannello compresso ----
+     Con l'elenco arrivi che su iPhone mostra due righe, completare i
+     pettorali mancanti è scomodo: non si vede quali righe siano ancora in
+     arancione. Un tocco riduce il cronometro a una barra sottile — ora
+     corrente e pulsante ARRIVO — e l'elenco guadagna trecento pixel.
+     Lo stato viene ricordato fra un uso e l'altro. */
+  .clockcard.compatto{display:flex;align-items:center;gap:10px;padding:8px 56px 8px 10px}
+  .clockcard.compatto .lbl,
+  .clockcard.compatto .startrow,
+  .clockcard.compatto .quickwrap,
+  .clockcard.compatto .pad{display:none}
+  .clockcard.compatto .clock{font-size:21px;margin:0;flex:0 0 auto}
+  .clockcard.compatto .clock .ms{display:none}      /* i centesimi non servono qui */
+  .clockcard.compatto .bigbtn{flex:1;margin:0;padding:14px 10px;font-size:18px}
+
+  /* ---- modalità assegnazione ----
+     Il tastierino serve e resta: è quello lo strumento. Sparisce tutto il
+     resto — cronometro compreso, che qui non si guarda: l'ora che conta è
+     quella dell'arrivo, ed è scritta nell'avviso.
+     Il guadagno è limitato perché il tastierino da solo occupa 213px: chi
+     deve scorrere l'elenco in cerca delle righe arancioni conviene che
+     comprima prima il pannello, e ci ritorna da solo dopo ogni assegnazione. */
+  .clockcard.assegna .lbl,
+  .clockcard.assegna .startrow,
+  .clockcard.assegna .clock,
+  .clockcard.assegna .preview{display:none}
+  .clockcard.assegna .quickwrap{margin-top:0}
+  .clockcard.assegna .pad{margin-top:6px}
 
   .quickwrap{margin-top:7px}
   .quick{font-size:25px;padding:7px 12px;caret-color:transparent}
@@ -460,6 +503,7 @@ html,body{overscroll-behavior-y:contain}
   <div class="finish">
     <div>
       <div class="clockcard">
+        <button class="compbtn" id="btnCompatta" type="button" style="display:none"></button>
         <div class="lbl" id="clockLbl">Cronometro</div>
         <div class="clock idle" id="clock">--:--:--<span class="ms">.--</span></div>
         <div class="startrow" id="startRow"></div>
@@ -751,20 +795,51 @@ function markSaved(txt, kind) {
   $('#saveTxt').textContent = txt;
   $('#saveDot').className = 'dot' + (kind ? ' ' + kind : '');
 }
-const save = debounce(async () => {
+/*
+   SALVATAGGIO IMMEDIATO.
+
+   Gli arrivi si scrivono in localStorage subito, in modo sincrono, senza
+   nessun ritardo: se il telefono ricarica la pagina, arriva una telefonata o
+   il sistema chiude il browser per fare memoria, l'ultimo arrivo deve essere
+   già su disco. Un salvataggio ritardato di 350 ms è una finestra in cui un
+   arrivo può svanire, e al traguardo non si torna indietro.
+
+   Costa poco: misurato con la gara intera in memoria (280 iscritti, 265
+   arrivi, 52 KB di JSON) una scrittura completa richiede meno di 1,5 ms,
+   contro i 220 ms che separano i due arrivi più ravvicinati della gara vera.
+
+   Il ritardo resta solo per la digitazione nei campi di testo della
+   configurazione, dove ogni tasto premuto genererebbe una scrittura inutile
+   e dove non c'è niente di irrecuperabile in gioco.
+*/
+function scriviTutto() {
   const json = JSON.stringify(S);
   try { localStorage.setItem(KEY, json); storageOk = true; }
-  catch (e) { storageOk = false; markSaved('Memoria del browser non disponibile — usa il backup su file', 'err'); }
+  catch (e) {
+    storageOk = false;
+    markSaved('Memoria del browser non disponibile — usa il backup su file', 'err');
+  }
   if (fsHandle) {
-    try {
-      const w = await fsHandle.createWritable();
-      await w.write(json); await w.close();
-      markSaved('Salvato su file · ' + new Date().toLocaleTimeString('it-IT'));
-      return;
-    } catch (e) { markSaved('File non scrivibile — solo memoria locale', 'err'); return; }
+    // La scrittura su file è per forza asincrona (lo impone l'API del
+    // browser): parte subito e non fa attendere nessuno. La copia in
+    // localStorage qui sopra è già andata a buon fine in ogni caso.
+    (async () => {
+      try {
+        const w = await fsHandle.createWritable();
+        await w.write(json); await w.close();
+        markSaved('Salvato su file · ' + new Date().toLocaleTimeString('it-IT'));
+      } catch (e) { markSaved('File non scrivibile — solo memoria locale', 'err'); }
+    })();
+    return;
   }
   if (storageOk) markSaved('Salvato in locale · ' + new Date().toLocaleTimeString('it-IT'));
-}, 350);
+}
+
+// save: immediato. È il comportamento predefinito, perché è quello sicuro.
+const save = scriviTutto;
+// saveRitardato: solo per la digitazione, dove un tasto al secondo non merita
+// una scrittura per tasto.
+const saveRitardato = debounce(scriviTutto, 350);
 
 function load() {
   try {
@@ -985,7 +1060,8 @@ function renderGara() {
   const bind = (sel, key, num) => {
     const e = $(sel);
     if (document.activeElement !== e) e.value = c[key] ?? '';
-    e.oninput = () => { c[key] = num ? (e.value === '' ? null : +e.value) : e.value; touched(); };
+    // digitazione: salvataggio ritardato, non c'è niente di irrecuperabile
+    e.oninput = () => { c[key] = num ? (e.value === '' ? null : +e.value) : e.value; touchedTesto(); };
   };
   bind('#cfgNome', 'nome'); bind('#cfgLuogo', 'luogo');
   bind('#cfgKm', 'km', 1); bind('#cfgAnno', 'anno', 1); bind('#cfgOrg', 'org');
@@ -1176,6 +1252,26 @@ function renderTraguardo() {
   costruisciPad();
   $('#pad').style.display = (started && !fermo) ? '' : 'none';
   if (padBersaglio !== null && !S.arrivi.some(a => a.id === padBersaglio)) padBersaglio = null;
+
+  // Pannello compresso: solo su telefono, e mai mentre si assegna un
+  // pettorale, perché lì il tastierino serve.
+  const card = document.querySelector('.clockcard');
+  const inAssegnazione = padBersaglio !== null;
+  const compresso = modoTelefono() && compatto && !inAssegnazione && started && !fermo;
+  if (card) {
+    card.classList.toggle('compatto', compresso);
+    card.classList.toggle('assegna', modoTelefono() && inAssegnazione);
+  }
+  const bc = $('#btnCompatta');
+  if (bc) {
+    bc.style.display = (modoTelefono() && started && !fermo && !inAssegnazione) ? '' : 'none';
+    bc.textContent = compresso ? '⌄' : '⌃';
+    const t = compresso ? 'Espandi il cronometro' : 'Comprimi il cronometro';
+    bc.title = t;
+    bc.setAttribute('aria-label', t);
+    bc.setAttribute('aria-expanded', compresso ? 'false' : 'true');
+  }
+
   aggiornaPad();
   sincronizzaWakeLock();
 
@@ -1558,8 +1654,14 @@ function render() {
   $('#raceName').textContent = S.cfg.nome || 'Nuova gara';
   document.title = (S.cfg.nome ? S.cfg.nome + ' — ' : '') + 'CronoStrada';
 }
+// touched: salva SUBITO e ridisegna. È quello che usa tutto ciò che riguarda
+// la gara — arrivi, partenza, stop, ritirati — e per questo è il predefinito.
 function touched() { save(); render(); }
-function touchedSoft() { save(); }
+// touchedSoft: salvataggio ritardato, senza ridisegno. Solo per la digitazione.
+function touchedSoft() { saveRitardato(); }
+// touchedTesto: salvataggio ritardato con ridisegno. Per i campi di testo
+// della configurazione, dove si scrive lettera per lettera.
+function touchedTesto() { saveRitardato(); render(); }
 </script>
 <script>
 "use strict";
@@ -1824,6 +1926,18 @@ const modoTelefono = () => MQ_TEL.matches;
 // dell'arrivo a cui si sta assegnando il pettorale a posteriori.
 let padBersaglio = null;
 
+/* --- pannello del cronometro compresso ---
+   Chiave sua, separata dai dati della gara: è una preferenza di chi usa la
+   app, non deve finire nei backup né sparire con "Azzera tutto". */
+const KEY_COMPATTO = 'cronostrada.compatto';
+let compatto = false;
+try { compatto = localStorage.getItem(KEY_COMPATTO) === '1'; } catch (e) { }
+function impostaCompatto(v) {
+  compatto = !!v;
+  try { localStorage.setItem(KEY_COMPATTO, compatto ? '1' : '0'); } catch (e) { }
+  render();
+}
+
 /* --- conferma tattile: vibrazione + lampo, mai bloccanti --- */
 function feedbackArrivo() {
   try { if (navigator.vibrate) navigator.vibrate(35); } catch (e) { }
@@ -1870,8 +1984,26 @@ function costruisciPad() {
       type: 'button', class: fn ? 'fn' : '',
       'aria-label': t === 'C' ? 'svuota il campo' : t === '⌫' ? 'cancella una cifra' : t,
     }, t);
+    /*
+       Un tasto agisce solo sul click che nasce da una pressione SUA.
+
+       Serve perché il pannello cambia forma quando si esce dalla modalità
+       assegnazione: premendo ASSEGNA il cronometro riappare, tutto scorre
+       verso il basso, e il click che segue la pressione finisce sul tasto
+       che nel frattempo si è spostato sotto il dito. Senza questa guardia
+       nel campo restava uno zero e il tocco successivo avrebbe registrato
+       il pettorale 0.
+
+       Non è un blocco anti-doppio-tocco e non introduce nessuna attesa: una
+       pressione vera produce sempre pointerdown e click sullo stesso tasto,
+       e due pressioni ravvicinate restano due pressioni.
+    */
+    b.addEventListener('pointerdown', () => { b.dataset.premuto = '1'; });
     b.addEventListener('click', ev => {
       ev.preventDefault();
+      const suo = b.dataset.premuto === '1';
+      delete b.dataset.premuto;
+      if (!suo) return;                       // click nato da un'altra pressione
       if (t === 'C') padImposta('');
       else if (t === '⌫') padImposta($('#quickBib').value.slice(0, -1));
       else padImposta($('#quickBib').value + t);
@@ -2004,12 +2136,20 @@ function wire() {
     if (ms !== undefined) toast('Tempo ' + fmtHMS(ms), 'go');
     $('#quickBib').focus();
   };
+  $('#btnCompatta').addEventListener('click', e => {
+    e.preventDefault();
+    impostaCompatto(!compatto);
+  });
   // Da telefono: si agisce sulla pressione, non sul rilascio. Niente attesa,
   // niente rischio che due tocchi ravvicinati vengano fusi in uno.
   $('#btnArrivo').addEventListener('pointerdown', e => {
     if (!modoTelefono()) return;
     if (e.pointerType === 'mouse' && e.button !== 0) return;
     e.preventDefault();
+    // Nessun tasto del tastierino è più "in pressione": il click che sta per
+    // arrivare appartiene a questo pulsante, non a un tasto finito qui sotto
+    // per via del cambio di forma del pannello.
+    $$('#padGrid button').forEach(k => delete k.dataset.premuto);
     padConferma();
   });
   $('#btnUndo').onclick = () => {

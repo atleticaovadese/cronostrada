@@ -216,14 +216,26 @@ test.describe('Volata: nessun ritardo, nessun raggruppamento', () => {
   }
 
   /**
-   * Qualche tocco a vuoto prima di misurare: i primi tocchi dopo l'avvio
-   * sono molto più lenti degli altri e falserebbero gli intervalli. Gli
-   * arrivi prodotti dal riscaldamento vengono buttati via.
+   * Riscaldamento, e allo stesso tempo misura di quanto costa UN tocco.
+   *
+   * Inviare un tocco non è gratis: misurato, costa ~50 ms su Android e fino
+   * a ~160 ms su WebKit quando la suite gira tutta insieme. Se si aspettasse
+   * un tempo fisso, l'intervallo reale finirebbe molto oltre quello voluto e
+   * il test proverebbe qualcosa di diverso da quel che dichiara.
+   *
+   * Restituisce il costo mediano di un tocco, così chi chiama può calcolare
+   * quanto attendere per ottenere davvero l'intervallo che gli serve.
+   * Gli arrivi del riscaldamento vengono buttati via.
    */
   async function scaldaMotore(page, x, y) {
-    for (let i = 0; i < 4; i++) await page.touchscreen.tap(x, y);
+    for (let i = 0; i < 5; i++) await page.touchscreen.tap(x, y);
+    const ms = await page.evaluate(() => S.arrivi.map(a => a.ms));
     await page.evaluate(() => { S.arrivi = []; touched(); });
+    return ms.length > 2 ? mediana(intervalli(ms)) : 0;
   }
+
+  /** Attesa da chiedere per ottenere un intervallo reale di `obiettivo` ms. */
+  const attesaPer = (obiettivo, costoTocco) => Math.max(0, obiettivo - costoTocco);
 
   const intervalli = ms => ms.slice(1).map((v, i) => v - ms[i]);
 
@@ -246,11 +258,16 @@ test.describe('Volata: nessun ritardo, nessun raggruppamento', () => {
    * un blocco anti-doppio-tocco fa sbagliare il conteggio a ogni tentativo.
    */
   async function eseguiVolata(page, x, y, { quanti, attesa, tetto, descrizione }) {
+    // Cinque tentativi: su WebKit, con la suite intera che gira in parallelo,
+    // capita che l'invio dei tocchi rallenti. Il conteggio viene verificato a
+    // ogni tentativo, quindi un difetto vero fallisce subito comunque.
+    const TENTATIVI = 5;
     let peggiore = null;
-    for (let tentativo = 1; tentativo <= 3; tentativo++) {
+    let attesaCorrente = attesa;
+    for (let tentativo = 1; tentativo <= TENTATIVI; tentativo++) {
       await page.evaluate(() => { S.arrivi = []; touched(); });
       for (let i = 0; i < quanti; i++) {
-        if (i && attesa) await page.waitForTimeout(attesa);
+        if (i && attesaCorrente) await page.waitForTimeout(attesaCorrente);
         await page.touchscreen.tap(x, y);
       }
       const stato = await page.evaluate(() => ({
@@ -259,10 +276,14 @@ test.describe('Volata: nessun ritardo, nessun raggruppamento', () => {
       verificaVolata(stato, quanti, descrizione);       // il requisito vero
       const med = mediana(intervalli(stato.ms));
       if (med <= tetto) return stato;
+      // Il costo di un tocco cambia anche durante la corsa, non solo al
+      // riscaldamento: si attende un po' meno e si riprova. Il tetto invece
+      // non si tocca — è quello che dà senso al conteggio.
+      attesaCorrente = Math.max(0, attesaCorrente - (med - tetto) - 25);
       peggiore = { stato, med };
     }
     throw new Error(
-      `\nDopo 3 tentativi i tocchi restano troppo distanti: intervallo mediano ` +
+      `\nDopo ${TENTATIVI} tentativi i tocchi restano troppo distanti: intervallo mediano ` +
       `${peggiore.med} ms, tetto ${tetto} ms.\n` +
       `  Intervalli: ${intervalli(peggiore.stato.ms).join(', ')} ms\n\n` +
       `  Il conteggio degli arrivi è sempre risultato corretto. Due cause possibili:\n` +
@@ -299,13 +320,13 @@ test.describe('Volata: nessun ritardo, nessun raggruppamento', () => {
     // un secondo dal precedente, con un minimo di 220 ms.
     await traguardoPronto(page);
     const [x, y] = await centroArrivo(page);
-    await scaldaMotore(page, x, y);
+    const costoTocco = await scaldaMotore(page, x, y);
 
     // Il tetto deve stare SOTTO la dimensione dei blocchi che si vogliono
     // scoprire: con un tetto di 400 ms un anti-doppio-tocco da 300 ms
     // passerebbe inosservato, perché non farebbe cadere nessun arrivo.
     await eseguiVolata(page, x, y, {
-      quanti: 10, attesa: 140, tetto: 280,          // 140 + overhead reale ≈ 190 ms
+      quanti: 10, attesa: attesaPer(200, costoTocco), tetto: 280,
       descrizione: 'Dieci pressioni ravvicinate, come una volata di gruppo al traguardo.',
     });
   });
@@ -322,7 +343,7 @@ test.describe('Volata: nessun ritardo, nessun raggruppamento', () => {
     await scaldaMotore(page, x, y);
 
     await eseguiVolata(page, x, y, {
-      quanti: 10, attesa: 0, tetto: 300,
+      quanti: 10, attesa: 0, tetto: 300,   // nessuna pausa: solo il costo del tocco
       descrizione: 'Dieci pressioni attaccate, senza nessuna pausa fra una e l\'altra.',
     });
   });
@@ -330,10 +351,10 @@ test.describe('Volata: nessun ritardo, nessun raggruppamento', () => {
   test('due pressioni a 220 ms, il caso più stretto della gara reale', async ({ page }) => {
     await traguardoPronto(page);
     const [x, y] = await centroArrivo(page);
-    await scaldaMotore(page, x, y);
+    const costoTocco = await scaldaMotore(page, x, y);
 
     await eseguiVolata(page, x, y, {
-      quanti: 2, attesa: 160, tetto: 400,
+      quanti: 2, attesa: attesaPer(220, costoTocco), tetto: 300,
       descrizione: 'È l\'intervallo più stretto misurato nella 7ª Stradolcetto: 220 ms.',
     });
   });
@@ -350,6 +371,256 @@ test.describe('Volata: nessun ritardo, nessun raggruppamento', () => {
 
     expect(await page.evaluate(() => S.arrivi.map(a => a.pett)))
       .toEqual([null, 121, null]);
+  });
+});
+
+test.describe('Salvataggio immediato degli arrivi', () => {
+  /*
+   * Il salvataggio era ritardato di 350 ms. In quella finestra un
+   * ricaricamento, una telefonata o il sistema che chiude il browser per
+   * fare memoria si portavano via l'ultimo arrivo. Al traguardo non si
+   * torna indietro: ora la scrittura è sincrona e immediata.
+   */
+
+  test('l\'arrivo è già in memoria nello stesso istante in cui viene registrato', async ({ page }) => {
+    // La prova più stringente possibile: si legge localStorage nello stesso
+    // blocco di codice, senza che passi un solo millisecondo.
+    await traguardoPronto(page);
+
+    const r = await page.evaluate(() => {
+      segnaArrivo(126);
+      const salvato = JSON.parse(localStorage.getItem('cronostrada.v1') || '{}');
+      return {
+        arriviInMemoria: (salvato.arrivi || []).length,
+        pettorali: (salvato.arrivi || []).map(a => a.pett),
+        partenzaSalvata: !!salvato.start,
+      };
+    });
+
+    if (r.arriviInMemoria !== 1) {
+      throw new Error(
+        `\nL'arrivo non era ancora salvato subito dopo essere stato registrato.\n` +
+        `  arrivi in localStorage: ${r.arriviInMemoria}, attesi 1\n\n` +
+        `  La scrittura degli arrivi deve essere sincrona e immediata: un\n` +
+        `  salvataggio ritardato è una finestra in cui un arrivo può sparire.\n`);
+    }
+    expect(r.pettorali, 'con il pettorale giusto').toEqual([126]);
+    expect(r.partenzaSalvata, "e l'orario di partenza insieme a lui").toBe(true);
+  });
+
+  /**
+   * Ricarica la pagina dopo `ritardo` millisecondi contati DENTRO la pagina,
+   * così il tempo trascorso è davvero quello e non la latenza degli
+   * strumenti di prova. Il valore misurato viaggia in window.name, che
+   * sopravvive al ricaricamento.
+   */
+  async function ricaricaDopo(page, ritardo) {
+    const navigazione = page.waitForEvent('load');    // in ascolto PRIMA di innescare
+    await page.evaluate(ms => {
+      const t0 = Date.now();
+      setTimeout(() => {
+        window.name = 'ricaricata:' + (Date.now() - t0);
+        location.reload();
+      }, ms);
+    }, ritardo);
+    await navigazione;
+    await page.waitForFunction(() => typeof S !== 'undefined' && C !== null);
+    return page.evaluate(() => Number(String(window.name).split(':')[1]));
+  }
+
+  test('un arrivo sopravvive a un ricaricamento immediato della pagina', async ({ page }) => {
+    await traguardoPronto(page);
+    await page.tap('#btnArrivo');
+
+    // 10 ms nominali: con la variabilità dei timer si resta comodamente
+    // sotto i 50 ms richiesti. Il limite conta: sopra i 350 ms il test
+    // passerebbe anche col vecchio salvataggio ritardato, senza provare nulla.
+    const trascorso = await ricaricaDopo(page, 10);
+    const r = { arrivi: await page.evaluate(() => S.arrivi.length), trascorso };
+
+    if (r.arrivi !== 1) {
+      throw new Error(
+        `\nL'arrivo è andato perso ricaricando la pagina dopo ${r.trascorso} ms.\n` +
+        `  arrivi ritrovati: ${r.arrivi}, atteso 1\n\n` +
+        `  È lo scenario del telefono che si riavvia al traguardo: quello che\n` +
+        `  è stato registrato deve essere già su disco.\n`);
+    }
+    expect(r.trascorso, 'il ricaricamento deve essere avvenuto entro 50 ms')
+      .toBeLessThanOrEqual(50);
+  });
+
+  test('dieci arrivi in volata sopravvivono a un ricaricamento subito dopo l\'ultimo', async ({ page }) => {
+    await traguardoPronto(page);
+    const b = await page.locator('#btnArrivo').boundingBox();
+    for (let i = 0; i < 10; i++) {
+      await page.touchscreen.tap(b.x + b.width / 2, b.y + b.height / 2);
+    }
+    expect(await page.evaluate(() => S.arrivi.length), 'i dieci arrivi prima del ricaricamento')
+      .toBe(10);
+
+    const trascorso = await ricaricaDopo(page, 10);
+    const r = Object.assign({ trascorso }, await page.evaluate(() => ({
+      arrivi: S.arrivi.length,
+      ms: S.arrivi.map(a => a.ms),
+    })));
+
+    if (r.arrivi !== 10) {
+      throw new Error(
+        `\nDopo un ricaricamento a ${r.trascorso} ms dall'ultimo arrivo ne sono ` +
+        `rimasti ${r.arrivi} su 10.\n` +
+        `  Tempi ritrovati: ${r.ms.join(', ')} ms\n\n` +
+        `  Una volata registrata e subito persa è il peggiore dei casi:\n` +
+        `  chi era al traguardo giura di averli premuti tutti.\n`);
+    }
+    expect(new Set(r.ms).size, 'e sono dieci arrivi distinti').toBe(10);
+    expect(r.trascorso, 'il ricaricamento deve essere avvenuto entro 50 ms')
+      .toBeLessThanOrEqual(50);
+  });
+});
+
+test.describe('Pannello del cronometro comprimibile', () => {
+  test('un tocco lo riduce a una barra sottile e libera l\'elenco', async ({ page }) => {
+    await traguardoPronto(page);
+    await page.evaluate(() => { for (let i = 0; i < 15; i++) segnaArrivo(null); });
+    await page.waitForTimeout(200);
+
+    const misura = () => page.evaluate(() => {
+      const c = document.querySelector('.clockcard');
+      const box = c.getBoundingClientRect();
+      const righe = [...document.querySelectorAll('#arrTable tbody tr')];
+      return {
+        altezza: Math.round(box.height),
+        compatto: c.classList.contains('compatto'),
+        tastierino: getComputedStyle(document.querySelector('#pad')).display !== 'none',
+        orologio: getComputedStyle(document.querySelector('#clock')).display !== 'none',
+        arrivo: document.querySelector('#btnArrivo').offsetHeight > 0,
+        righeVisibili: righe.filter(r => {
+          const q = r.getBoundingClientRect();
+          return q.top >= box.bottom - 1 && q.bottom <= window.innerHeight + 1;
+        }).length,
+      };
+    });
+
+    const prima = await misura();
+    expect(prima.compatto, 'di partenza il pannello è aperto').toBe(false);
+
+    await page.tap('#btnCompatta');
+    const dopo = await misura();
+
+    expect(dopo.compatto, 'un tocco solo lo comprime').toBe(true);
+    expect(dopo.orologio, 'nella barra resta il tempo corrente').toBe(true);
+    expect(dopo.arrivo, 'e resta il pulsante ARRIVO').toBe(true);
+    expect(dopo.tastierino, 'il tastierino invece sparisce').toBe(false);
+
+    if (dopo.altezza >= prima.altezza / 2) {
+      throw new Error(
+        `\nIl pannello compresso è alto ${dopo.altezza}px contro i ${prima.altezza}px di prima: ` +
+        `non è una barra sottile.\n`);
+    }
+    if (dopo.righeVisibili <= prima.righeVisibili) {
+      throw new Error(
+        `\nComprimendo il pannello le righe visibili dell'elenco sono passate da ` +
+        `${prima.righeVisibili} a ${dopo.righeVisibili}.\n\n` +
+        `  Serve proprio a questo: vedere quali righe sono ancora in arancione\n` +
+        `  mentre si completano i pettorali mancanti.\n`);
+    }
+
+    // e da compresso si registra ancora
+    await page.tap('#btnArrivo');
+    expect(await page.evaluate(() => S.arrivi.length),
+      'anche compresso il pulsante ARRIVO registra').toBe(16);
+  });
+
+  test('lo stato compresso viene ricordato fra un uso e l\'altro', async ({ page }) => {
+    await traguardoPronto(page);
+    await page.tap('#btnCompatta');
+    expect(await page.evaluate(() => document.querySelector('.clockcard').classList.contains('compatto')))
+      .toBe(true);
+
+    await page.reload();
+    await page.waitForFunction(() => typeof S !== 'undefined' && C !== null);
+    await page.waitForTimeout(200);
+
+    const r = await page.evaluate(() => ({
+      compatto: document.querySelector('.clockcard').classList.contains('compatto'),
+      inMemoria: localStorage.getItem('cronostrada.compatto'),
+    }));
+    expect(r.compatto, 'dopo il ricaricamento resta compresso').toBe(true);
+    expect(r.inMemoria, 'lo stato è ricordato in una chiave sua').toBe('1');
+
+    // e si riapre
+    await page.tap('#btnCompatta');
+    await page.reload();
+    await page.waitForFunction(() => typeof S !== 'undefined' && C !== null);
+    await page.waitForTimeout(200);
+    expect(await page.evaluate(() => document.querySelector('.clockcard').classList.contains('compatto')),
+      'e riaperto resta aperto').toBe(false);
+  });
+
+  test('azzerare la gara non cancella la preferenza sul pannello', async ({ page }) => {
+    await traguardoPronto(page);
+    await page.tap('#btnCompatta');
+    await page.evaluate(() => { S = VUOTO(); fsHandle = null; touched(); });
+    expect(await page.evaluate(() => localStorage.getItem('cronostrada.compatto')),
+      'la preferenza vive in una chiave separata dai dati della gara').toBe('1');
+  });
+
+  test('entrando in assegnazione il cronometro si comprime ma il tastierino resta', async ({ page }) => {
+    await traguardoPronto(page);
+    await page.evaluate(() => { for (let i = 0; i < 15; i++) segnaArrivo(null); });
+    await page.waitForTimeout(200);
+
+    const prima = await page.evaluate(() =>
+      Math.round(document.querySelector('.clockcard').getBoundingClientRect().height));
+
+    await page.locator('#arrTable tbody tr.nobib input.mono').first().tap();
+
+    const dopo = await page.evaluate(() => {
+      const c = document.querySelector('.clockcard');
+      return {
+        altezza: Math.round(c.getBoundingClientRect().height),
+        assegna: c.classList.contains('assegna'),
+        orologio: getComputedStyle(document.querySelector('#clock')).display !== 'none',
+        tastierino: getComputedStyle(document.querySelector('#pad')).display !== 'none',
+      };
+    });
+
+    expect(dopo.assegna, 'la modalità assegnazione comprime il cronometro da sola').toBe(true);
+    expect(dopo.orologio, 'il cronometro sparisce: qui conta l\'ora dell\'arrivo, non quella corrente')
+      .toBe(false);
+    expect(dopo.tastierino, 'il tastierino resta, è lo strumento che serve').toBe(true);
+    expect(dopo.altezza, `il pannello deve rimpicciolirsi (era ${prima}px)`)
+      .toBeLessThan(prima);
+  });
+
+  test('dopo aver assegnato, il campo resta pulito', async ({ page }) => {
+    // Uscendo dalla modalità assegnazione il pannello cambia forma e il click
+    // che segue la pressione su ASSEGNA finiva su un tasto del tastierino
+    // spostatosi lì sotto: nel campo restava uno zero e il tocco successivo
+    // avrebbe registrato il pettorale 0.
+    await traguardoPronto(page);
+    await page.evaluate(() => { for (let i = 0; i < 6; i++) segnaArrivo(null); });
+    await page.waitForTimeout(200);
+
+    await page.locator('#arrTable tbody tr.nobib input.mono').first().tap();
+    for (const c of ['1', '2', '1']) await page.tap(`#padGrid button:text-is("${c}")`);
+    await page.tap('#btnArrivo');
+    await page.waitForTimeout(250);
+
+    const r = await page.evaluate(() => ({
+      campo: document.querySelector('#quickBib').value,
+      etichetta: document.querySelector('#btnArrivo').textContent,
+      assegnati: S.arrivi.filter(a => a.pett !== null).map(a => a.pett),
+    }));
+
+    expect(r.assegnati, 'il pettorale va assegnato').toEqual([121]);
+    if (r.campo !== '') {
+      throw new Error(
+        `\nDopo l'assegnazione nel campo è rimasto "${r.campo}" e il pulsante dice ` +
+        `"${r.etichetta}".\n\n` +
+        `  Il tocco successivo registrerebbe quel pettorale invece del solo tempo.\n`);
+    }
+    expect(r.etichetta, 'e il pulsante torna pronto per il prossimo arrivo').toBe('ARRIVO');
   });
 });
 

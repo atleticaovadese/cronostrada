@@ -8,7 +8,9 @@
     "test": "node ./node_modules/@playwright/test/cli.js test",
     "test:ui": "node ./node_modules/@playwright/test/cli.js test --ui",
     "test:report": "node ./node_modules/@playwright/test/cli.js show-report",
-    "browser": "node ./node_modules/@playwright/test/cli.js install chromium",
+    "browser": "node ./node_modules/@playwright/test/cli.js install chromium webkit",
+    "mutazioni": "node tools/mutazioni.js",
+    "schermate": "node tools/schermate.js",
     "dati": "python tools/anonimizza.py"
   },
   "devDependencies": {

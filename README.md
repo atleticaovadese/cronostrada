@@ -74,6 +74,11 @@ registrati **non compaiono da soli**. Per spostarli devi passare da un backup:
 Svuotare la cronologia del browser, la navigazione in incognito, o un "pulisci i
 dati dei siti" fatto per abitudine: ognuna di queste cose cancella la gara.
 
+**Gli arrivi si salvano nell'istante stesso in cui li registri**, non un
+momento dopo: se il telefono si riavvia, arriva una telefonata o il sistema
+chiude il browser per fare memoria, quello che hai premuto è già al sicuro.
+Restano le tre cose qui sotto da sapere.
+
 **Quindi**, due difese, e mettile in campo entrambe:
 
 1. **Su Chrome o Edge da computer** — scheda **Gara** → **Collega file di
@@ -180,6 +185,12 @@ traguardo non c'è tempo di leggere un messaggio.
 I tasti non si spostano mai, nemmeno quando compaiono avvisi: al traguardo si
 preme senza guardare. Cronometro e tastierino restano sempre in alto, l'elenco
 arrivi scorre sotto.
+
+**Per vedere meglio l'elenco:** il pulsante in alto a destra del pannello nero
+riduce il cronometro a una barra sottile — restano il tempo e il pulsante
+ARRIVO — e l'elenco arrivi passa da 2 righe a 7. Serve quando completi i
+pettorali mancanti e devi vedere quali righe sono ancora in arancione. La app
+si ricorda come l'hai lasciato.
 
 **Lo schermo non si spegne** da solo mentre il cronometro va, e torna normale
 quando premi STOP.
@@ -384,6 +395,29 @@ Poi, ogni volta che vuoi:
 npm test
 ```
 
+### Chi controlla i controllori
+
+Una suite tutta verde non dimostra niente finché non si è visto che sa anche
+diventare rossa. Questo comando rompe la app di proposito, quattro volte, e
+verifica che i test se ne accorgano:
+
+```bash
+npm run mutazioni
+```
+
+Le quattro rotture sono quelle che farebbero il danno peggiore, perché
+sbagliano i risultati **in silenzio**: arrotondamento al posto del
+troncamento, soglia di categoria spostata di un anno, premiati assoluti non
+più esclusi dalla loro fascia, rilevamento degli omonimi che non scatta più.
+
+Alla fine `index.html` torna identico al byte, sempre: anche se un test va
+storto, anche se interrompi lo script a metà, anche se chiudi la finestra di
+brutto (in quel caso se ne accorge al lancio successivo e ripara da solo).
+
+Gira anche su GitHub Actions, ma **una volta a settimana** e non a ogni
+modifica: è una verifica della qualità dei test, non della modifica in arrivo,
+e richiede quattro esecuzioni complete della suite.
+
 ### I dati su cui girano
 
 I test **non** usano i dati veri. Usano `reference_anon.json` e
@@ -418,12 +452,25 @@ reference_anon.json           dati di test anonimizzati (280 iscritti, 265 arriv
 wise_iscritti_anon.xlsx       export WISE anonimizzato, per il test di importazione
 test/                         i test automatici
 tools/anonimizza.py           genera i dati anonimi da quelli veri
+tools/mutazioni.js            rompe la app di proposito per collaudare i test
+tools/schermate.js            genera gli screenshot su iPhone e Android
 tools/serve.js                server statico minimo, usato solo dai test
 package.json                  comandi npm (npm test)
 
-.github/workflows/deploy.yml  test + pubblicazione a ogni modifica
-.gitignore                    cosa non finisce nel repository
+.github/workflows/deploy.yml     test + pubblicazione a ogni modifica
+.github/workflows/mutazioni.yml  prova della rete di sicurezza, una volta a settimana
+.gitignore                       cosa non finisce nel repository
 ```
+
+### I comandi
+
+| Comando | Cosa fa |
+|---|---|
+| `npm test` | I test automatici (computer, iPhone, Android) |
+| `npm run mutazioni` | Rompe la app di proposito e controlla che i test se ne accorgano |
+| `npm run schermate` | Genera gli screenshot su iPhone e Android |
+| `npm run dati` | Rigenera i dati di test anonimizzati da quelli veri |
+| `npm run browser` | Scarica i browser dei test (la prima volta) |
 
 **Statico puro, per scelta.** Nessun framework, nessun bundler, nessun passaggio
 di compilazione. `index.html` contiene tutto: struttura, aspetto e logica, senza
