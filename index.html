@@ -998,19 +998,61 @@ function elencoGareTutte() {
   return leggiElenco().slice().sort(perData);
 }
 
-/** Le gare di chi sta usando la app adesso, la più recente per prima.
-    Entrando con un account si vedono le sue; entrando senza account si vedono
-    quelle create senza. Non si mescolano mai. */
+/* Le gare che si vedono adesso.
+
+   LA REGOLA, e il perché.
+   Nessuna gara deve mai sparire dalla vista per un cambio di stato
+   dell'accesso: semmai deve comparire, mai sparire. Chi prepara la gara la
+   sera prima senza aver fatto l'accesso e la mattina si collega deve
+   ritrovarla lì — non c'è nulla di più grave che aprire la app al campo e
+   non vedere il proprio lavoro.
+
+   Da qui:
+   - SENZA ACCOUNT si vede tutto quello che c'è su questo dispositivo. Senza
+     un'identità non c'è niente in base a cui filtrare, e nascondere dati
+     locali dietro un accesso sarebbe la trappola che abbiamo evitato ovunque.
+   - CON UN ACCOUNT si vedono le sue gare più quelle non ancora attribuite.
+     Restano fuori solo quelle di un ALTRO account, che è la separazione
+     davvero voluta.
+   - Al primo accesso le gare non attribuite vengono adottate (vedi
+     adottaGareSenzaAccount), quindi in pratica l'elenco non cambia mai
+     sotto i piedi di nessuno. */
 function elencoGare() {
   const mio = accountCorrente();
-  return elencoGareTutte().filter(g => (g.account || null) === mio);
+  if (!mio) return elencoGareTutte();
+  return elencoGareTutte().filter(g => !g.account || g.account === mio);
 }
 
-/** Quante gare appartengono all'altra modalità: serve a non mostrare mai un
-    elenco vuoto quando le gare esistono, solo altrove. */
+/** Quante gare esistono su questo dispositivo ma non si vedono da qui.
+    Serve a non mostrare mai un elenco vuoto quando le gare ci sono. */
 function gareAltrove() {
+  const visibili = new Set(elencoGare().map(g => g.id));
+  return elencoGareTutte().filter(g => !visibili.has(g.id)).length;
+}
+
+/* Al primo accesso, le gare preparate senza account passano all'account che
+   entra. È il gesto che chiunque si aspetta: "queste sono mie". */
+function adottaGareSenzaAccount() {
   const mio = accountCorrente();
-  return elencoGareTutte().filter(g => (g.account || null) !== mio).length;
+  if (!mio) return 0;
+  const elenco = leggiElenco();
+  let quante = 0;
+  for (const v of elenco) {
+    if (v.account) continue;
+    v.account = mio;
+    quante++;
+    if (S && S.garaId === v.id) { S.account = mio; continue; }
+    try {
+      const raw = localStorage.getItem(chiaveGara(v.id));
+      if (raw) {
+        const d = JSON.parse(raw);
+        d.account = mio;
+        localStorage.setItem(chiaveGara(v.id), JSON.stringify(d));
+      }
+    } catch (e) { }
+  }
+  if (quante) { scriviElenco(elenco); save(); }
+  return quante;
 }
 
 /** Mette al sicuro la gara attiva nella sua chiave. */
@@ -2774,22 +2816,21 @@ function renderPortaOrganizzatore() {
 
     /* Un elenco vuoto quando le gare esistono, solo sotto l'altro ingresso,
        si legge come "le ho perse". Meglio dirlo, e dire anche dove sono. */
+    /* Restano nascoste solo le gare di un ALTRO account: quelle senza account
+       si vedono sempre, e uscendo dall'accesso si vede tutto. Ma anche questo
+       caso va detto, invece di lasciare un elenco vuoto che sembra una
+       perdita. */
     if (altrove) {
       box.append(el('div', { class: 'card', style: 'margin-top:14px' },
         el('div', { class: 'body' },
           el('div', { class: 'banner info' }, el('div', {},
             el('b', {}, 'Non hai perso niente. '),
-            collegato()
-              ? [plur(altrove, 'gara è stata creata', 'gare sono state create'),
-                ' senza account, quindi non compaiono qui. Le ritrovi uscendo ',
-                'dall\'account e scegliendo ', el('b', {}, 'Continua senza account'), '.']
-              : [plur(altrove, 'gara appartiene', 'gare appartengono'),
-                ' a un account. Le ritrovi facendo l\'accesso con quell\'account.'])),
+            'Su questo dispositivo ', plur(altrove, 'c\'è una gara', 'ci sono ' + altrove + ' gare'),
+            ' di un altro account. ',
+            'Uscendo dall\'accesso vedi tutto quello che c\'è qui.')),
           el('div', { class: 'btnrow', style: 'margin-top:12px' },
-            collegato()
-              ? el('button', { class: 'btn', onclick: () => { scollega(); scegliSenzaAccount(true); } },
-                'Esci e mostra quelle senza account')
-              : el('button', { class: 'btn', onclick: () => scegliSenzaAccount(false) }, 'Accedi')))));
+            el('button', { class: 'btn', onclick: () => { scollega(); scegliSenzaAccount(true); } },
+              'Esci e mostra tutte')))));
     }
     return;
   }
@@ -3131,7 +3172,9 @@ async function accedi(email, password) {
     scade: Date.now() + (d.expires_in || 3600) * 1000,
     email: (d.user && d.user.email) || email, utente: d.user && d.user.id,
   });
-  return { ok: true };
+  // Le gare preparate prima di collegarsi diventano di chi è appena entrato.
+  const adottate = adottaGareSenzaAccount();
+  return { ok: true, adottate };
 }
 
 async function rinnovaSessione() {
@@ -3750,6 +3793,9 @@ function renderFsHint() {
      cronometra. Se una di queste fallisce, non se ne accorge nessuno. */
   registraServiceWorker();
   caricaSessione();
+  // Se si riapre la app già collegati, ciò che è stato preparato senza
+  // account nel frattempo passa comunque all'account.
+  if (collegato()) adottaGareSenzaAccount();
   disegnaStatoSincronia();
   avviaOrologioPubblicazione();
   programmaSincronia();

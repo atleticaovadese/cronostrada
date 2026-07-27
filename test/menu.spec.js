@@ -335,97 +335,143 @@ test.describe('Più gare in locale', () => {
 });
 
 test.describe('Le gare seguono chi le ha create', () => {
-  /* Entrando con un account si vedono le sue gare; entrando senza account
-     quelle create senza. Non si mescolano mai, nemmeno sullo stesso
-     dispositivo e nemmeno fra due account diversi. */
+  /*
+   * LA REGOLA, e il difetto che l'ha prodotta.
+   *
+   * La prima versione filtrava per account senza eccezioni. Risultato: una
+   * gara preparata la sera prima SENZA aver fatto l'accesso spariva
+   * dall'elenco la mattina, appena ci si collegava. I dati c'erano ancora sul
+   * disco, ma dalla app non si vedevano più: al campo è la stessa cosa che
+   * averli persi.
+   *
+   * Regola corretta: nessuna gara sparisce mai dalla vista per un cambio di
+   * stato dell'accesso. Semmai compare, mai sparisce.
+   */
 
-  const fingiAccount = id => (utente => {
-    sessione = utente ? { access_token: 'finto', refresh_token: 'x', email: utente + '@prova', utente } : null;
-  });
-
-  test('con account si vedono le sue, senza account solo quelle senza', async ({ page }) => {
+  test('la sequenza vera: preparo senza account la sera, accedo la mattina', async ({ page }) => {
     await apriApp(page);
 
-    const r = await page.evaluate(() => {
-      const entra = utente => {
-        sessione = utente
-          ? { access_token: 'finto', refresh_token: 'x', email: utente + '@prova.it', utente }
-          : null;
+    // LA SERA PRIMA — nessun accesso fatto
+    await page.evaluate(() => {
+      nuovaGara();
+      S.cfg.nome = '7ª Stradolcetto'; S.cfg.data = '2026-09-14'; S.cfg.luogo = 'Ovada';
+      S.iscritti = Array.from({ length: 280 }, (_, i) => ({
+        id: nid(), pett: i + 1, cognome: 'ATLETA', nome: 'N' + i, sesso: 'M',
+        societa: 'ATL. PROVA', nascita: '1990-01-01', conferma: 'S',
+      }));
+      touched();
+    });
+    expect(await page.evaluate(() => elencoGare().map(g => g.nome)),
+      "la sera la gara è nell'elenco").toContain('7ª Stradolcetto');
+
+    // CHIUDO E RIAPRO
+    await page.reload();
+    await page.waitForFunction(() => typeof S !== 'undefined' && C !== null);
+    expect(await page.evaluate(() => elencoGare().map(g => g.nome)),
+      'riaprendo è ancora lì').toContain('7ª Stradolcetto');
+
+    // LA MATTINA — faccio l'accesso
+    const dopo = await page.evaluate(utente => {
+      sessione = { access_token: 'finto', refresh_token: 'x', email: 'a@b.c', utente };
+      const adottate = adottaGareSenzaAccount();
+      return {
+        adottate,
+        visibili: elencoGare().map(g => g.nome),
+        iscritti: (elencoGare()[0] || {}).iscritti,
+        proprietari: elencoGareTutte().map(g => g.account),
       };
-      const crea = nome => { nuovaGara(); S.cfg.nome = nome; touched(); };
-      const nomi = () => elencoGare().map(g => g.nome).sort();
+    }, 'utente-A');
 
-      entra(null); crea('Senza account 1'); crea('Senza account 2');
-      entra('utente-A'); crea('Di A');
-      entra('utente-B'); crea('Di B 1'); crea('Di B 2');
+    if (!dopo.visibili.includes('7ª Stradolcetto')) {
+      throw new Error(
+        "\nDopo l'accesso la gara preparata senza account è sparita dall'elenco.\n\n" +
+        '  Uno la prepara la sera prima e la mattina al campo non la trova più.\n' +
+        "  Nessuna gara deve mai sparire per un cambio di stato dell'accesso:\n" +
+        '  semmai deve comparire, mai sparire.\n');
+    }
+    confrontaNumero('e con i suoi 280 iscritti', 280, dopo.iscritti);
+    confrontaNumero("la gara viene adottata dall'account che entra", 1, dopo.adottate);
+    expect(dopo.proprietari, 'e ora è sua').toEqual(['utente-A']);
+  });
 
-      entra('utente-A'); const vedeA = nomi(); const altroveA = gareAltrove();
-      entra('utente-B'); const vedeB = nomi();
-      entra(null); const vedeSenza = nomi();
-      const tutte = elencoGareTutte().length;
-      entra(null);
-      return { vedeA, vedeB, vedeSenza, altroveA, tutte };
+  test("uscendo dall'accesso le gare restano visibili", async ({ page }) => {
+    await apriApp(page);
+    const r = await page.evaluate(() => {
+      sessione = { access_token: 'f', refresh_token: 'x', email: 'a@b.c', utente: 'utente-A' };
+      nuovaGara(); S.cfg.nome = 'Con account 1'; touched();
+      nuovaGara(); S.cfg.nome = 'Con account 2'; touched();
+      const collegato = elencoGare().map(g => g.nome).sort();
+
+      sessione = null;                       // e adesso si esce
+      const scollegato = elencoGare().map(g => g.nome).sort();
+      return { collegato, scollegato };
     });
 
-    expect(r.tutte, 'sul dispositivo ci sono cinque gare in tutto').toBe(5);
-    expect(r.vedeA, 'A vede solo la sua').toEqual(['Di A']);
-    expect(r.vedeB, 'B vede solo le sue due').toEqual(['Di B 1', 'Di B 2']);
-    expect(r.vedeSenza, 'e senza account si vedono solo quelle senza')
-      .toEqual(['Senza account 1', 'Senza account 2']);
-    expect(r.altroveA, 'ad A risultano quattro gare altrove').toBe(4);
+    expect(r.collegato).toEqual(['Con account 1', 'Con account 2']);
+    if (r.scollegato.length < r.collegato.length) {
+      throw new Error(
+        `\nUscendo dall'accesso sono sparite delle gare: da ${r.collegato.length} a ` +
+        `${r.scollegato.length}.\n\n  Senza account si vede tutto quello che c'è su questo ` +
+        `dispositivo:\n  nascondere dati locali dietro un accesso è la trappola da evitare.\n`);
+    }
+    expect(r.scollegato, 'si vedono ancora tutte').toEqual(['Con account 1', 'Con account 2']);
   });
 
-  test('una gara creata senza account non compare entrando con un account', async ({ page }) => {
+  test('una gara non attribuita si vede sempre, anche da collegati', async ({ page }) => {
     await apriApp(page);
     const r = await page.evaluate(() => {
-      sessione = null;
-      nuovaGara(); S.cfg.nome = 'Fatta senza account';
-      S.arrivi = [{ id: nid(), pett: 1, ms: 1000, corr: 0 }];
-      touched();
-      const senza = elencoGare().map(g => g.nome);
+      sessione = { access_token: 'f', refresh_token: 'x', email: 'a@b.c', utente: 'utente-A' };
+      nuovaGara(); S.cfg.nome = 'Di A'; touched();
+      nuovaGara(); S.cfg.nome = 'Non attribuita'; S.account = null; touched();
+      riponiGaraAttiva();
+      return elencoGare().map(g => g.nome).sort();
+    });
+    expect(r, 'si vedono entrambe').toEqual(['Di A', 'Non attribuita']);
+  });
 
-      // ora si accede: quella gara resta di chi l'ha creata
-      sessione = { access_token: 'finto', refresh_token: 'x', email: 'a@b.c', utente: 'utente-A' };
-      const conAccount = elencoGare().map(g => g.nome);
+  test('le gare di un ALTRO account restano separate, e lo dice', async ({ page }) => {
+    await apriApp(page);
+    const r = await page.evaluate(() => {
+      sessione = { access_token: 'f', refresh_token: 'x', email: 'b@b.c', utente: 'utente-B' };
+      nuovaGara(); S.cfg.nome = 'Di B'; touched(); riponiGaraAttiva();
+
+      sessione = { access_token: 'f', refresh_token: 'x', email: 'a@b.c', utente: 'utente-A' };
+      const vedeA = elencoGare().map(g => g.nome);
       const altrove = gareAltrove();
 
-      // e non è sparita: torna se si esce
       sessione = null;
-      const diNuovo = elencoGare().map(g => g.nome);
-      return { senza, conAccount, altrove, diNuovo };
+      const vedeSenza = elencoGare().map(g => g.nome);
+      return { vedeA, altrove, vedeSenza };
     });
-
-    expect(r.senza).toContain('Fatta senza account');
-    expect(r.conAccount, "con l'account non compare").not.toContain('Fatta senza account');
-    expect(r.altrove, 'ma risulta esistere altrove').toBeGreaterThanOrEqual(1);
-    expect(r.diNuovo, 'e uscendo torna dov\'era').toContain('Fatta senza account');
+    expect(r.vedeA, 'A non vede le gare di B').not.toContain('Di B');
+    confrontaNumero('ma gli risulta che esistono', 1, r.altrove);
+    expect(r.vedeSenza, "e uscendo si vede tutto quello che c'è sul dispositivo")
+      .toContain('Di B');
   });
 
-  test('un elenco vuoto dice dove sono finite le gare, invece di sembrare una perdita', async ({ page }) => {
+  test('un elenco vuoto dice dove sono finite le gare', async ({ page }) => {
     await apriApp(page);
     await page.evaluate(() => {
-      sessione = null;
-      nuovaGara(); S.cfg.nome = 'Solo questa'; touched();
-      // si accede: l'elenco dell'account è vuoto
-      sessione = { access_token: 'finto', refresh_token: 'x', email: 'a@b.c', utente: 'utente-A' };
+      sessione = { access_token: 'f', refresh_token: 'x', email: 'b@b.c', utente: 'utente-B' };
+      nuovaGara(); S.cfg.nome = 'Di B'; touched(); riponiGaraAttiva();
+      sessione = { access_token: 'f', refresh_token: 'x', email: 'a@b.c', utente: 'utente-A' };
       tornaAlMenu('organizzatore');
     });
-
     const testo = await page.evaluate(() => document.querySelector('#menuCorpo').textContent);
     expect(testo, 'deve rassicurare').toContain('Non hai perso niente');
-    expect(testo, 'e spiegare dove sono').toContain('senza account');
-    expect(testo, 'senza limitarsi al vuoto').not.toBe('');
+    expect(testo, 'e dire come vederle').toContain("Uscendo dall'accesso");
   });
 
-  test('le gare del formato vecchio restano fra quelle senza account', async ({ page }) => {
-    // Erano state create quando gli account non esistevano: è la verità, e
-    // dire il contrario le farebbe sparire a chi poi si collega.
+  test('una gara del formato vecchio non sparisce collegandosi', async ({ page }) => {
     await apriApp(page);
     await page.evaluate(() => {
       localStorage.clear();
       localStorage.setItem('cronostrada.v1', JSON.stringify({
         v: 1,
-        cfg: { nome: 'Gara del 2025', data: '2025-09-14', luogo: 'Ovada', km: 10, anno: 2025, org: '', premAssF: 3, premAssM: 3, premCat: 3, premSoc: 3, socEscluse: ['RUNCARD'] },
+        cfg: {
+          nome: 'Gara del 2025', data: '2025-09-14', luogo: 'Ovada', km: 10, anno: 2025,
+          org: '', premAssF: 3, premAssM: 3, premCat: 3, premSoc: 3, socEscluse: ['RUNCARD'],
+        },
         matrice: [], iscritti: [], arrivi: [{ id: 'x1abc', pett: 1, ms: 1000, corr: 0 }],
         start: Date.now() - 7200000, stop: Date.now() - 3600000, dnf: [],
       }));
@@ -434,18 +480,19 @@ test.describe('Le gare seguono chi le ha create', () => {
     await page.waitForFunction(() => typeof S !== 'undefined' && C !== null);
 
     const r = await page.evaluate(() => {
-      const senza = elencoGare().map(g => g.nome);
-      sessione = { access_token: 'finto', refresh_token: 'x', email: 'a@b.c', utente: 'utente-A' };
-      const conAccount = elencoGare().map(g => g.nome);
-      const altrove = gareAltrove();
+      const prima = elencoGare().map(g => g.nome);
+      sessione = { access_token: 'f', refresh_token: 'x', email: 'a@b.c', utente: 'utente-A' };
+      const adottate = adottaGareSenzaAccount();
+      const dopo = elencoGare().map(g => g.nome);
       sessione = null;
-      return { account: S.account, senza, conAccount, altrove };
+      const uscendo = elencoGare().map(g => g.nome);
+      return { prima, dopo, uscendo, adottate };
     });
 
-    expect(r.account, 'la gara vecchia non ha account').toBe(null);
-    expect(r.senza, 'e si vede senza account').toContain('Gara del 2025');
-    expect(r.conAccount, 'non entrando con un account').not.toContain('Gara del 2025');
-    expect(r.altrove, 'ma viene segnalata come esistente altrove').toBe(1);
+    expect(r.prima, 'si vede prima').toContain('Gara del 2025');
+    expect(r.dopo, 'e anche dopo essersi collegati').toContain('Gara del 2025');
+    expect(r.uscendo, 'e uscendo di nuovo').toContain('Gara del 2025');
+    confrontaNumero("viene adottata dall'account", 1, r.adottate);
   });
 });
 
