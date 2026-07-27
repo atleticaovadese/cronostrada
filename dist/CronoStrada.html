@@ -902,6 +902,14 @@ const VUOTO = () => ({
   sessione: 1,
 
   pubblicata: false,   // visibile nella pagina Live pubblica
+
+  /* A chi appartiene questa gara.
+     L'identificativo dell'account con cui è stata creata, oppure null se è
+     stata creata senza account. Entrando con un account si vedono le gare di
+     quell'account; entrando senza, quelle create senza. Le gare create prima
+     che esistessero gli account hanno null, che è la verità: nessun account
+     c'era. */
+  account: null,
   cfg: {
     nome: '', data: new Date().toISOString().slice(0, 10), luogo: '', km: null,
     anno: new Date().getFullYear(), org: '',
@@ -953,6 +961,7 @@ function scriviElenco(a) {
 /** La riga di indice che descrive una gara nel menu. */
 const voceDi = s => ({
   id: s.garaId,
+  account: s.account || null,
   nome: s.cfg.nome || '',
   data: s.cfg.data || '',
   luogo: s.cfg.luogo || '',
@@ -976,12 +985,32 @@ function aggiornaVoceAttiva(forza) {
   scriviElenco(elenco);
 }
 
-/** Tutte le gare conosciute, la più recente per prima. */
+/** Chi sta usando la app adesso: l'account collegato, oppure nessuno. */
+const accountCorrente = () => (collegato() && sessione.utente) ? sessione.utente : null;
+
+const perData = (a, b) =>
+  (b.inCorso ? 1 : 0) - (a.inCorso ? 1 : 0) ||
+  String(b.data || '').localeCompare(String(a.data || '')) ||
+  (b.aggiornata || 0) - (a.aggiornata || 0);
+
+/** Tutte le gare su questo dispositivo, di chiunque siano. */
+function elencoGareTutte() {
+  return leggiElenco().slice().sort(perData);
+}
+
+/** Le gare di chi sta usando la app adesso, la più recente per prima.
+    Entrando con un account si vedono le sue; entrando senza account si vedono
+    quelle create senza. Non si mescolano mai. */
 function elencoGare() {
-  return leggiElenco().slice().sort((a, b) =>
-    (b.inCorso ? 1 : 0) - (a.inCorso ? 1 : 0) ||
-    String(b.data || '').localeCompare(String(a.data || '')) ||
-    (b.aggiornata || 0) - (a.aggiornata || 0));
+  const mio = accountCorrente();
+  return elencoGareTutte().filter(g => (g.account || null) === mio);
+}
+
+/** Quante gare appartengono all'altra modalità: serve a non mostrare mai un
+    elenco vuoto quando le gare esistono, solo altrove. */
+function gareAltrove() {
+  const mio = accountCorrente();
+  return elencoGareTutte().filter(g => (g.account || null) !== mio).length;
 }
 
 /** Mette al sicuro la gara attiva nella sua chiave. */
@@ -1014,6 +1043,9 @@ function apriGara(id) {
 function nuovaGara() {
   riponiGaraAttiva();
   S = VUOTO();
+  // Nasce di chi la sta creando: con l'account collegato è sua, senza account
+  // resta senza. Non cambia più padrone.
+  S.account = accountCorrente();
   impronte.clear();
   fsHandle = null;
   save();
@@ -1114,6 +1146,9 @@ function load() {
    servono solo a ritrovare una riga dentro la app. */
 function aggiornaFormato() {
   if (!S.garaId || !eUuid(S.garaId)) S.garaId = nid();
+  // Le gare del formato vecchio non hanno un account, ed è la verità: quando
+  // sono state create gli account non c'erano. Restano fra quelle "senza".
+  if (S.account === undefined) S.account = null;
   if (typeof S.scartoPartenza !== 'number') S.scartoPartenza = 0;
   if (typeof S.sessione !== 'number') S.sessione = 1;
   if (typeof S.pubblicata !== 'boolean') S.pubblicata = false;
@@ -2730,11 +2765,32 @@ function renderPortaOrganizzatore() {
       el('button', { class: 'btn primary', id: 'btnNuovaGara', onclick: nuovaGara }, '+ Nuova gara')));
 
   if (!gare.length) {
+    const altrove = gareAltrove();
     testa.append(el('div', { class: 'body' },
       el('p', { class: 'hint', style: 'margin:0' },
         'Nessuna gara ancora. Premi ', el('b', {}, '+ Nuova gara'),
         ' per cominciare: nome, data, iscritti da WISE, e sei pronto.')));
     box.append(testa);
+
+    /* Un elenco vuoto quando le gare esistono, solo sotto l'altro ingresso,
+       si legge come "le ho perse". Meglio dirlo, e dire anche dove sono. */
+    if (altrove) {
+      box.append(el('div', { class: 'card', style: 'margin-top:14px' },
+        el('div', { class: 'body' },
+          el('div', { class: 'banner info' }, el('div', {},
+            el('b', {}, 'Non hai perso niente. '),
+            collegato()
+              ? [plur(altrove, 'gara è stata creata', 'gare sono state create'),
+                ' senza account, quindi non compaiono qui. Le ritrovi uscendo ',
+                'dall\'account e scegliendo ', el('b', {}, 'Continua senza account'), '.']
+              : [plur(altrove, 'gara appartiene', 'gare appartengono'),
+                ' a un account. Le ritrovi facendo l\'accesso con quell\'account.'])),
+          el('div', { class: 'btnrow', style: 'margin-top:12px' },
+            collegato()
+              ? el('button', { class: 'btn', onclick: () => { scollega(); scegliSenzaAccount(true); } },
+                'Esci e mostra quelle senza account')
+              : el('button', { class: 'btn', onclick: () => scegliSenzaAccount(false) }, 'Accedi')))));
+    }
     return;
   }
 
