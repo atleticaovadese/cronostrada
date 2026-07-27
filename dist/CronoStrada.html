@@ -4,6 +4,15 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>CronoStrada — Gestione gare su strada</title>
+<!-- App installabile. Sono tutti riferimenti facoltativi: se mancano (per
+     esempio aprendo il file dalla chiavetta USB) la app funziona identica. -->
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="apple-touch-icon" href="icone/icona-ios-180.png">
+<link rel="icon" type="image/png" sizes="192x192" href="icone/icona-192.png">
+<meta name="theme-color" content="#12151a">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black">
+<meta name="apple-mobile-web-app-title" content="CronoStrada">
 <style>
 :root{
   --bg:#f4f6f8; --surface:#ffffff; --surface-2:#fafbfc;
@@ -205,6 +214,18 @@ dialog header{padding:14px 18px;border-bottom:1px solid var(--line-2);font-weigh
 dialog footer{padding:12px 18px;border-top:1px solid var(--line-2);display:flex;justify-content:flex-end;gap:8px;background:var(--surface-2);border-radius:0 0 var(--radius) var(--radius)}
 
 #toast{position:fixed;left:50%;bottom:22px;transform:translateX(-50%);z-index:200;display:flex;flex-direction:column;gap:8px;align-items:center;pointer-events:none}
+/* avviso di versione nuova: discreto, in basso, e mai a gara in corso */
+body.conAggiornamento #toast{bottom:82px}
+#aggiorna{position:fixed;left:50%;bottom:18px;transform:translateX(-50%);z-index:210;
+  display:none;align-items:center;gap:12px;background:var(--ink);color:#fff;
+  padding:9px 10px 9px 16px;border-radius:24px;box-shadow:var(--shadow-lg);
+  font-size:13px;font-weight:600;max-width:calc(100vw - 20px)}
+#aggiorna.on{display:flex}
+#aggiorna span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+#aggiorna button{border:0;background:var(--go);color:#fff;border-radius:18px;padding:9px 16px;
+  font-weight:700;font-size:13px;cursor:pointer;min-height:38px;flex:0 0 auto;
+  touch-action:manipulation;-webkit-tap-highlight-color:transparent}
+#aggiorna button:active{background:#0a5a2c}
 .toast{background:var(--ink);color:#fff;padding:10px 16px;border-radius:22px;font-size:13px;font-weight:600;box-shadow:var(--shadow-lg);animation:pop .2s ease-out}
 .toast.bad{background:var(--bad)}
 .toast.go{background:var(--go)}
@@ -433,6 +454,8 @@ html,body{overscroll-behavior-y:contain}
 
 <!-- ============ GARA ============ -->
 <section class="view" data-v="gara"><div class="wrap">
+  <div id="installBox"></div>
+
   <div class="card"><header><h2>Dati della gara</h2></header><div class="body">
     <div class="grid g3">
       <label class="f">Nome della gara<input id="cfgNome" placeholder="es. 7ª Stradolcetto"></label>
@@ -613,6 +636,10 @@ html,body{overscroll-behavior-y:contain}
 
 <div id="toast"></div>
 <div id="flash"></div>
+<div id="aggiorna">
+  <span>È disponibile una versione aggiornata</span>
+  <button type="button" id="btnRicarica">Ricarica</button>
+</div>
 
 <dialog id="dlgImport">
   <header>Importa iscritti</header>
@@ -1083,6 +1110,7 @@ function renderGara() {
     el('div', {}, el('b', {}, 'Anno di riferimento diverso dall\'anno di gara. '),
       `Le categorie vengono calcolate su ${c.anno} mentre la gara è del ${y}. `,
       el('button', { class: 'btn sm', style: 'margin-left:6px', onclick: () => { c.anno = y; touched(); } }, `Usa ${y}`))));
+  renderInstalla();
   renderMatrice();
 }
 const plur = (n, s, p) => n + ' ' + (n === 1 ? s : p);
@@ -1653,6 +1681,8 @@ function render() {
   if (f) f();
   $('#raceName').textContent = S.cfg.nome || 'Nuova gara';
   document.title = (S.cfg.nome ? S.cfg.nome + ' — ' : '') + 'CronoStrada';
+  // Se la gara è appena finita, l'avviso di versione nuova può comparire.
+  aggiornaAvvisoVersione();
 }
 // touched: salva SUBITO e ridisegna. È quello che usa tutto ciò che riguarda
 // la gara — arrivi, partenza, stop, ritirati — e per questo è il predefinito.
@@ -2116,6 +2146,134 @@ MQ_TEL.addEventListener('change', () => {
 });
 
 /* ============================================================
+   App installabile (PWA)
+
+   Due regole sopra tutte:
+
+   1. La app non deve MAI dipendere dal service worker per funzionare. Se
+      manca — aprendo il file dalla chiavetta USB, o su un browser che non
+      li supporta — tutto continua a girare identico. Per questo qui non
+      c'è niente di essenziale: solo installazione e aggiornamenti.
+
+   2. Non ci si ricarica mai da soli. Quando esce una versione nuova
+      compare un avviso e decide chi sta davanti allo schermo. E se la gara
+      è in corso (S.start valorizzato e S.stop no) l'avviso non compare
+      nemmeno: si aspetta in silenzio la fine.
+   ============================================================ */
+let registrazioneSw = null;
+let aggiornamentoPronto = false;
+let ricaricaVoluta = false;
+let promptInstalla = null;
+
+const garaInCorso = () => !!S.start && !S.stop;
+const appInstallata = () =>
+  (window.matchMedia && matchMedia('(display-mode: standalone)').matches) ||
+  navigator.standalone === true;
+const suIPhone = () => /iPad|iPhone|iPod/.test(navigator.userAgent) ||
+  (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+
+/** Mostra o nasconde l'avviso di versione nuova. Chiamata a ogni ridisegno. */
+function aggiornaAvvisoVersione() {
+  const barra = $('#aggiorna');
+  if (!barra) return;
+  const daMostrare = aggiornamentoPronto && !garaInCorso();
+  barra.classList.toggle('on', daMostrare);
+  document.body.classList.toggle('conAggiornamento', daMostrare);
+}
+
+async function registraServiceWorker() {
+  if (!('serviceWorker' in navigator)) return;
+  // Da chiavetta USB (file://) non si registra niente, ed è giusto così.
+  if (location.protocol !== 'http:' && location.protocol !== 'https:') return;
+  // La copia di emergenza non deve lasciare registrazioni in giro.
+  if (location.pathname.includes('/dist/')) return;
+
+  // Ci si ricarica solo se è stato chiesto. Senza questa guardia il passaggio
+  // alla versione nuova ricaricherebbe la pagina da solo.
+  navigator.serviceWorker.addEventListener('controllerchange', () => {
+    if (ricaricaVoluta) location.reload();
+  });
+
+  try {
+    // updateViaCache 'none': sw.js viene sempre richiesto davvero al server,
+    // senza passare dalla cache HTTP. GitHub Pages manda un Cache-Control
+    // anche su questo file, e senza questa riga un aggiornamento potrebbe
+    // restare invisibile per dieci minuti.
+    registrazioneSw = await navigator.serviceWorker.register('sw.js', { updateViaCache: 'none' });
+  } catch (e) {
+    return;                       // niente PWA: la app resta quella di sempre
+  }
+
+  const segnala = () => { aggiornamentoPronto = true; aggiornaAvvisoVersione(); };
+  if (registrazioneSw.waiting && navigator.serviceWorker.controller) segnala();
+  registrazioneSw.addEventListener('updatefound', () => {
+    const nuovo = registrazioneSw.installing;
+    if (!nuovo) return;
+    nuovo.addEventListener('statechange', () => {
+      // controller presente = non è la prima installazione, è un aggiornamento
+      if (nuovo.state === 'installed' && navigator.serviceWorker.controller) segnala();
+    });
+  });
+
+  // Si controlla se c'è una versione nuova quando si torna sulla app, ma
+  // mai mentre si sta cronometrando.
+  document.addEventListener('visibilitychange', () => {
+    if (document.visibilityState === 'visible' && !garaInCorso() && registrazioneSw) {
+      registrazioneSw.update().catch(() => { });
+    }
+  });
+}
+
+/** Il riquadro per installare la app, nella scheda Gara. */
+function renderInstalla() {
+  const box = $('#installBox');
+  if (!box) return;
+  box.innerHTML = '';
+  if (appInstallata()) return;
+
+  if (promptInstalla) {
+    box.append(el('div', { class: 'card' },
+      el('div', { class: 'body' },
+        el('div', { class: 'btnrow' },
+          el('button', {
+            class: 'btn primary', id: 'btnInstalla', onclick: async () => {
+              const p = promptInstalla;
+              promptInstalla = null;
+              try { await p.prompt(); await p.userChoice; } catch (e) { }
+              render();
+            }
+          }, 'Installa sul telefono'),
+          el('span', { class: 'hint' },
+            'Installata funziona anche senza rete e parte come una app qualsiasi.')))));
+    return;
+  }
+
+  if (suIPhone()) {
+    box.append(el('div', { class: 'card' },
+      el('div', { class: 'body' },
+        el('p', { class: 'hint', style: 'margin:0' },
+          el('b', {}, 'Installa sul telefono. '),
+          'Su iPhone si fa a mano: tocca ',
+          el('b', {}, 'Condividi'),
+          ' in fondo allo schermo (il quadrato con la freccia verso l\'alto), ' +
+          'scorri e scegli ',
+          el('b', {}, 'Aggiungi a Home'),
+          '. Da lì la app parte a schermo intero e funziona anche in modalità aereo.'),
+        el('p', { class: 'hint', style: 'margin:8px 0 0;color:var(--warn)' },
+          'Attenzione: la app installata ha una memoria sua, separata da quella di ' +
+          'Safari. Se hai già una gara aperta nel browser, portala di là con ' +
+          'Scarica backup .json e poi Carica backup .json.'))));
+  }
+}
+
+window.addEventListener('beforeinstallprompt', e => {
+  e.preventDefault();
+  promptInstalla = e;
+  if (ui.view === 'gara') renderInstalla();
+});
+window.addEventListener('appinstalled', () => { promptInstalla = null; render(); });
+
+/* ============================================================
    Eventi
    ============================================================ */
 function wire() {
@@ -2139,6 +2297,15 @@ function wire() {
   $('#btnCompatta').addEventListener('click', e => {
     e.preventDefault();
     impostaCompatto(!compatto);
+  });
+  $('#btnRicarica').addEventListener('click', () => {
+    // Da qui in poi ricaricarsi è voluto: l'ha chiesto chi sta davanti.
+    ricaricaVoluta = true;
+    if (registrazioneSw && registrazioneSw.waiting) {
+      registrazioneSw.waiting.postMessage({ tipo: 'PASSA_ALLA_NUOVA' });
+      // se il passaggio non arriva, si ricarica lo stesso dopo un attimo
+      setTimeout(() => location.reload(), 1200);
+    } else location.reload();
   });
   // Da telefono: si agisce sulla pressione, non sul rilascio. Niente attesa,
   // niente rischio che due tocchi ravvicinati vengano fusi in uno.
@@ -2286,6 +2453,8 @@ function renderFsHint() {
   window.addEventListener('resize', misuraTop);
   render();
   markSaved(trovato ? 'Gara ripresa dalla memoria locale' : 'Pronto');
+  // Ultima cosa: la app è già in piedi e funzionante prima che questa parta.
+  registraServiceWorker();
   window.addEventListener('beforeunload', e => {
     if (S.arrivi.length && !fsHandle) { e.preventDefault(); e.returnValue = ''; }
   });

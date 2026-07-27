@@ -11,6 +11,8 @@
     "browser": "node ./node_modules/@playwright/test/cli.js install chromium webkit",
     "mutazioni": "node tools/mutazioni.js",
     "schermate": "node tools/schermate.js",
+    "icone": "node tools/icone.js",
+    "versione": "node tools/versione.js",
     "dati": "python tools/anonimizza.py"
   },
   "devDependencies": {

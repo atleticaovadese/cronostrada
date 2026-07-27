@@ -12,6 +12,7 @@ da ricaricare su WISE.
 ## Indice
 
 - [In due parole](#in-due-parole)
+- [Installala sul telefono](#installala-sul-telefono)
 - [La cosa più importante da sapere: dove finiscono i dati](#la-cosa-più-importante-da-sapere-dove-finiscono-i-dati)
 - [Le otto schede](#le-otto-schede)
 - [Il giorno della gara, passo per passo](#il-giorno-della-gara-passo-per-passo)
@@ -40,6 +41,34 @@ Tre conseguenze pratiche, tutte a tuo favore:
 
 ---
 
+## Installala sul telefono
+
+Vale la pena farlo: installata, CronoStrada parte come una app qualsiasi, a
+schermo intero, **e funziona anche in modalità aereo**. Misurato: riparte in
+meno di un decimo di secondo senza rete.
+
+**Su Android:** apri il sito, vai sulla scheda **Gara** e premi **Installa sul
+telefono**. Il pulsante compare da solo quando il browser lo permette.
+
+**Su iPhone** va fatto a mano, perché Safari non offre il pulsante:
+
+1. apri https://atleticaovadese.github.io/cronostrada/ in Safari
+2. tocca **Condividi** in fondo allo schermo — il quadrato con la freccia in su
+3. scorri l'elenco e scegli **Aggiungi a Home**
+
+Poi apri la app dall'icona, non più da Safari.
+
+> **Prima di installarla, leggi la Regola 2 qui sotto.** La app installata ha
+> una memoria sua, separata da quella del browser: se hai già preparato la gara
+> in Safari, devi portarla di là con un backup.
+
+**Quando esce una versione nuova** compare in basso un avviso discreto — *È
+disponibile una versione aggiornata* — con un pulsante **Ricarica**. Decidi tu
+quando. E se il cronometro è in funzione, l'avviso **non compare nemmeno**:
+aspetta in silenzio la fine della gara. La app non si aggiorna mai da sola.
+
+---
+
 ## La cosa più importante da sapere: dove finiscono i dati
 
 CronoStrada salva **nella memoria del browser** del dispositivo che stai usando.
@@ -55,19 +84,29 @@ per adesso non c'è.
 **Quindi:** decidi in anticipo quale dispositivo sta al traguardo, e usa solo
 quello per tutta la gara.
 
-### Regola 2 — Il sito e la chiavetta sono due memorie diverse
+### Regola 2 — Ogni "posto" da cui apri la app ha la sua memoria
 
 Questa sorprende tutti, quindi te la dico chiara.
 
-Il browser tiene le memorie separate per indirizzo. Aprire il sito
-`atleticaovadese.github.io/cronostrada` e aprire il file `CronoStrada.html` dalla
-chiavetta sono, per il browser, **due posti diversi**: ognuno ha i suoi dati e non
-vede quelli dell'altro.
+Il browser tiene le memorie separate. Questi tre sono, per lui, **tre posti
+diversi**, ognuno con i suoi dati e cieco a quelli degli altri:
 
-**Quindi:** se sei partito dal sito e a metà gara passi alla chiavetta, gli arrivi
-registrati **non compaiono da soli**. Per spostarli devi passare da un backup:
+1. il sito aperto nel browser, `atleticaovadese.github.io/cronostrada`
+2. la app **installata** sulla schermata Home
+3. il file `CronoStrada.html` aperto dalla chiavetta USB
+
+Il punto 2 sorprende quasi tutti, e su iPhone è particolarmente insidioso:
+**la app installata non vede i dati di Safari**, nemmeno se è lo stesso
+indirizzo e lo stesso telefono.
+
+**Quindi:** se prepari la gara nel browser e poi installi la app, gli iscritti
+importati **non compaiono da soli**. Per spostarli devi passare da un backup:
 `Scarica backup .json` da una parte, `Carica backup .json` dall'altra. Vedi
 [Quando qualcosa va storto](#quando-qualcosa-va-storto).
+
+**La regola pratica:** decidi *prima* da dove userai la app il giorno della
+gara — installata, oppure dal browser — e prepara tutto lì. Non cambiare posto
+a metà.
 
 ### Regola 3 — Il backup non è facoltativo
 
@@ -314,7 +353,18 @@ Copy-Item -LiteralPath ".\index.html" -Destination ".\dist\CronoStrada.html" -Fo
 if ((Get-FileHash .\index.html).Hash -eq (Get-FileHash .\dist\CronoStrada.html).Hash) { "IDENTICHE - ok" } else { "DIVERSE - rifai la copia" }
 ```
 
-**3. Manda su GitHub:**
+**3. Allinea la versione della app installata** (sempre, dopo ogni modifica a
+`index.html`):
+
+```bash
+npm run versione
+```
+
+Senza questo, chi ha la app installata sul telefono continuerebbe a usare la
+versione vecchia per sempre, senza che nessun avviso glielo dica. Se te ne
+dimentichi `npm test` fallisce e ti ricorda questo comando.
+
+**4. Manda su GitHub:**
 
 ```bash
 git add -A; git commit -m "Descrivi qui cosa hai cambiato"; git push
@@ -448,6 +498,10 @@ index.html                    la app pubblicata sul sito
 dist/CronoStrada.html         copia identica, per la chiavetta USB (offline)
 README.md                     questo file
 
+manifest.webmanifest          rende la app installabile sul telefono
+sw.js                         fa partire la app senza rete (service worker)
+icone/                        le icone: SVG di partenza e PNG generati
+
 reference_anon.json           dati di test anonimizzati (280 iscritti, 265 arrivi)
 wise_iscritti_anon.xlsx       export WISE anonimizzato, per il test di importazione
 test/                         i test automatici
@@ -468,6 +522,8 @@ package.json                  comandi npm (npm test)
 |---|---|
 | `npm test` | I test automatici (computer, iPhone, Android) |
 | `npm run mutazioni` | Rompe la app di proposito e controlla che i test se ne accorgano |
+| `npm run versione` | Allinea la versione della app installata dopo una modifica |
+| `npm run icone` | Rigenera i PNG delle icone dagli SVG |
 | `npm run schermate` | Genera gli screenshot su iPhone e Android |
 | `npm run dati` | Rigenera i dati di test anonimizzati da quelli veri |
 | `npm run browser` | Scarica i browser dei test (la prima volta) |
@@ -489,10 +545,15 @@ libreria esterna.
 `wise_iscritti.xlsx`) sono esclusi dal repository di proposito: contengono nomi e
 date di nascita di persone vere e il repository è pubblico. Restano sul computer.
 
+**Statico anche da installata.** Il service worker mette in cache soltanto
+sette file — la pagina, il manifest e le icone — e nient'altro: i dati di
+prova e gli strumenti di sviluppo non finiscono sul telefono di nessuno. E la
+app non dipende dal service worker per funzionare: se manca, come succede
+aprendo il file dalla chiavetta, gira identica.
+
 ### Cosa non c'è ancora
 
 - Sincronizzazione fra dispositivi
-- Installazione come app sul telefono, con funzionamento offline garantito
 - Più postazioni sulla stessa gara
 
 Sono i passaggi successivi, previsti e nell'ordine giusto.

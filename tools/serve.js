@@ -6,14 +6,19 @@
  * pubblicato (http), invece che su file://. La app non ne ha bisogno per
  * funzionare: non fa una sola richiesta di rete.
  *
- *     node tools/serve.js [porta]
+ *     node tools/serve.js [porta] [cartella]
+ *
+ * La cartella si può indicare: serve al test degli aggiornamenti, che lavora
+ * su una copia isolata della app per non disturbare gli altri test.
  */
 
 const http = require('http');
 const fs = require('fs');
 const path = require('path');
 
-const RADICE = path.resolve(__dirname, '..');
+const RADICE = process.argv[3]
+  ? path.resolve(process.argv[3])
+  : path.resolve(__dirname, '..');
 const PORTA = Number(process.argv[2] || 8777);
 
 const TIPI = {
