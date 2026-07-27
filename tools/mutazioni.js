@@ -68,6 +68,90 @@ const MUTAZIONI = [
     sostituisci: "    if (dupNome.get(norm(o.cognome) + '|' + norm(o.nome)) > 2) o.alert.push('NOME');",
     test: 'omonimia',
   },
+
+  /* Le rotture che riguardano la gara che scende dal server. Nessuna di
+     queste dà un errore a schermo: sono tutte guasti che sembrano
+     funzionare. */
+  {
+    nome: 'un pezzo che non arriva passa per una lista vuota',
+    spiega: 'scaricaTutte ingoia la risposta sbagliata invece di fermarsi',
+    danno: 'La gara viene scritta senza gli iscritti, e sembra completa. Una gara scaricata a metà è peggio di una assente.',
+    cerca: '    if (!r.ok) throw new Error(`${cosa}: il server ha risposto ${r.status}`);',
+    sostituisci: '    if (!r.ok) return righe;',
+    test: 'tutto o niente',
+  },
+  {
+    nome: 'le pagine si contano invece delle righe',
+    spiega: 'scaricaTutte riparte dal numero di pagina, non da quante righe ha davvero',
+    danno: 'Con un server che manda meno righe di quante gliene chiedi, la gara arriva con dei buchi in mezzo.',
+    cerca: '    const da = righe.length;',
+    sostituisci: '    const da = ((righe.giro = (righe.giro || 0) + 1) - 1) * PAGINA_SCARICO;',
+    test: 'troncata',
+  },
+  {
+    nome: 'lo scarico non guarda più la coda',
+    spiega: 'si sovrascrive la copia locale senza controllare se ha roba non inviata',
+    danno: "Gli arrivi registrati e non ancora partiti spariscono, e nessuno lo dice. Erano l'unica copia.",
+    cerca: '  let coda = await codaDellaGara(id);\n  if (coda.ops.length) {',
+    sostituisci: '  let coda = await codaDellaGara(id);\n  if (false) {',
+    test: 'non si perde in silenzio|non passa in silenzio',
+  },
+  {
+    nome: 'una gara in corso si lascia sovrascrivere',
+    spiega: 'ostacoloAlloScarico non trova più nessun ostacolo',
+    danno: 'Si scarica sopra una gara mentre il cronometro cammina: gli arrivi appena presi non esistono più.',
+    cerca: 'function ostacoloAlloScarico(id, remota) {\n  if (S && S.start && !S.stop) {',
+    sostituisci: 'function ostacoloAlloScarico(id, remota) {\n  if (false) {',
+    test: 'non si scarica e non si sovrascrive',
+  },
+  {
+    nome: "l'invio si ferma alla fotografia iniziale",
+    spiega: 'il giro non rilegge la coda: quello che entra mentre invia resta dentro',
+    danno: 'A gara finita nessuno tocca più niente, e quelle righe non partono mai. L\'indicatore dice "Da inviare" per sempre.',
+    cerca: "      if (!partite) { aggiornaStato('attesa', await contaCoda()); return; }",
+    sostituisci: "      aggiornaStato('attesa', await contaCoda()); return;",
+    test: 'non si ferma a metà',
+  },
+  {
+    nome: 'quello che è appena sceso risale',
+    spiega: 'dopo lo scarico le impronte restano vuote',
+    danno: 'Trecento richieste inutili dal telefono e una correzione doppia per ogni arrivo, ogni volta che si apre una gara.',
+    cerca: '  const giaSulServer = prendiImpronteDelloScarico();   // subito, senza cedere il turno',
+    sostituisci: '  const giaSulServer = [];',
+    test: 'non rifà il lavoro',
+  },
+  {
+    nome: 'lo scarto della partenza sommato invece che sottratto',
+    spiega: 'scendendo, i tempi grezzi non vengono riportati alla partenza corrente',
+    danno: 'Chi scarica una gara con la partenza spostata legge tempi diversi da chi l\'ha cronometrata.',
+    cerca: '        ms: Number(a.ms) - scarto,      // qui dentro i tempi sono già traslati',
+    sostituisci: '        ms: Number(a.ms) + scarto,',
+    test: 'partenza spostata',
+  },
+  {
+    nome: 'la riga della gara perde la precedenza',
+    spiega: "le operazioni partono nell'ordine in cui capitano, gara compresa",
+    danno: 'Con una gara piccola la configurazione parte prima della gara, il server la rifiuta e non arriva mai.',
+    cerca: 'const PRECEDENZA = { gara: 0 };',
+    sostituisci: 'const PRECEDENZA = {};',
+    test: "ordine di invio",
+  },
+  {
+    nome: 'le righe rifiutate restano da parte per sempre',
+    spiega: 'la coda non rimette mai in gioco quello che il server ha respinto',
+    danno: 'Un rifiuto passeggero diventa definitivo: quelle righe non partono più, e nessuno ci riprova.',
+    cerca: '    await sbloccaCoda();',
+    sostituisci: '    ;',
+    test: 'riprova al giro dopo',
+  },
+  {
+    nome: 'la sessione azzerata torna in gara',
+    spiega: 'scendendo non si filtra più per sessione',
+    danno: 'Gli arrivi di una falsa partenza rientrano in classifica insieme a quelli buoni.',
+    cerca: '    .filter(a => Number(a.sessione || 1) === sessione)   // le sessioni azzerate non contano',
+    sostituisci: '    .filter(a => true)',
+    test: 'sessione azzerata',
+  },
 ];
 
 // ---------------------------------------------------------------- ripristino
@@ -125,10 +209,20 @@ process.on('uncaughtException', e => {
 });
 
 // ---------------------------------------------------------------- esecuzione
+const scappa = s => s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+
+/* L'ancoraggio si cerca senza badare a come sono scritti gli a capo:
+   index.html sta su Windows con CRLF, e una rottura che ne attraversa due
+   righe non si troverebbe mai cercando '\n'. Lo si è scoperto qui: due
+   rotture su dodici risultavano "ancoraggio non trovato" e passavano per
+   applicate a vuoto — cioè per rotture che nessuno stava provando. */
 function applica(m) {
   const testo = ORIGINALE.toString('utf8');
-  if (!testo.includes(m.cerca)) return null;
-  const mutato = testo.replace(m.cerca, m.sostituisci);
+  const rx = new RegExp(m.cerca.split('\n').map(scappa).join('\\r?\\n'));
+  if (!rx.test(testo)) return null;
+  const aCapo = testo.includes('\r\n') ? '\r\n' : '\n';
+  const nuovo = m.sostituisci.split('\n').join(aCapo);
+  const mutato = testo.replace(rx, () => nuovo);
   if (mutato === testo) return null;
   ripristinato = false;
   fs.writeFileSync(APP, mutato, 'utf8');

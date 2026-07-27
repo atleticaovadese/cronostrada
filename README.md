@@ -78,8 +78,33 @@ con calma, adesso, e non il giorno della gara.
 ### Regola 1 — Un dispositivo, una gara
 
 I dati stanno nel browser di **quel** dispositivo. Se registri gli arrivi dal
-telefono, sul computer non li vedi. Non c'è ancora sincronizzazione: arriverà,
-per adesso non c'è.
+telefono, sul computer non li vedi comparire da soli.
+
+Con l'accesso fatto (menu → **Organizzatore**) c'è anche una copia sul server, e
+lì l'elenco delle gare ti dice a colpo d'occhio dove sta ognuna:
+
+| Etichetta | Vuol dire |
+|---|---|
+| **solo qui** | Sta soltanto su questo dispositivo. Se si rompe, non esiste più da nessuna parte. |
+| **solo sul server** | L'hai preparata altrove. Aprendola, la scarichi qui. |
+| **qui e sul server** | Sta in tutti e due i posti. |
+
+**Aprire una gara che è solo sul server la scarica per intero** — nome, fasce,
+iscritti, arrivi, correzioni, ritiri — e da quel momento è questo dispositivo a
+mandarla su. O arriva tutta o non arriva niente: non esistono gare scaricate a
+metà. È il modo giusto di preparare la gara sul computer e cronometrarla dal
+telefono.
+
+Tre cose che la app non fa, e non per dimenticanza:
+
+- **non fonde due dispositivi che scrivono insieme.** Uno solo sta al traguardo.
+  Se anche l'altro registrasse arrivi, sul server ci finirebbero tutti, ma
+  ognuno dei due continuerebbe a vedere solo i propri finché non riscarica.
+- **non sovrascrive mai quello che qui non è ancora partito.** Se la copia
+  locale ha operazioni in coda, si ferma e ti chiede cosa fare, dicendoti quante
+  e di che tipo. Nel dubbio vince quello che hai in mano.
+- **non tocca una gara in corso.** Col cronometro che cammina non si scarica
+  niente, per nessun motivo.
 
 **Quindi:** decidi in anticipo quale dispositivo sta al traguardo, e usa solo
 quello per tutta la gara.
@@ -553,7 +578,11 @@ aprendo il file dalla chiavetta, gira identica.
 
 ### Cosa non c'è ancora
 
-- Sincronizzazione fra dispositivi
-- Più postazioni sulla stessa gara
+- **Due postazioni che scrivono sulla stessa gara nello stesso momento.** Oggi
+  il verso è uno solo: aprire una gara la scarica, e da quel momento la manda su
+  questo dispositivo. Il caso di due postazioni insieme si affronterà quando
+  servirà davvero, cioè con il giudice arrivi.
+- **Le gare non si cancellano dal server** dalla app: eliminandone una,
+  sparisce da questo dispositivo e resta là.
 
 Sono i passaggi successivi, previsti e nell'ordine giusto.

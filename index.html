@@ -216,7 +216,16 @@ dialog{border:0;border-radius:var(--radius);padding:0;box-shadow:var(--shadow-lg
 dialog::backdrop{background:rgba(16,20,28,.42)}
 dialog .body{padding:18px}
 dialog header{padding:14px 18px;border-bottom:1px solid var(--line-2);font-weight:680;font-size:15px}
-dialog footer{padding:12px 18px;border-top:1px solid var(--line-2);display:flex;justify-content:flex-end;gap:8px;background:var(--surface-2);border-radius:0 0 var(--radius) var(--radius)}
+dialog footer{padding:12px 18px;border-top:1px solid var(--line-2);display:flex;flex-wrap:wrap;justify-content:flex-end;gap:8px;background:var(--surface-2);border-radius:0 0 var(--radius) var(--radius)}
+/* Su un telefono tre strade in fila non ci stanno, e quella che sparisce a
+   sinistra è proprio la prima: cioè quella che non fa danni. In verticale
+   ci stanno tutte, e la prima resta in cima. */
+@media (max-width:560px){
+  dialog footer{flex-direction:column;align-items:stretch}
+  /* 44 punti: la misura sotto la quale un dito sbaglia. Vale qui come vale
+     per il tastierino del traguardo. */
+  dialog footer .btn{width:100%;justify-content:center;min-height:44px}
+}
 
 #toast{position:fixed;left:50%;bottom:22px;transform:translateX(-50%);z-index:200;display:flex;flex-direction:column;gap:8px;align-items:center;pointer-events:none}
 /* avviso di versione nuova: discreto, in basso, e mai a gara in corso */
@@ -465,6 +474,18 @@ body.inMenu #top,body.inMenu main{display:none!important}
 .garacorsa .dot{background:var(--go);animation:pulsa 1.4s ease-in-out infinite}
 @keyframes pulsa{50%{opacity:.25}}
 .gareelenco{border:1px solid var(--line);border-radius:var(--radius);overflow:hidden;background:var(--surface)}
+
+/* DOVE STA UNA GARA. Tre condizioni, tre etichette, sempre nello stesso
+   posto: solo qui, solo sul server, in entrambi i posti. Chi guarda deve
+   capirlo senza leggere, perché "solo qui" vuol dire che se il telefono si
+   rompe non esiste più. */
+.dove{display:inline-flex;align-items:center;gap:5px;font-size:11px;font-weight:700;
+  border-radius:20px;padding:2px 9px;white-space:nowrap}
+.dove.qui{background:var(--warn-soft);color:var(--warn)}
+.dove.server{background:var(--accent-soft);color:var(--accent-ink)}
+.dove.entrambi{background:var(--go-soft);color:var(--go)}
+.garariga.remota .gnome{color:var(--ink-2)}
+.garariga .gscarico{font-size:12px;font-weight:650;color:var(--accent-ink);white-space:nowrap}
 
 @media print{
   #menu{display:none!important}
@@ -728,6 +749,15 @@ body.inMenu #top,body.inMenu main{display:none!important}
   <footer><button class="btn" id="cfNo">Annulla</button><button class="btn danger" id="cfYes">Conferma</button></footer>
 </dialog>
 
+<!-- Quando le strade sono più di due. Serve al caso in cui si sta per
+     scaricare una gara che qui ha ancora roba non inviata: "sì o no" non
+     basta, perché la via d'uscita giusta di solito è una terza. -->
+<dialog id="dlgScelte">
+  <header id="scTitolo">Come vuoi procedere?</header>
+  <div class="body" id="scCorpo"></div>
+  <footer id="scPiede"></footer>
+</dialog>
+
 <input type="file" id="filePick" style="display:none">
 <script>
 "use strict";
@@ -768,6 +798,38 @@ function confirmDlg(title, msg) {
     const yes = () => { cleanup(); res(true); }, no = () => { cleanup(); res(false); };
     function cleanup() { d.close(); $('#cfYes').removeEventListener('click', yes); $('#cfNo').removeEventListener('click', no); }
     $('#cfYes').addEventListener('click', yes); $('#cfNo').addEventListener('click', no);
+    d.showModal();
+  });
+}
+
+/* Una domanda con più di due risposte.
+   `scelte` è un elenco di { k, testo, classe }: la prima è quella che si
+   prende premendo Invio o chiudendo con Esc, quindi va messa lì la strada
+   che non fa danni. Torna la chiave scelta, oppure null. */
+function chiediScelta(titolo, corpo, scelte) {
+  return new Promise(risolvi => {
+    const d = $('#dlgScelte');
+    $('#scTitolo').textContent = titolo;
+    const c = $('#scCorpo'); c.textContent = '';
+    c.append(corpo);
+    const piede = $('#scPiede'); piede.textContent = '';
+    let fatto = false;
+    const chiudi = valore => {
+      if (fatto) return;
+      fatto = true;
+      d.removeEventListener('close', suEsc);
+      d.close();
+      risolvi(valore);
+    };
+    // Esc, o il pulsante indietro del telefono: vale come la prima scelta.
+    const suEsc = () => chiudi(scelte[0] ? scelte[0].k : null);
+    for (const s of scelte) {
+      piede.append(el('button', {
+        class: 'btn ' + (s.classe || ''), type: 'button', 'data-scelta': s.k,
+        onclick: () => chiudi(s.k),
+      }, s.testo));
+    }
+    d.addEventListener('close', suEsc);
     d.showModal();
   });
 }
@@ -2789,7 +2851,14 @@ function renderPortaOrganizzatore() {
     return;
   }
 
-  const gare = elencoGare();
+  /* Si chiede al server una volta sola per apertura della porta, e sempre
+     DOPO aver disegnato: l'elenco locale non aspetta mai una risposta. */
+  if (collegato() && gareRemote === null && !gareRemoteChieste) {
+    gareRemoteChieste = true;
+    setTimeout(caricaGareRemote, 0);
+  }
+
+  const gare = elencoOrganizzatore();
 
   const testa = el('div', { class: 'card' },
     el('header', {},
@@ -2801,6 +2870,12 @@ function renderPortaOrganizzatore() {
         : (sincroniaPossibile()
           ? el('button', { class: 'btn sm', onclick: () => scegliSenzaAccount(false) }, 'Accedi')
           : null),
+      collegato()
+        ? el('button', {
+          class: 'btn sm', id: 'btnAggiornaGare',
+          onclick: () => { scordaGareRemote(); renderMenu(); },
+        }, 'Aggiorna')
+        : null,
       collegato()
         ? el('button', { class: 'btn sm', onclick: () => { scollega(); renderMenu(); } }, 'Esci')
         : null,
@@ -2837,8 +2912,15 @@ function renderPortaOrganizzatore() {
 
   const elenco = el('div', { class: 'gareelenco', id: 'elencoGare' });
   for (const g of gare) {
-    const apri = () => apriGara(g.id);
-    const riga = el('button', { class: 'garariga', type: 'button', 'data-gara': g.id, onclick: apri },
+    const remota = g.dove === 'server';
+    const apri = remota ? () => avviaScarico(g) : () => apriGara(g.id);
+    const scarico = scaricoInCorso && scaricoInCorso.id === g.id ? scaricoInCorso : null;
+    const riga = el('button', {
+      class: 'garariga' + (remota ? ' remota' : ''), type: 'button',
+      'data-gara': g.id, 'data-dove': g.dove,
+      disabled: scarico ? '' : null,
+      onclick: apri,
+    },
       el('div', {},
         el('div', { class: 'gnome' }, g.nome || 'Gara senza nome'),
         el('div', { class: 'gsotto' }, [
@@ -2848,12 +2930,80 @@ function renderPortaOrganizzatore() {
           plur(g.iscritti || 0, 'iscritto', 'iscritti'),
         ].filter(Boolean).join(' · '))),
       el('div', { class: 'topspace' }),
+      scarico ? el('span', { class: 'gscarico' }, 'Scarico ' + scarico.passo + '…') : null,
       g.inCorso ? el('span', { class: 'garacorsa' }, el('span', { class: 'dot' }), 'in corso') : null,
-      el('span', { class: 'ib danger', title: 'Elimina questa gara', 'data-elimina': g.id,
-        onclick: e => { e.stopPropagation(); chiediEliminazione(g); } }, '×'));
+      scarico ? null : etichettaDove(g.dove),
+      remota
+        ? null
+        : el('span', { class: 'ib danger', title: 'Elimina questa gara', 'data-elimina': g.id,
+          onclick: e => { e.stopPropagation(); chiediEliminazione(g); } }, '×'));
     elenco.append(riga);
   }
   box.append(testa, el('div', { style: 'margin-top:14px' }, elenco));
+
+  if (collegato() && gareRemote === null) {
+    // Nessun errore: solo il silenzio di chi non ha ancora risposto, o non
+    // può rispondere. L'elenco locale qui sopra è già completo e usabile.
+    box.append(el('p', { class: 'hint', style: 'margin:12px 2px 0' },
+      'Le gare che hai qui sono tutte utilizzabili anche senza rete.'));
+  }
+}
+
+/* Dove sta una gara, detto in due parole e sempre nello stesso posto. */
+function etichettaDove(dove) {
+  const mappa = {
+    qui: ['qui', 'solo qui', 'Sta soltanto su questo dispositivo: se si rompe, non esiste più da nessuna parte.'],
+    server: ['server', 'solo sul server', 'Creata su un altro dispositivo. Aprila per scaricarla qui.'],
+    entrambi: ['entrambi', 'qui e sul server', 'Sta su questo dispositivo e anche sul server.'],
+  };
+  const [classe, testo, spiega] = mappa[dove] || mappa.qui;
+  return el('span', { class: 'dove ' + classe, title: spiega }, testo);
+}
+
+/* Le gare locali e quelle del mio account sul server, in una lista sola.
+   L'elenco locale c'è sempre e subito; quello del server si aggiunge se e
+   quando arriva. Una gara che esiste già qui non compare mai due volte. */
+function elencoOrganizzatore() {
+  const perId = new Map(elencoGare().map(g => [g.id, Object.assign({}, g, { dove: 'qui' })]));
+  const quiComunque = new Set(elencoGareTutte().map(g => g.id));
+  for (const r of (gareRemote || [])) {
+    const g = perId.get(r.id);
+    if (g) { g.dove = 'entrambi'; g.remota = r; continue; }
+    // C'è già su questo dispositivo ma sotto un altro accesso: non la si
+    // mostra come "solo sul server", perché scaricarla sovrascriverebbe
+    // quella copia senza che nessuno l'abbia chiesto.
+    if (quiComunque.has(r.id)) continue;
+    perId.set(r.id, {
+      id: r.id, nome: r.nome || '', data: r.data || '', luogo: r.luogo || '',
+      iscritti: r.iscritti || 0, arrivi: r.arrivi || 0, inCorso: !!r.in_corso,
+      aggiornata: Date.parse(r.aggiornato_il || '') || 0,
+      dove: 'server', remota: r,
+    });
+  }
+  return [...perId.values()].sort(perData);
+}
+
+/* Lo scaricamento visto da chi guarda: la riga dice a che punto è, e finché
+   dura non si può premere due volte. */
+let scaricoInCorso = null;
+
+async function avviaScarico(g) {
+  if (scaricoInCorso) return;
+  scaricoInCorso = { id: g.id, passo: 'la gara' };
+  renderMenu();
+  let esito;
+  try {
+    esito = await scaricaGara(g.id, passo => {
+      if (scaricoInCorso) { scaricoInCorso.passo = passo; renderMenu(); }
+    });
+  } finally {
+    scaricoInCorso = null;
+  }
+  if (esito && esito.ok) {
+    toast(`«${g.nome || 'Gara'}» scaricata: ${esito.iscritti} iscritti, ${esito.arrivi} arrivi`, 'go');
+  } else {
+    renderMenu();
+  }
 }
 
 /** La schermata di accesso dell'organizzatore, all'ingresso della sua porta. */
@@ -2869,6 +3019,7 @@ function renderAccessoOrganizzatore(box) {
     const r = await accedi(email.value.trim(), pw.value);
     if (r.ok) {
       impronte.clear();
+      scordaGareRemote();          // le gare da chiedere sono quelle di chi è appena entrato
       scegliSenzaAccount(false);
       toast('Collegato', 'go');
       renderMenu();
@@ -2913,10 +3064,18 @@ async function chiediEliminazione(g) {
     plur(g.arrivi || 0, 'arrivo registrato', 'arrivi registrati'),
     plur(g.iscritti || 0, 'iscritto', 'iscritti'),
   ].join(' e ');
+  /* Se la gara sta anche sul server, eliminarla di qui non la elimina di là:
+     sparisce dal dispositivo e ricompare nell'elenco come «solo sul server».
+     Vederla tornare senza saperlo sembra un guasto, quindi lo si dice prima. */
+  const staAncheSulServer = (gareRemote || []).some(r => r.id === g.id);
   const ok = await confirmDlg(
     'Elimina «' + (g.nome || 'gara senza nome') + '»',
     `Vengono cancellati ${cosa}. L'operazione non si può annullare: se ti ` +
-    `servono, apri la gara e scarica prima un backup .json.`);
+    `servono, apri la gara e scarica prima un backup .json.` +
+    (staAncheSulServer
+      ? ' Questa gara sta anche sul server: viene tolta da questo dispositivo, ' +
+        'non da là, e resterà nell\'elenco come «solo sul server».'
+      : ''));
   if (!ok) return;
   // Due conferme, non una: la seconda chiede di scrivere, così non la si
   // supera premendo due volte di seguito nello stesso punto.
@@ -3198,6 +3357,8 @@ async function rinnovaSessione() {
 function scollega() {
   salvaSessione(null);
   statoSincronia = { fase: 'locale', coda: 0 };
+  // L'elenco del server era di chi è appena uscito: non resta appeso lì.
+  scordaGareRemote();
   render();
 }
 
@@ -3211,6 +3372,7 @@ async function chiamaRest(percorso, opzioni = {}) {
     'Content-Type': 'application/json',
   };
   if (opzioni.prefer) testa.Prefer = opzioni.prefer;
+  if (opzioni.intestazioni) Object.assign(testa, opzioni.intestazioni);
   const r = await fetch(SUPA.url + percorso, {
     method: opzioni.metodo || 'GET',
     headers: testa,
@@ -3269,6 +3431,18 @@ const leggiInviati = () => conNegozio('inviati', 'readonly', n => n.getAllKeys()
    tutto risulta cambiato, e va bene — la coda scarta da sola ciò che il
    server ha già, perché ogni operazione porta con sé la propria chiave. */
 const impronte = new Map();
+
+/* Gli identificativi che si sanno già sul server SENZA doverlo chiedere a
+   IndexedDB. Serve per una finestra sola, ma stretta e pericolosa: appena
+   scaricata una gara, fra il momento in cui si sa che i suoi arrivi sono già
+   sul server e il momento in cui il fatto è scritto su disco passano
+   centinaia di scritture asincrone, e un giro di sincronizzazione che cada
+   lì in mezzo legge il disco com'era prima e li rimanda tutti su.
+   Questo insieme è in memoria e si aggiorna in modo sincrono, quindi quella
+   finestra non esiste. Gli identificativi sono UUID e non si ripetono fra
+   gare diverse: non c'è niente da ripulire cambiando gara. */
+const giaSulServer = new Set();
+
 const cambiata = (chiave, valore) => {
   const s = JSON.stringify(valore);
   if (impronte.get(chiave) === s) return false;
@@ -3331,7 +3505,7 @@ function operazioniDaMandare(inviati) {
      nemmeno spostando la partenza. */
   const scarto = S.scartoPartenza || 0;
   for (const a of S.arrivi) {
-    if (inviati.has(a.id)) continue;          // già sul server: è immutabile
+    if (inviati.has(a.id) || giaSulServer.has(a.id)) continue;   // già lì: è immutabile
     ops.push({
       id: a.id, gara: G, tipo: 'arrivi', immutabile: true,
       corpo: { id: a.id, gara_id: G, sessione: S.sessione || 1, ms: a.ms + scarto, dispositivo },
@@ -3397,49 +3571,102 @@ const PERCORSI = {
   ritiri: '/rest/v1/ritiri',
 };
 
+/* L'ORDINE IN CUI SI MANDA.
+
+   La riga della gara viene prima di tutte le altre, sempre. Ogni altra
+   tabella la referenzia: se arriva per prima una configurazione, il server
+   la rifiuta perché quella gara ancora non esiste, e la rifiuta con un 403
+   che sembra un problema di permessi.
+
+   Non è un caso di scuola: le operazioni si leggono da IndexedDB in ordine
+   di CHIAVE, non di inserimento, e 'conf:…' viene prima di 'gara:…'.
+   L'istante di accodamento le rimetteva in fila solo quando cadevano in
+   millisecondi diversi — cioè quasi sempre con una gara grossa, e quasi mai
+   con una piccola. Un guasto che compariva a seconda di quanto era veloce
+   il computer. */
+const PRECEDENZA = { gara: 0 };
+
+const perOrdineDiInvio = (a, b) =>
+  (PRECEDENZA[a.tipo] ?? 1) - (PRECEDENZA[b.tipo] ?? 1) ||
+  (a.creato || 0) - (b.creato || 0);
+
+/** Rimette in gioco le operazioni messe da parte a un giro precedente. */
+async function sbloccaCoda() {
+  try {
+    for (const op of await leggiCoda()) {
+      if (!op.bloccata) continue;
+      delete op.bloccata; delete op.motivo;
+      await accoda(op);
+    }
+  } catch (e) { }
+}
+
+/* SI VA AVANTI FINCHÉ SI FA STRADA.
+   Il giro legge la coda, la manda e ricomincia: mentre il primo giro invia,
+   altre operazioni possono essere entrate — un arrivo registrato nel
+   frattempo, o semplicemente il resto di una gara grossa accodato mentre il
+   primo pezzo partiva. Fermarsi alla fotografia iniziale lasciava quelle
+   dentro finché qualcuno non toccava qualcosa: a gara finita, cioè quando
+   nessuno tocca più niente, restavano lì per sempre con l'indicatore che
+   diceva "Da inviare" e nessuno che ci riprovasse.
+   Si smette quando la coda è vuota, oppure quando un giro intero non è
+   riuscito a mandare niente — così le operazioni rifiutate dal server non
+   fanno girare a vuoto. */
 async function inviaCoda() {
   if (invioInCorso || !sincroniaPossibile() || !collegato()) return;
   if (!navigator.onLine) { aggiornaStato('offline'); return; }
   invioInCorso = true;
   try {
-    const coda = (await leggiCoda()).sort((a, b) => (a.creato || 0) - (b.creato || 0));
-    if (!coda.length) { aggiornaStato('allineato'); return; }
-    aggiornaStato('invio', coda.length);
+    /* Le rifiutate si riprovano una volta per giro di sincronizzazione, non
+       una volta per sempre: se il motivo del rifiuto era passeggero — la
+       riga della gara non ancora arrivata, una connessione a metà — al giro
+       dopo passano. Dentro un giro invece restano da parte, per non fare
+       girare a vuoto tutto il resto. */
+    await sbloccaCoda();
 
-    for (const op of coda) {
-      if (op.bloccata) continue;
-      // Le righe immutabili si ignorano se già presenti; le altre si
-      // sovrascrivono con l'ultimo valore. In entrambi i casi rimandare la
-      // stessa operazione non produce doppioni.
-      const prefer = op.immutabile
-        ? 'resolution=ignore-duplicates,return=minimal'
-        : 'resolution=merge-duplicates,return=minimal';
-      let r;
-      try {
-        r = await chiamaRest(PERCORSI[op.tipo], { metodo: 'POST', corpo: op.corpo, prefer });
-      } catch (e) {
-        aggiornaStato('offline', coda.length);      // rete caduta: si riprova dopo
-        return;
+    for (;;) {
+      const coda = (await leggiCoda())
+        .filter(o => !o.bloccata)                   // rifiutate poco fa: non ora
+        .sort(perOrdineDiInvio);
+      if (!coda.length) { aggiornaStato(await contaCoda() ? 'attesa' : 'allineato'); return; }
+      aggiornaStato('invio', coda.length);
+
+      let partite = 0;
+      for (const op of coda) {
+        // Le righe immutabili si ignorano se già presenti; le altre si
+        // sovrascrivono con l'ultimo valore. In entrambi i casi rimandare la
+        // stessa operazione non produce doppioni.
+        const prefer = op.immutabile
+          ? 'resolution=ignore-duplicates,return=minimal'
+          : 'resolution=merge-duplicates,return=minimal';
+        let r;
+        try {
+          r = await chiamaRest(PERCORSI[op.tipo], { metodo: 'POST', corpo: op.corpo, prefer });
+        } catch (e) {
+          aggiornaStato('offline', coda.length);      // rete caduta: si riprova dopo
+          return;
+        }
+        if (r.ok || r.status === 409) {
+          await togliDallaCoda(op.id);
+          if (op.immutabile) await segnaInviato(op.id);
+          partite++;
+        } else if (r.status === 401) {
+          if (await rinnovaSessione()) { invioInCorso = false; return inviaCoda(); }
+          aggiornaStato('scollegato', coda.length);
+          return;
+        } else if (r.status >= 500) {
+          aggiornaStato('attesa', coda.length);        // problema del server: si riprova
+          return;
+        } else {
+          // Rifiutata dal server: non si perde, si mette da parte e si va avanti
+          // con le altre invece di bloccare tutta la coda.
+          op.bloccata = true;
+          op.motivo = r.status + ' ' + (await r.text().catch(() => '')).slice(0, 120);
+          await accoda(op);
+        }
       }
-      if (r.ok || r.status === 409) {
-        await togliDallaCoda(op.id);
-        if (op.immutabile) await segnaInviato(op.id);
-      } else if (r.status === 401) {
-        if (await rinnovaSessione()) { invioInCorso = false; return inviaCoda(); }
-        aggiornaStato('scollegato', coda.length);
-        return;
-      } else if (r.status >= 500) {
-        aggiornaStato('attesa', coda.length);        // problema del server: si riprova
-        return;
-      } else {
-        // Rifiutata dal server: non si perde, si mette da parte e si va avanti
-        // con le altre invece di bloccare tutta la coda.
-        op.bloccata = true;
-        op.motivo = r.status + ' ' + (await r.text().catch(() => '')).slice(0, 120);
-        await accoda(op);
-      }
+      if (!partite) { aggiornaStato('attesa', await contaCoda()); return; }
     }
-    aggiornaStato(await contaCoda() ? 'attesa' : 'allineato');
   } catch (e) {
     aggiornaStato('attesa');
   } finally {
@@ -3525,6 +3752,400 @@ const programmaSincronia = debounce(async () => {
   } catch (e) { /* IndexedDB non disponibile: la app funziona lo stesso */ }
   inviaCoda();
 }, 400);
+
+/* ============================================================
+   SCARICARE UNA GARA DAL SERVER
+
+   LA REGOLA, che è una sola e tiene tutto in piedi: aprire una gara la
+   scarica in locale, e da quel momento questo dispositivo la spinge come ha
+   sempre fatto. Non esiste nessuna fusione continua fra due dispositivi che
+   scrivono insieme — quel problema si affronta quando arriverà il giudice
+   arrivi, non adesso. Qui il verso è uno solo: giù una volta, su per sempre.
+
+   Quattro cose che non si negoziano:
+
+   1. O ARRIVA TUTTA O NON ARRIVA NIENTE. Si scarica prima ogni pezzo in
+      memoria; solo quando c'è tutto si scrive. Una gara scaricata a metà è
+      peggio di una gara assente, perché sembra completa.
+
+   2. NON SI SOVRASCRIVE MAI ROBA NON ANCORA INVIATA. Se la copia locale ha
+      operazioni in coda ci si ferma e si chiede, dicendo quante e di che
+      tipo. Nel dubbio vince quello che è sul telefono: è l'unica copia che
+      potrebbe non esistere da nessun'altra parte.
+
+   3. UNA GARA IN CORSO NON SI TOCCA. Né si scarica, né si sovrascrive, né si
+      abbandona per andare a scaricarne un'altra. Per nessun motivo.
+
+   4. SENZA RETE NON SUCCEDE NIENTE. L'elenco del server semplicemente non
+      compare, quello locale funziona identico, e non appare nessun errore:
+      la app da chiavetta è la stessa app.
+   ============================================================ */
+
+/* Quante righe per volta. PostgREST tronca le risposte lunghe e lo dice nel
+   Content-Range: si chiede a pagine e si controlla il totale, perché una
+   troncatura silenziosa è esattamente la mezza gara che non vogliamo. */
+const PAGINA_SCARICO = 500;
+
+async function scaricaTutte(percorso, cosa) {
+  const righe = [];
+  for (;;) {
+    /* Si riparte da quante righe si hanno DAVVERO, non dal numero di pagine
+       fatte: il server ha un suo tetto e può mandarne meno di quante gliene
+       si chiedono. Contando le pagine invece delle righe si salterebbe tutto
+       quello che sta in mezzo, e la gara arriverebbe con dei buchi. */
+    const da = righe.length;
+    const r = await chiamaRest(percorso, {
+      prefer: 'count=exact',
+      intestazioni: { 'Range-Unit': 'items', Range: `${da}-${da + PAGINA_SCARICO - 1}` },
+    });
+    if (!r.ok) throw new Error(`${cosa}: il server ha risposto ${r.status}`);
+    const parte = await r.json();
+    righe.push(...parte);
+    const totale = Number((String(r.headers.get('Content-Range') || '').split('/')[1] || '').trim());
+    if (!Number.isFinite(totale)) return righe;         // niente conteggio: è tutto qui
+    if (righe.length >= totale) {
+      if (righe.length !== totale) {
+        throw new Error(`${cosa}: il server ne dichiara ${totale} e ne ha mandate ${righe.length}`);
+      }
+      return righe;
+    }
+    if (!parte.length) throw new Error(`${cosa}: mancano ${totale - righe.length} righe`);
+  }
+}
+
+/** Tutti i pezzi di una gara. Se anche uno solo non arriva, non arriva niente. */
+async function scaricaPezzi(id, avanzamento) {
+  const q = encodeURIComponent(id);
+  /* Ogni richiesta porta un ORDINE, e l'ultimo criterio è sempre una colonna
+     unica. Senza, l'ordine fra una pagina e l'altra non è garantito e a
+     scaricare a pagine si rischia di prendere due volte la stessa riga e mai
+     un'altra: una gara con dei buchi, che però sembra intera. */
+  const passi = [
+    ['gara', `/rest/v1/gare?id=eq.${q}&select=*`, 'la gara'],
+    ['configurazione', `/rest/v1/configurazione?gara_id=eq.${q}&select=*`, 'la configurazione'],
+    ['fasce', `/rest/v1/fasce?gara_id=eq.${q}&select=*&order=ordine.asc,id.asc`, 'le fasce'],
+    ['iscritti', `/rest/v1/iscritti?gara_id=eq.${q}&select=*&order=id.asc`, 'gli iscritti'],
+    ['arrivi', `/rest/v1/arrivi?gara_id=eq.${q}&select=*&order=id.asc`, 'gli arrivi'],
+    ['correzioni', `/rest/v1/arrivi_correzioni?gara_id=eq.${q}&select=*&order=creato_il.asc,id.asc`, 'le correzioni'],
+    ['ritiri', `/rest/v1/ritiri?gara_id=eq.${q}&select=*&order=pett.asc`, 'i ritiri'],
+  ];
+  const d = {};
+  for (const [chiave, percorso, nome] of passi) {
+    if (avanzamento) avanzamento(nome);
+    d[chiave] = await scaricaTutte(percorso, nome);
+  }
+  if (!d.gara.length) throw new Error('la gara: sul server non c\'è più');
+  d.gara = d.gara[0];
+  d.configurazione = d.configurazione[0] || {};
+  return d;
+}
+
+/* Da come stanno le cose sul server a come stanno qui.
+   È l'inverso esatto di operazioniDaMandare, e le due devono restare
+   specchiate: se una cambia forma e l'altra no, un giro giù e su di seguito
+   non riporta gli stessi numeri. C'è un test che fa proprio quel giro. */
+function componiGaraScaricata(d) {
+  const g = VUOTO();
+  const c = d.configurazione || {};
+  const scarto = Number(c.scarto_partenza_ms || 0);
+  const sessione = Number(c.sessione || 1);
+
+  g.garaId = d.gara.id;
+  g.account = accountCorrente();
+  g.scartoPartenza = scarto;
+  g.sessione = sessione;
+  g.pubblicata = !!d.gara.pubblicata;
+  g.start = c.partenza_ms ?? null;
+  g.stop = c.stop_ms ?? null;
+
+  Object.assign(g.cfg, {
+    nome: d.gara.nome || '',
+    data: d.gara.data || '',
+    luogo: d.gara.luogo || '',
+    km: d.gara.km === null || d.gara.km === undefined ? null : Number(d.gara.km),
+    anno: d.gara.anno ?? g.cfg.anno,
+    org: d.gara.organizzatore || '',
+    premAssF: c.premi_ass_f ?? 3, premAssM: c.premi_ass_m ?? 3,
+    premCat: c.premi_cat ?? 3, premSoc: c.premi_soc ?? 3,
+    socEscluse: c.societa_escluse || ['RUNCARD'],
+  });
+
+  const fasce = (d.fasce || []).filter(f => !f.eliminata)
+    .sort((a, b) => (a.ordine || 0) - (b.ordine || 0));
+  if (fasce.length) {
+    g.matrice = fasce.map(f => ({
+      idRiga: f.id, nome: f.nome || '', fidal: f.fidal || [], premi: f.premi ?? null,
+    }));
+  }
+
+  /* L'ordine degli iscritti sul server non c'è: le righe non hanno una
+     posizione, e quello del foglio WISE da cui erano stati importati non
+     viaggia. Si rimettono in un ordine deciso qui — pettorale, poi cognome e
+     nome — così due dispositivi che scaricano la stessa gara vedono la stessa
+     lista nella stessa sequenza. Sui calcoli non incide: le classifiche
+     vanno per tempo e per pettorale. */
+  g.iscritti = (d.iscritti || []).filter(i => !i.eliminato).map(i => ({
+    id: i.id, pett: i.pett ?? null,
+    cognome: i.cognome || '', nome: i.nome || '', sesso: i.sesso || '',
+    societa: i.societa || '', nascita: i.nascita || '',
+    conferma: i.conferma ? 'S' : 'N',
+  })).sort((a, b) =>
+    (a.pett === null) - (b.pett === null) ||
+    (a.pett ?? 0) - (b.pett ?? 0) ||
+    String(a.cognome).localeCompare(String(b.cognome)) ||
+    String(a.nome).localeCompare(String(b.nome)));
+
+  /* Lo stato di un arrivo è l'arrivo più la sua correzione più recente.
+     Le righe arrivano già in ordine di creazione, quindi l'ultima che si
+     incontra per un certo arrivo è quella che vale. */
+  const ultima = new Map();
+  for (const k of (d.correzioni || [])) ultima.set(k.arrivo_id, k);
+
+  g.arrivi = (d.arrivi || [])
+    .filter(a => Number(a.sessione || 1) === sessione)   // le sessioni azzerate non contano
+    .map(a => {
+      const k = ultima.get(a.id);
+      if (k && k.annullato) return null;
+      const stato = { pett: k ? (k.pett ?? null) : null, corr_s: k ? (k.corr_s || 0) : 0, nota: k ? (k.nota || null) : null };
+      const arrivo = {
+        id: a.id,
+        ms: Number(a.ms) - scarto,      // qui dentro i tempi sono già traslati
+        pett: stato.pett,
+        corr: stato.corr_s,
+        nota: stato.nota || '',
+      };
+      /* La correzione che è già sul server viene marcata come tale: senza
+         questo, il primo giro di sincronizzazione ne scriverebbe una copia
+         identica per ogni arrivo — 265 righe inutili appena scaricata. */
+      if (k) { arrivo.corrId = k.id; arrivo.corrKey = JSON.stringify(stato); }
+      return arrivo;
+    })
+    .filter(Boolean)
+    .sort((x, y) => x.ms - y.ms);
+
+  g.dnf = (d.ritiri || []).filter(r => r.ritirato).map(r => r.pett);
+  return g;
+}
+
+/* Quello che si è appena scaricato È sul server, per definizione.
+   Si passa una volta dal costruttore delle operazioni: le impronte restano
+   quelle dello stato appena arrivato, così la prima sincronizzazione non
+   rimanda su niente. Questa parte è SINCRONA e va fatta subito dopo aver
+   messo la gara al suo posto: se in mezzo girasse un altro giro di
+   sincronizzazione, troverebbe le impronte vuote e riscriverebbe tutto.
+   Torna le operazioni da segnare come già inviate, che invece può aspettare. */
+function prendiImpronteDelloScarico() {
+  let ops = [];
+  try { ops = operazioniDaMandare(new Set()); } catch (e) { return []; }
+  // Segnato subito e in memoria: scriverlo su disco richiede centinaia di
+  // scritture asincrone, e un giro di sincronizzazione che cada in mezzo
+  // rimanderebbe su tutto quello che è appena sceso.
+  for (const op of ops) if (op.immutabile) giaSulServer.add(op.id);
+  return ops;
+}
+
+async function segnaComeGiaInviate(ops) {
+  try {
+    for (const op of ops) if (op.immutabile) await segnaInviato(op.id);
+  } catch (e) { /* IndexedDB assente: si rimanderà su qualcosa in più, non è un danno */ }
+}
+
+/** Le operazioni in coda che riguardano una certa gara, raggruppate per tipo. */
+async function codaDellaGara(id) {
+  let ops = [];
+  try { ops = (await leggiCoda()).filter(o => o.gara === id); } catch (e) { return { ops: [], per: [] }; }
+  const nomi = {
+    gara: ['dato della gara', 'dati della gara'],
+    configurazione: ['impostazione', 'impostazioni'],
+    fasce: ['fascia', 'fasce'],
+    iscritti: ['iscritto modificato', 'iscritti modificati'],
+    arrivi: ['arrivo', 'arrivi'],
+    arrivi_correzioni: ['correzione', 'correzioni'],
+    ritiri: ['ritiro', 'ritiri'],
+  };
+  const conta = new Map();
+  for (const o of ops) conta.set(o.tipo, (conta.get(o.tipo) || 0) + 1);
+  // Gli arrivi per primi: sono quelli che non esistono da nessun'altra parte.
+  const ordine = ['arrivi', 'arrivi_correzioni', 'ritiri', 'iscritti', 'fasce', 'configurazione', 'gara'];
+  const per = ordine.filter(t => conta.has(t))
+    .map(t => ({ tipo: t, n: conta.get(t), testo: plur(conta.get(t), nomi[t][0], nomi[t][1]) }));
+  return { ops, per };
+}
+
+/* Perché una gara non si può scaricare adesso. Torna null se si può. */
+function ostacoloAlloScarico(id, remota) {
+  if (S && S.start && !S.stop) {
+    return S.garaId === id
+      ? 'Questa gara è in corso su questo dispositivo. Finché il cronometro cammina non si sovrascrive niente, per nessun motivo.'
+      : 'C\'è una gara in corso su questo dispositivo. Ferma il cronometro prima di scaricarne un\'altra: dal traguardo non ci si sposta.';
+  }
+  const locale = elencoGareTutte().find(g => g.id === id);
+  if (locale && locale.inCorso) {
+    return 'La copia che hai qui di questa gara è in corso. Una gara in corso non si sovrascrive mai.';
+  }
+  if (remota && remota.in_corso) {
+    return 'Questa gara è in corso su un altro dispositivo. Si scarica quando il cronometro è fermo: scaricarla adesso vorrebbe dire fotografare una gara a metà.';
+  }
+  return null;
+}
+
+/**
+ * Scarica una gara e la apre. Torna { ok, motivo }.
+ * `avanzamento` viene chiamata con il nome del pezzo in arrivo, per farlo
+ * vedere nell'elenco mentre succede.
+ */
+async function scaricaGara(id, avanzamento) {
+  const remota = (gareRemote || []).find(g => g.id === id) || null;
+
+  const ostacolo = ostacoloAlloScarico(id, remota);
+  if (ostacolo) {
+    await confirmDlg('Non si scarica', ostacolo);
+    return { ok: false, motivo: 'in-corso' };
+  }
+  if (!collegato()) return { ok: false, motivo: 'scollegato' };
+  if (!navigator.onLine) {
+    await confirmDlg('Senza rete', 'Per scaricare una gara serve la connessione. Le gare che hai già qui funzionano lo stesso.');
+    return { ok: false, motivo: 'offline' };
+  }
+
+  /* LA CODA. Prima di sovrascrivere qualsiasi cosa si guarda se qui c'è
+     roba che il server non ha ancora, e in quel caso si chiede. */
+  let coda = await codaDellaGara(id);
+  if (coda.ops.length) {
+    const scelta = await chiediScelta(
+      'Qui c\'è roba non ancora inviata',
+      el('div', {},
+        el('p', { style: 'margin:0 0 10px' },
+          'La copia di ', el('b', {}, (remota && remota.nome) || 'questa gara'),
+          ' che hai su questo dispositivo ha ',
+          el('b', {}, plur(coda.ops.length, 'operazione', 'operazioni')),
+          ' che il server non ha ancora:'),
+        el('ul', { style: 'margin:0 0 10px 18px;padding:0' },
+          ...coda.per.map(p => el('li', {}, p.testo))),
+        el('p', { class: 'hint', style: 'margin:0' },
+          'Scaricare la gara dal server sostituirebbe questa copia. Nel dubbio ',
+          'vince quello che hai qui: è l\'unica copia che potrebbe non esistere ',
+          'da nessun\'altra parte.')),
+      [
+        { k: 'tieni', testo: 'Tieni quello che ho qui', classe: 'primary' },
+        { k: 'invia', testo: 'Invia prima, poi scarica' },
+        {
+          k: 'scarta', classe: 'danger',
+          testo: 'Scarta ' + (coda.ops.length === 1
+            ? 'l\'operazione' : `le ${coda.ops.length} operazioni`),
+        },
+      ]);
+
+    if (scelta === 'tieni' || scelta === null) return { ok: false, motivo: 'coda' };
+
+    if (scelta === 'invia') {
+      await inviaCoda();
+      coda = await codaDellaGara(id);
+      if (coda.ops.length) {
+        await confirmDlg('Non è partito tutto',
+          `Sono rimaste ${plur(coda.ops.length, 'operazione', 'operazioni')} da inviare. ` +
+          'Finché sono lì la gara non si scarica: quello che hai qui resta intatto.');
+        return { ok: false, motivo: 'coda' };
+      }
+    } else if (scelta === 'scarta') {
+      const sicuro = await confirmDlg('Scartare per davvero?',
+        (coda.ops.length === 1
+          ? 'Questa operazione va persa e non si recupera.'
+          : `Queste ${coda.ops.length} operazioni vanno perse e non si recuperano.`) +
+        ' Poi la gara viene scaricata dal server.');
+      if (!sicuro) return { ok: false, motivo: 'coda' };
+      for (const o of coda.ops) { try { await togliDallaCoda(o.id); } catch (e) { } }
+      verificaCoda();
+    }
+  }
+
+  /* Lo scarico vero. Fino all'ultima riga non si tocca niente di locale. */
+  let dati;
+  try {
+    dati = await scaricaPezzi(id, avanzamento);
+  } catch (e) {
+    await confirmDlg('Non è arrivata tutta',
+      'Lo scaricamento si è fermato su ' + (e && e.message ? e.message : 'un errore di rete') +
+      '. Non è stato scritto niente: sul dispositivo è rimasto tutto come prima. ' +
+      'Riprova quando la connessione è stabile.');
+    return { ok: false, motivo: 'incompleta' };
+  }
+
+  const gara = componiGaraScaricata(dati);
+
+  // Da qui in poi si scrive, e sono due righe: prima la gara, poi l'indice.
+  // In quest'ordine, perché se la seconda non riesce resta una gara che non
+  // si vede — non una voce di menu che apre il vuoto.
+  riponiGaraAttiva();
+  try {
+    localStorage.setItem(chiaveGara(gara.garaId), JSON.stringify(gara));
+  } catch (e) {
+    await confirmDlg('Non c\'è posto',
+      'La memoria di questo browser è piena e la gara non è stata scritta. ' +
+      'Non è cambiato niente: elimina una gara vecchia e riprova.');
+    return { ok: false, motivo: 'memoria' };
+  }
+  const elenco = leggiElenco().filter(x => x.id !== gara.garaId);
+  elenco.push(voceDi(gara));
+  scriviElenco(elenco);
+
+  /* E la si apre. Non passando da apriGara(): quella, se l'identificativo è
+     quello della gara già attiva, si limita a entrare senza rileggere niente
+     — e riscaricare la gara aperta non avrebbe cambiato una virgola. */
+  S = gara;
+  aggiornaFormato();
+  impronte.clear();
+  fsHandle = null;              // il file di salvataggio era di un'altra gara
+  const giaSulServer = prendiImpronteDelloScarico();   // subito, senza cedere il turno
+  save();
+  entraNellaApp('gara');
+
+  await segnaComeGiaInviate(giaSulServer);
+  aggiornaStato(collegato() ? 'allineato' : 'locale');
+  return {
+    ok: true,
+    iscritti: gara.iscritti.length,
+    arrivi: gara.arrivi.length,
+    dnf: gara.dnf.length,
+  };
+}
+
+/* ---------------- l'elenco che sta sul server ----------------
+   Non è mai sul percorso di nessuno: l'elenco locale si disegna subito e
+   questo arriva dopo, se arriva. Se non arriva non si dice niente — la app
+   senza rete deve sembrare la stessa app, non una app rotta. */
+let gareRemote = null;          // null = non pervenuto. Mai un errore in faccia.
+let gareRemoteInCorso = false;
+let gareRemoteChieste = false;  // già chiesto una volta: non si riprova da soli
+
+/** Dimentica l'elenco del server: al prossimo giro si richiede da capo. */
+function scordaGareRemote() {
+  gareRemote = null;
+  gareRemoteChieste = false;
+}
+
+async function caricaGareRemote() {
+  if (!sincroniaPossibile() || !collegato() || !navigator.onLine) { gareRemote = null; return; }
+  if (gareRemoteInCorso) return;
+  gareRemoteInCorso = true;
+  try {
+    const r = await chiamaRest('/rest/v1/gare?select=' +
+      'id,nome,data,luogo,km,anno,organizzatore,pubblicata,in_corso,aggiornato_il,' +
+      'iscritti(count),arrivi(count)&order=data.desc');
+    if (r.status === 401) { await rinnovaSessione(); gareRemote = null; return; }
+    if (!r.ok) { gareRemote = null; return; }
+    const righe = await r.json();
+    const quanti = v => Array.isArray(v) ? Number((v[0] || {}).count || 0) : Number(v || 0);
+    gareRemote = righe.map(g => Object.assign({}, g, {
+      iscritti: quanti(g.iscritti), arrivi: quanti(g.arrivi),
+    }));
+  } catch (e) {
+    gareRemote = null;          // senza rete non compare, e basta
+  } finally {
+    gareRemoteInCorso = false;
+    if (ui.schermata === 'menu' && ui.porta === 'organizzatore') renderMenu();
+  }
+}
 
 /* ---------------- pubblicazione della classifica ----------------
    A tempo fisso e fuori dal percorso critico: registrare un arrivo alza solo
@@ -3800,7 +4421,10 @@ function renderFsHint() {
   avviaOrologioPubblicazione();
   programmaSincronia();
   // Quando torna la rete la coda riparte da sola, senza che nessuno prema niente.
-  window.addEventListener('online', () => { aggiornaStato('attesa'); inviaCoda(); });
+  window.addEventListener('online', () => {
+    aggiornaStato('attesa'); inviaCoda();
+    scordaGareRemote();          // tornata la rete, l'elenco del server si può richiedere
+  });
   window.addEventListener('offline', () => aggiornaStato('offline'));
   window.addEventListener('beforeunload', e => {
     if (serveAvvisoChiusura()) { e.preventDefault(); e.returnValue = ''; }
