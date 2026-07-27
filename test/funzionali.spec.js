@@ -364,10 +364,19 @@ test.describe('Persistenza', () => {
       pett: r.pett, atteso: r.tempo, ottenuto: dopo.ris[n].tempo,
     })));
 
-    // La app riapre direttamente sugli arrivi quando ritrova una gara.
-    const vista = await page.evaluate(() => ui.view);
-    expect(vista, 'ritrovando una gara la app deve riaprirsi sugli arrivi')
-      .toBe('traguardo');
+    /* Come si riapre la app dopo un ricaricamento.
+       Qui la gara è FERMA (iniettaRiferimento imposta anche lo stop), quindi
+       si torna al menu: la regola è che si salta il menu solo quando una gara
+       è davvero in corso, e quel caso ha un test suo in menu.spec.js.
+       Quello che conta qui è che la gara sia ancora tutta lì, e lo dicono le
+       verifiche qui sopra. */
+    const dopoIlRicaricamento = await page.evaluate(() => ({
+      schermata: ui.schermata,
+      gara: S.garaId,
+      arrivi: S.arrivi.length,
+    }));
+    expect(dopoIlRicaricamento.schermata, 'a gara ferma si torna al menu').toBe('menu');
+    confrontaNumero('e la gara è ancora intera', 265, dopoIlRicaricamento.arrivi);
   });
 });
 

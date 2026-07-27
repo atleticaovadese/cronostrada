@@ -71,7 +71,14 @@ function confrontaNumero(descrizione, atteso, ottenuto, spiegazione = '') {
     (spiegazione ? `\n  ${spiegazione}` : '') + '\n');
 }
 
-/** Apre la app e attende che sia pronta. */
+/** Apre la app, entra in una gara e attende che sia pronta.
+ *
+ * Da quando esiste il menu con le due porte, la app si apre lì invece che
+ * dentro una gara — tranne quando una gara è in corso, e quello ha un test
+ * suo. Questi test verificano il comportamento DENTRO una gara, quindi
+ * l'aiuto ci entra: è il gesto che farebbe chiunque aprendo la app, non una
+ * scorciatoia per aggirare qualcosa.
+ */
 async function apriApp(page, percorso = '/index.html') {
   // La app avvisa prima di abbandonare la pagina se ci sono arrivi non salvati
   // su file: nei test accettiamo sempre.
@@ -79,6 +86,7 @@ async function apriApp(page, percorso = '/index.html') {
   await page.goto(percorso);
   await page.waitForFunction(
     () => typeof S !== 'undefined' && typeof calcola === 'function' && C !== null);
+  await page.evaluate(() => { if (ui.schermata === 'menu') entraNellaApp('gara'); });
 }
 
 /**

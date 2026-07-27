@@ -427,7 +427,44 @@ html,body{overscroll-behavior-y:contain}
   .matrix td:first-child input{min-height:38px;font-weight:650}
 }
 
+/* ---------- menu delle due porte ---------- */
+#menu{display:none;min-height:100vh;background:var(--bg)}
+body.inMenu #menu{display:block}
+body.inMenu #top,body.inMenu main{display:none!important}
+/* L'avviso di versione nuova resta visibile anche nel menu: lì una gara in
+   corso non c'è per definizione, quindi è il momento migliore per aggiornare. */
+.menuwrap{max-width:840px;margin:0 auto;padding:22px 16px 60px}
+.menutesta{display:flex;align-items:baseline;gap:10px;padding:6px 2px 18px}
+.porte{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+@media(max-width:560px){.porte{grid-template-columns:1fr}}
+.porta{display:flex;flex-direction:column;align-items:flex-start;gap:4px;text-align:left;
+  padding:18px 18px 20px;border:1px solid var(--line);background:var(--surface);
+  border-radius:var(--radius);cursor:pointer;box-shadow:var(--shadow);
+  touch-action:manipulation;-webkit-tap-highlight-color:transparent;min-height:88px}
+.porta:hover{border-color:#cfd6de;background:var(--surface-2)}
+.porta.on{border-color:var(--accent);background:var(--accent-soft);box-shadow:none}
+.portaTitolo{font-size:19px;font-weight:700;letter-spacing:-.01em;color:var(--ink)}
+.porta.on .portaTitolo{color:var(--accent-ink)}
+.portaSotto{font-size:12.5px;color:var(--ink-2);font-weight:500}
+#menuCorpo{margin-top:16px}
+
+/* elenco delle gare, sia locali sia pubbliche */
+.garariga{display:flex;align-items:center;gap:12px;padding:13px 14px;border-bottom:1px solid var(--line-2);
+  cursor:pointer;background:var(--surface);text-align:left;width:100%;border:0;border-bottom:1px solid var(--line-2);
+  touch-action:manipulation;-webkit-tap-highlight-color:transparent}
+.garariga:last-child{border-bottom:0}
+.garariga:hover{background:var(--surface-2)}
+.garariga .gnome{font-weight:650;font-size:14.5px;color:var(--ink)}
+.garariga .gsotto{font-size:12px;color:var(--ink-2);margin-top:2px}
+.garariga .topspace{flex:1}
+.garacorsa{display:inline-flex;align-items:center;gap:5px;font-size:11px;font-weight:700;
+  color:var(--go);background:var(--go-soft);border-radius:20px;padding:2px 9px;white-space:nowrap}
+.garacorsa .dot{background:var(--go);animation:pulsa 1.4s ease-in-out infinite}
+@keyframes pulsa{50%{opacity:.25}}
+.gareelenco{border:1px solid var(--line);border-radius:var(--radius);overflow:hidden;background:var(--surface)}
+
 @media print{
+  #menu{display:none!important}
   #top,nav,.noprint,#toast,.pad,#flash{display:none!important}
   /* in stampa niente riquadri che scorrono: le tabelle vanno per intero */
   .tw{overflow:visible!important;max-height:none!important}
@@ -444,8 +481,30 @@ html,body{overscroll-behavior-y:contain}
 </style>
 </head>
 <body>
+<!-- ============ MENU: le due porte ============
+     Vive fuori dalla app. Quando è aperto, barra e schede spariscono. -->
+<div id="menu">
+  <div class="menuwrap">
+    <div class="menutesta">
+      <div class="brand">CronoStrada <small>gare su strada</small></div>
+    </div>
+    <div class="porte" id="porte">
+      <button class="porta" type="button" data-p="organizzatore">
+        <span class="portaTitolo">Organizzatore</span>
+        <span class="portaSotto">Le tue gare: cronometra, correggi, stampa</span>
+      </button>
+      <button class="porta" type="button" data-p="live">
+        <span class="portaTitolo">Live</span>
+        <span class="portaSotto">Classifiche pubbliche, in diretta</span>
+      </button>
+    </div>
+    <div id="menuCorpo"></div>
+  </div>
+</div>
+
 <div id="top">
   <div class="topbar">
+    <button class="btn sm" id="btnMenu" type="button" title="Torna al menu">‹ Gare</button>
     <div class="brand">CronoStrada <small>gare su strada</small></div>
     <div class="racename" id="raceName">Nuova gara</div>
     <div class="topspace"></div>
@@ -854,11 +913,123 @@ const VUOTO = () => ({
   dnf: [],        // pettorali dichiarati ritirati
 });
 let S = VUOTO();
-let ui = { view: 'gara', clsMode: 'gen', socMode: 'conf', iscQ: '', iscF: '', arrQ: '', clsQ: '', stQ: '', stF: 'tutti' };
+let ui = {
+  schermata: 'app',        // 'menu' | 'app' — deciso all'avvio, vedi init()
+  porta: 'organizzatore',  // quale delle due porte è aperta nel menu
+  view: 'gara', clsMode: 'gen', socMode: 'conf',
+  iscQ: '', iscF: '', arrQ: '', clsQ: '', stQ: '', stF: 'tutti'
+};
 
-/* ---------- persistenza ---------- */
+/* ---------- persistenza ----------
+   PIÙ GARE, UNA SOLA ATTIVA.
+
+   La gara attiva resta dove è sempre stata, in 'cronostrada.v1'. Non è
+   pigrizia: è la chiave che il salvataggio sincrono scrive a ogni arrivo, e
+   spostarla avrebbe voluto dire rimettere le mani nel punto più delicato
+   della app per un motivo puramente organizzativo.
+
+   Le altre gare vivono ognuna nella sua chiave, e un indice leggero tiene
+   nome, data e conteggi per il menu. Cambiare gara vuol dire spostare quella
+   attuale nella sua chiave e portare l'altra in 'cronostrada.v1'. */
 const KEY = 'cronostrada.v1';
+const KEY_ELENCO = 'cronostrada.elenco';
+const chiaveGara = id => 'cronostrada.gara.' + id;
 let fsHandle = null, storageOk = true;
+
+function leggiElenco() {
+  try {
+    const raw = localStorage.getItem(KEY_ELENCO);
+    const a = raw ? JSON.parse(raw) : [];
+    return Array.isArray(a) ? a : [];
+  } catch (e) { return []; }
+}
+function scriviElenco(a) {
+  try { localStorage.setItem(KEY_ELENCO, JSON.stringify(a)); } catch (e) { }
+}
+
+/** La riga di indice che descrive una gara nel menu. */
+const voceDi = s => ({
+  id: s.garaId,
+  nome: s.cfg.nome || '',
+  data: s.cfg.data || '',
+  luogo: s.cfg.luogo || '',
+  iscritti: (s.iscritti || []).length,
+  arrivi: (s.arrivi || []).length,
+  inCorso: !!s.start && !s.stop,
+  aggiornata: Date.now(),
+});
+
+/** Aggiorna nell'indice la voce della gara attiva. */
+function aggiornaVoceAttiva(forza) {
+  if (!S || !S.garaId) return;
+  const elenco = leggiElenco();
+  const i = elenco.findIndex(x => x.id === S.garaId);
+  // Una gara ancora completamente vuota non intasa il menu, a meno che non
+  // sia stata creata apposta con "+ Nuova gara".
+  const vuota = !S.cfg.nome && !(S.iscritti || []).length && !(S.arrivi || []).length && !S.start;
+  if (i < 0 && vuota && !forza) return;
+  const v = voceDi(S);
+  if (i >= 0) elenco[i] = v; else elenco.push(v);
+  scriviElenco(elenco);
+}
+
+/** Tutte le gare conosciute, la più recente per prima. */
+function elencoGare() {
+  return leggiElenco().slice().sort((a, b) =>
+    (b.inCorso ? 1 : 0) - (a.inCorso ? 1 : 0) ||
+    String(b.data || '').localeCompare(String(a.data || '')) ||
+    (b.aggiornata || 0) - (a.aggiornata || 0));
+}
+
+/** Mette al sicuro la gara attiva nella sua chiave. */
+function riponiGaraAttiva() {
+  if (!S || !S.garaId) return;
+  try { localStorage.setItem(chiaveGara(S.garaId), JSON.stringify(S)); } catch (e) { }
+  aggiornaVoceAttiva();
+}
+
+/** Apre una gara: quella di prima viene riposta, questa diventa attiva. */
+function apriGara(id) {
+  if (S && S.garaId === id) { entraNellaApp(); return true; }
+  riponiGaraAttiva();
+  let d = null;
+  try {
+    const raw = localStorage.getItem(chiaveGara(id));
+    if (raw) d = JSON.parse(raw);
+  } catch (e) { }
+  if (!d || !d.cfg) return false;
+  S = Object.assign(VUOTO(), d);
+  S.cfg = Object.assign(VUOTO().cfg, d.cfg);
+  aggiornaFormato();
+  impronte.clear();               // gara diversa: le impronte non valgono più
+  fsHandle = null;                // il file di salvataggio era dell'altra gara
+  save();
+  entraNellaApp();
+  return true;
+}
+
+function nuovaGara() {
+  riponiGaraAttiva();
+  S = VUOTO();
+  impronte.clear();
+  fsHandle = null;
+  save();
+  aggiornaVoceAttiva(true);      // creata apposta: compare subito nel menu
+  entraNellaApp('gara');
+}
+
+function eliminaGara(id) {
+  const elenco = leggiElenco().filter(x => x.id !== id);
+  scriviElenco(elenco);
+  try { localStorage.removeItem(chiaveGara(id)); } catch (e) { }
+  if (S && S.garaId === id) {
+    // era quella aperta: si torna al menu con una gara vuota in mano
+    S = VUOTO();
+    impronte.clear();
+    fsHandle = null;
+    save();
+  }
+}
 
 function markSaved(txt, kind) {
   $('#saveTxt').textContent = txt;
@@ -904,11 +1075,18 @@ function scriviTutto() {
   if (storageOk) markSaved('Salvato in locale · ' + new Date().toLocaleTimeString('it-IT'));
 }
 
+/* L'indice del menu si aggiorna insieme alla gara. È un oggetto piccolo —
+   una riga per gara — quindi non pesa sul salvataggio di un arrivo. */
+function scriviTuttoEIndice() {
+  scriviTutto();
+  aggiornaVoceAttiva();
+}
+
 // save: immediato. È il comportamento predefinito, perché è quello sicuro.
-const save = scriviTutto;
+const save = scriviTuttoEIndice;
 // saveRitardato: solo per la digitazione, dove un tasto al secondo non merita
 // una scrittura per tasto.
-const saveRitardato = debounce(scriviTutto, 350);
+const saveRitardato = debounce(scriviTuttoEIndice, 350);
 
 function load() {
   try {
@@ -1131,7 +1309,14 @@ function buildNav() {
     n.append(b);
   }
 }
-function go(id) { ui.view = id; render(); }
+function go(id) {
+  // Chiamare go() significa voler stare dentro la app: se il menu era aperto
+  // si chiude da solo.
+  ui.schermata = 'app';
+  document.body.classList.remove('inMenu');
+  ui.view = id;
+  render();
+}
 
 function renderNav() {
   for (const v of VIEWS) {
@@ -1839,6 +2024,12 @@ const slug = () => (S.cfg.nome || 'gara').replace(/[^\w\- ]+/g, '').trim().repla
 /* ---------------- render ---------------- */
 function render() {
   ricalcola();
+  if (ui.schermata === 'menu') { renderMenu(); return; }
+  document.body.classList.remove('inMenu');
+  /* La barra si misura QUI e non solo all'avvio: quando la app parte dal menu
+     la barra è nascosta e misurerebbe zero, e il pannello del cronometro
+     finirebbe appiccicato sotto di essa invece che sotto la barra. */
+  misuraTop();
   renderNav();
   const f = { gara: renderGara, iscritti: renderIscritti, traguardo: renderTraguardo, classifiche: renderClassifiche, premiazioni: renderPremiazioni, societa: renderSocieta, stati: renderStati, export: renderExport }[ui.view];
   if (f) f();
@@ -2373,6 +2564,10 @@ async function registraServiceWorker() {
   } catch (e) {
     return;                       // niente PWA: la app resta quella di sempre
   }
+  // Alcuni contesti (o un browser configurato per bloccarli) restituiscono
+  // undefined invece di una registrazione: senza questa riga la app
+  // lancerebbe un errore per una funzione che non le è indispensabile.
+  if (!registrazioneSw) return;
 
   const segnala = () => { aggiornamentoPronto = true; aggiornaAvvisoVersione(); };
   if (registrazioneSw.waiting && navigator.serviceWorker.controller) segnala();
@@ -2442,6 +2637,277 @@ window.addEventListener('beforeinstallprompt', e => {
   if (ui.view === 'gara') renderInstalla();
 });
 window.addEventListener('appinstalled', () => { promptInstalla = null; render(); });
+
+/* ============================================================
+   IL MENU: le due porte
+
+   Due vincoli lo governano, e vengono prima di qualsiasi comodità.
+
+   1. NON SI METTE MAI FRA CHI CRONOMETRA E IL TRAGUARDO. Se una gara è in
+      corso — partenza impostata e stop no — la app si apre direttamente su
+      quella, nella scheda Arrivi. Allo sparo non si tocca niente.
+
+   2. NON ASPETTA MAI LA RETE. L'elenco delle gare locali compare subito,
+      sempre, anche in modalità aereo: viene da localStorage. Solo la porta
+      Live dipende dalla connessione, e quando manca lo dice invece di
+      restare a girare a vuoto.
+   ============================================================ */
+
+function entraNellaApp(vista) {
+  ui.schermata = 'app';
+  if (vista) ui.view = vista;
+  document.body.classList.remove('inMenu');
+  fermaOrologioLive();
+  render();
+}
+
+function tornaAlMenu(porta) {
+  riponiGaraAttiva();
+  ui.schermata = 'menu';
+  if (porta) ui.porta = porta;
+  document.body.classList.add('inMenu');
+  render();
+}
+
+function renderMenu() {
+  document.body.classList.add('inMenu');
+  $$('#porte .porta').forEach(b => b.classList.toggle('on', b.dataset.p === ui.porta));
+  if (ui.porta === 'live') renderPortaLive();
+  else renderPortaOrganizzatore();
+}
+
+/* ---------------- porta Organizzatore ---------------- */
+function renderPortaOrganizzatore() {
+  const box = $('#menuCorpo');
+  box.innerHTML = '';
+  const gare = elencoGare();
+
+  const testa = el('div', { class: 'card' },
+    el('header', {},
+      el('h2', {}, 'Le tue gare'),
+      el('span', { class: 'tag' }, String(gare.length)),
+      el('div', { class: 'topspace' }),
+      el('button', { class: 'btn primary', id: 'btnNuovaGara', onclick: nuovaGara }, '+ Nuova gara')));
+
+  if (!gare.length) {
+    testa.append(el('div', { class: 'body' },
+      el('p', { class: 'hint', style: 'margin:0' },
+        'Nessuna gara ancora. Premi ', el('b', {}, '+ Nuova gara'),
+        ' per cominciare: nome, data, iscritti da WISE, e sei pronto.')));
+    box.append(testa);
+    return;
+  }
+
+  const elenco = el('div', { class: 'gareelenco', id: 'elencoGare' });
+  for (const g of gare) {
+    const apri = () => apriGara(g.id);
+    const riga = el('button', { class: 'garariga', type: 'button', 'data-gara': g.id, onclick: apri },
+      el('div', {},
+        el('div', { class: 'gnome' }, g.nome || 'Gara senza nome'),
+        el('div', { class: 'gsotto' }, [
+          g.data ? new Date(g.data + 'T00:00').toLocaleDateString('it-IT', { day: 'numeric', month: 'long', year: 'numeric' }) : 'senza data',
+          g.luogo || null,
+          plur(g.arrivi || 0, 'arrivo', 'arrivi'),
+          plur(g.iscritti || 0, 'iscritto', 'iscritti'),
+        ].filter(Boolean).join(' · '))),
+      el('div', { class: 'topspace' }),
+      g.inCorso ? el('span', { class: 'garacorsa' }, el('span', { class: 'dot' }), 'in corso') : null,
+      el('span', { class: 'ib danger', title: 'Elimina questa gara', 'data-elimina': g.id,
+        onclick: e => { e.stopPropagation(); chiediEliminazione(g); } }, '×'));
+    elenco.append(riga);
+  }
+  box.append(testa, el('div', { style: 'margin-top:14px' }, elenco));
+}
+
+/* Eliminare una gara deve costare fatica e dire cosa si sta buttando via. */
+async function chiediEliminazione(g) {
+  const cosa = [
+    plur(g.arrivi || 0, 'arrivo registrato', 'arrivi registrati'),
+    plur(g.iscritti || 0, 'iscritto', 'iscritti'),
+  ].join(' e ');
+  const ok = await confirmDlg(
+    'Elimina «' + (g.nome || 'gara senza nome') + '»',
+    `Vengono cancellati ${cosa}. L'operazione non si può annullare: se ti ` +
+    `servono, apri la gara e scarica prima un backup .json.`);
+  if (!ok) return;
+  // Due conferme, non una: la seconda chiede di scrivere, così non la si
+  // supera premendo due volte di seguito nello stesso punto.
+  const parola = await chiediParola(g);
+  if (!parola) return;
+  eliminaGara(g.id);
+  toast('Gara eliminata', 'bad');
+  render();
+}
+
+function chiediParola(g) {
+  return new Promise(risolvi => {
+    const campo = el('input', { placeholder: 'ELIMINA', autocapitalize: 'characters', style: 'text-transform:uppercase' });
+    const d = $('#dlgConfirm');
+    $('#cfTitle').textContent = 'Conferma definitiva';
+    const corpo = $('#cfMsg');
+    corpo.textContent = '';
+    corpo.append(
+      el('div', {}, 'Per eliminare «' + (g.nome || 'gara senza nome') + '» con i suoi ',
+        el('b', {}, plur(g.arrivi || 0, 'arrivo', 'arrivi')),
+        ', scrivi ', el('b', {}, 'ELIMINA'), ' qui sotto.'),
+      el('div', { style: 'margin-top:10px' }, campo));
+    const si = () => { const v = campo.value.trim().toUpperCase() === 'ELIMINA'; chiudi(); risolvi(v); };
+    const no = () => { chiudi(); risolvi(false); };
+    function chiudi() {
+      d.close(); corpo.textContent = '';
+      $('#cfYes').removeEventListener('click', si); $('#cfNo').removeEventListener('click', no);
+    }
+    $('#cfYes').addEventListener('click', si); $('#cfNo').addEventListener('click', no);
+    d.showModal();
+    setTimeout(() => campo.focus(), 60);
+  });
+}
+
+/* ---------------- porta Live ----------------
+   Sola lettura, nessun accesso, nessun pulsante che modifichi qualcosa. */
+let liveGare = null;          // null = non ancora caricate
+let liveErrore = null;
+let liveGaraAperta = null;
+let liveRisultati = null;
+let orologioLive = null;
+
+function fermaOrologioLive() {
+  if (orologioLive) { clearInterval(orologioLive); orologioLive = null; }
+}
+
+async function chiediPubblico(percorso) {
+  const r = await fetch(`${SUPA.url}/rest/v1/${percorso}`, {
+    headers: {
+      apikey: SUPA.chiave, Authorization: 'Bearer ' + SUPA.chiave,
+      'Accept-Profile': SUPA.schema,
+    },
+  });
+  if (!r.ok) throw new Error('HTTP ' + r.status);
+  return r.json();
+}
+
+async function caricaLive() {
+  if (!navigator.onLine) { liveErrore = 'rete'; liveGare = null; renderMenu(); return; }
+  try {
+    liveErrore = null;
+    liveGare = await chiediPubblico('live_gare?select=id,nome,data,luogo,km,organizzatore,in_corso&order=data.desc');
+  } catch (e) {
+    liveErrore = 'server'; liveGare = null;
+  }
+  if (ui.schermata === 'menu' && ui.porta === 'live') renderMenu();
+}
+
+async function caricaClassificaPubblica(id) {
+  if (!navigator.onLine) { liveErrore = 'rete'; renderMenu(); return; }
+  try {
+    liveErrore = null;
+    liveRisultati = await chiediPubblico(
+      `live_risultati?gara_id=eq.${encodeURIComponent(id)}&select=pos,pett,cognome,nome,societa,fascia,etichetta,tempo_ms&order=pos`);
+  } catch (e) { liveErrore = 'server'; }
+  if (ui.schermata === 'menu' && ui.porta === 'live') renderMenu();
+}
+
+function renderPortaLive() {
+  const box = $('#menuCorpo');
+  box.innerHTML = '';
+
+  if (liveErrore === 'rete') {
+    fermaOrologioLive();
+    box.append(el('div', { class: 'card' }, el('div', { class: 'body' },
+      el('div', { class: 'banner warn' }, el('div', {},
+        el('b', {}, 'Per vedere le classifiche in diretta serve la connessione. '),
+        'Questa parte legge i risultati dal server, quindi in modalità aereo non ',
+        'può funzionare. Il resto della app — cronometro, iscritti, stampe — ',
+        'continua a funzionare senza rete: lo trovi sotto Organizzatore.')),
+      el('div', { class: 'btnrow', style: 'margin-top:12px' },
+        el('button', { class: 'btn', onclick: () => caricaLive() }, 'Riprova')))));
+    return;
+  }
+  if (liveErrore === 'server') {
+    box.append(el('div', { class: 'card' }, el('div', { class: 'body' },
+      el('div', { class: 'banner warn' }, el('div', {},
+        el('b', {}, 'Le classifiche non sono raggiungibili in questo momento. '),
+        'Riprova fra poco.')),
+      el('div', { class: 'btnrow', style: 'margin-top:12px' },
+        el('button', { class: 'btn', onclick: () => caricaLive() }, 'Riprova')))));
+    return;
+  }
+
+  // dentro una gara
+  if (liveGaraAperta) {
+    const g = liveGaraAperta;
+    box.append(el('div', { class: 'card' },
+      el('header', {},
+        el('button', { class: 'btn sm', onclick: () => { liveGaraAperta = null; liveRisultati = null; fermaOrologioLive(); renderMenu(); } }, '‹ Gare'),
+        el('h2', {}, g.nome || 'Gara'),
+        g.in_corso ? el('span', { class: 'garacorsa' }, el('span', { class: 'dot' }), 'in corso') : null,
+        el('div', { class: 'topspace' }),
+        el('span', { class: 'hint' }, liveRisultati ? plur(liveRisultati.length, 'arrivato', 'arrivati') : 'caricamento…')),
+      el('div', { class: 'body flush' }, el('div', { class: 'tw', id: 'liveTabella' }))));
+
+    const t = el('table');
+    t.append(el('thead', {}, el('tr', {},
+      el('th', { class: 'num' }, 'Pos.'), el('th', { class: 'num' }, 'Pett.'),
+      el('th', {}, 'Cognome'), el('th', {}, 'Nome'), el('th', {}, 'Società'),
+      el('th', {}, 'Fascia'), el('th', { class: 'num' }, 'Tempo'))));
+    const tb = el('tbody');
+    for (const r of (liveRisultati || [])) {
+      tb.append(el('tr', {},
+        el('td', { class: 'num', style: 'font-weight:700' }, r.pos),
+        el('td', { class: 'num mono' }, r.pett ?? ''),
+        el('td', {}, el('b', {}, r.cognome || '')), el('td', {}, r.nome || ''),
+        el('td', { style: 'font-size:12.5px;color:var(--ink-2)' }, r.societa || ''),
+        el('td', {}, r.etichetta ? el('span', { class: 'tag acc' }, r.etichetta) : ''),
+        el('td', { class: 't num' }, fmtHMS(r.tempo_ms))));
+    }
+    t.append(tb);
+    const cont = $('#liveTabella');
+    cont.append(t);
+    if (!liveRisultati || !liveRisultati.length) {
+      cont.append(emptyTbl(liveRisultati ? 'Nessun arrivo ancora.' : 'Caricamento…'));
+    }
+    // mentre la gara è in corso, la classifica si aggiorna da sola
+    if (g.in_corso && !orologioLive) {
+      orologioLive = setInterval(() => caricaClassificaPubblica(g.id), 20000);
+    }
+    return;
+  }
+
+  // elenco delle gare pubblicate
+  if (liveGare === null) {
+    box.append(el('div', { class: 'card' }, el('div', { class: 'body' },
+      el('p', { class: 'hint', style: 'margin:0' }, 'Caricamento…'))));
+    caricaLive();
+    return;
+  }
+  if (!liveGare.length) {
+    box.append(el('div', { class: 'card' }, el('div', { class: 'body' },
+      el('p', { class: 'hint', style: 'margin:0' },
+        'Nessuna gara pubblicata in questo momento. Compaiono qui quando un ',
+        'organizzatore le rende pubbliche.'))));
+    return;
+  }
+  const elenco = el('div', { class: 'gareelenco', id: 'elencoLive' });
+  for (const g of liveGare) {
+    elenco.append(el('button', {
+      class: 'garariga', type: 'button', 'data-live': g.id,
+      onclick: () => { liveGaraAperta = g; liveRisultati = null; renderMenu(); caricaClassificaPubblica(g.id); }
+    },
+      el('div', {},
+        el('div', { class: 'gnome' }, g.nome || 'Gara'),
+        el('div', { class: 'gsotto' }, [
+          g.data ? new Date(g.data + 'T00:00').toLocaleDateString('it-IT', { day: 'numeric', month: 'long', year: 'numeric' }) : null,
+          g.luogo || null, g.km ? g.km + ' km' : null, g.organizzatore || null,
+        ].filter(Boolean).join(' · '))),
+      el('div', { class: 'topspace' }),
+      g.in_corso ? el('span', { class: 'garacorsa' }, el('span', { class: 'dot' }), 'in corso') : null));
+  }
+  box.append(el('div', { class: 'card' },
+    el('header', {}, el('h2', {}, 'Gare pubblicate'), el('span', { class: 'tag' }, String(liveGare.length)),
+      el('div', { class: 'topspace' }),
+      el('button', { class: 'btn sm', onclick: () => caricaLive() }, 'Aggiorna')),
+    el('div', { class: 'body flush' }, elenco)));
+}
 
 /* ============================================================
    SINCRONIZZAZIONE
@@ -2926,6 +3392,14 @@ function serveAvvisoChiusura() {
 function wire() {
   buildNav();
 
+  $('#btnMenu').addEventListener('click', () => tornaAlMenu('organizzatore'));
+  $$('#porte .porta').forEach(b => b.addEventListener('click', () => {
+    ui.porta = b.dataset.p;
+    if (ui.porta === 'live') { liveGaraAperta = null; liveRisultati = null; caricaLive(); }
+    else fermaOrologioLive();
+    renderMenu();
+  }));
+
   // --- traguardo
   $('#btnStart').onclick = async () => {
     if (S.arrivi.length && !await confirmDlg('Nuova partenza', 'Ci sono già arrivi registrati. Far ripartire il cronometro azzera i tempi esistenti?')) return;
@@ -3092,8 +3566,28 @@ function renderFsHint() {
 (function init() {
   const trovato = load();
   wire();
-  if (!trovato) { S.cfg.anno = new Date().getFullYear(); ui.view = 'gara'; }
-  else ui.view = 'traguardo';
+  if (!trovato) S.cfg.anno = new Date().getFullYear();
+  // La gara che era aperta compare subito nel menu, senza aspettare che
+  // qualcuno la tocchi.
+  if (trovato) aggiornaVoceAttiva(true);
+
+  /* LA REGOLA CHE VIENE PRIMA DI TUTTE.
+     Se una gara è in corso — partenza impostata e stop no — la app si apre
+     dritta su quella, nella scheda Arrivi. Il menu non si vede nemmeno.
+     Allo sparo non si tocca niente prima di poter registrare, e un telefono
+     che si riavvia al traguardo torna esattamente dov'era. */
+  if (S.start && !S.stop) {
+    ui.schermata = 'app';
+    ui.view = 'traguardo';
+  } else if (trovato || elencoGare().length) {
+    ui.schermata = 'menu';
+    ui.porta = 'organizzatore';
+  } else {
+    // prima apertura in assoluto: si comincia dai dati della gara
+    ui.schermata = 'menu';
+    ui.porta = 'organizzatore';
+  }
+  document.body.classList.toggle('inMenu', ui.schermata === 'menu');
   renderFsHint();
   sincronizzaInputMode();
   misuraTop();
