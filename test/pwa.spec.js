@@ -94,6 +94,38 @@ test.describe('Installabilità', () => {
     }
   });
 
+  test('i file che decidono la versione hanno i fine-riga di Unix', async () => {
+    /* L'impronta è il SHA-256 dei byte. Un CRLF al posto di un LF cambia i
+       byte, quindi cambia l'impronta.
+
+       Due modi di farsi male, e questo test copre tutti e due.
+       Il primo è già successo: index.html è passato da LF a CRLF senza che
+       nessuno lo decidesse — 4461 byte in più che in un diff non si vedono,
+       il file identico riga per riga e diverso byte per byte. Da lì
+       l'impronta è cambiata e le rotture di npm run mutazioni che
+       attraversano due righe hanno smesso di trovare il loro punto.
+       Il secondo è il rischio di adesso: .gitattributes normalizza quello
+       che viene REGISTRATO, e se uno strumento riscrivesse il file con CRLF
+       il disco resterebbe sbagliato. Siccome l'impronta si calcola sul file
+       locale, il numero di qui e quello di un clone divergerebbero. A
+       quello pensa tools/testo.js; questo test è quello che se ne accorge
+       se saltano entrambi. */
+    const daControllare = ['index.html', 'dist/CronoStrada.html', 'sw.js', 'manifest.webmanifest'];
+    const colpevoli = daControllare
+      .map(f => ({ f, byte: fs.readFileSync(path.join(RADICE, f)) }))
+      .filter(x => x.byte.includes(0x0d))
+      .map(x => `  ${x.f}: ${x.byte.toString('utf8').split('\r\n').length - 1} righe con CRLF`);
+
+    if (colpevoli.length) {
+      throw new Error(
+        '\nQuesti file hanno i fine-riga di Windows:\n' + colpevoli.join('\n') +
+        '\n\n  L\'impronta del guscio è il SHA-256 dei byte: con i fine-riga sbagliati\n' +
+        '  il numero calcolato qui non coincide con quello di un clone pulito, e\n' +
+        '  la versione del service worker diventa una lotteria.\n\n' +
+        '  Rimettili a posto e rilancia:  npm run versione\n');
+    }
+  });
+
   test('la versione del service worker è allineata a tutto il guscio', async () => {
     // Se si modifica un file che finisce in cache e sw.js resta identico, il
     // browser non si accorge di niente e chi ha la app installata usa la

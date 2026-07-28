@@ -31,6 +31,7 @@
 const fs = require('fs');
 const path = require('path');
 const crypto = require('crypto');
+const { scriviTesto } = require('./testo');
 
 const RADICE = path.resolve(__dirname, '..');
 const SW = path.join(RADICE, 'sw.js');
@@ -105,8 +106,10 @@ function principale() {
     process.exit(1);
   }
 
-  fs.writeFileSync(SW, testoSw.replace(
-    /const VERSIONE = '[^']+'/, `const VERSIONE = '${attesa}'`), 'utf8');
+  // scriviTesto e non writeFileSync: sw.js deve restare a fine-riga LF, o
+  // l'impronta calcolata qui smette di coincidere con quella di un clone.
+  scriviTesto(SW, testoSw.replace(
+    /const VERSIONE = '[^']+'/, `const VERSIONE = '${attesa}'`));
   console.log(`versione aggiornata: ${scritta} -> ${attesa}`);
 }
 

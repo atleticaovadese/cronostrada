@@ -350,7 +350,12 @@ def main():
         'arrivi': arrivi,
     }
     dst = RADICE / 'reference_anon.json'
-    dst.write_text(json.dumps(uscita, ensure_ascii=False, indent=1), encoding='utf-8')
+    # newline='\n' esplicito: su Windows write_text traduce ogni \n in \r\n,
+    # e questo file finirebbe nel repository con i fine-riga sbagliati come
+    # e' gia' successo a index.html. I fine-riga qui sono LF, sempre; vedi
+    # .gitattributes e tools/testo.js.
+    with open(dst, 'w', encoding='utf-8', newline='\n') as f:
+        f.write(json.dumps(uscita, ensure_ascii=False, indent=1))
     print(f'scritto {dst.name}')
 
     dst_x = RADICE / 'wise_iscritti_anon.xlsx'

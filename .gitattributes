@@ -1,4 +1,59 @@
-# I file vanno pubblicati esattamente come sono, byte per byte.
-# Senza questa riga git riscriverebbe i fine-riga (LF <-> CRLF) e index.html
-# non sarebbe più una copia identica di dist/CronoStrada.html.
+# FINE-RIGA: LF, SEMPRE, DA TUTTE E DUE LE PARTI.
+#
+# Qui non è una questione di gusto. L'impronta che finisce in sw.js è il
+# SHA-256 dei file del guscio, e un file con i fine-riga di Windows ha byte
+# diversi dallo stesso file con i fine-riga di Unix. Se il calcolo fatto su
+# questo computer non dà lo stesso numero di quello fatto su una copia
+# appena scaricata, la versione del service worker diventa una lotteria: la
+# CI dice che è disallineata quando è allineata, o peggio il contrario.
+#
+# PRIMA C'ERA SOLO "* -text", cioè "non convertire niente in nessuna
+# direzione". Garantiva la fedeltà byte per byte fra repository e disco —
+# che serve alle icone e al foglio Excel — ma non imponeva niente: quello
+# che entrava restava. Così index.html è passato da LF a CRLF senza che
+# nessuno lo decidesse, 4461 byte in più che in un diff non si vedono, e da
+# lì l'impronta è cambiata.
+#
+# La regola vale in due direzioni e servono entrambe:
+#   - QUI: "text eol=lf" fa sì che git registri LF e rimetta LF sul disco,
+#     qualunque cosa dica core.autocrlf sul computer di chi scarica;
+#   - NEGLI STRUMENTI: chi riscrive questi file lo fa scrivendo LF a mano
+#     (vedi tools/testo.js). Senza quella metà questa riga sarebbe peggio
+#     del male: git normalizzerebbe quello che viene REGISTRATO lasciando
+#     sul disco quello che c'è, e siccome l'impronta si calcola sul file
+#     locale, il numero di qui e quello di un clone divergerebbero davvero.
+
+# Il valore di partenza resta quello: nessuna conversione. Così un binario
+# non può essere rovinato per distrazione, nemmeno se domani si aggiunge
+# un'estensione a cui nessuno ha pensato.
 * -text
+
+# Il testo, invece, è LF. Sempre.
+*.html          text eol=lf
+*.js            text eol=lf
+*.json          text eol=lf
+*.md            text eol=lf
+*.yml           text eol=lf
+*.yaml          text eol=lf
+*.sql           text eol=lf
+*.py            text eol=lf
+*.svg           text eol=lf
+*.css           text eol=lf
+*.webmanifest   text eol=lf
+.gitattributes  text eol=lf
+.gitignore      text eol=lf
+
+# I file del guscio, quelli che entrano nell'impronta, detti per nome: si
+# vedono a colpo d'occhio e non dipendono da una regola per estensione che
+# qualcuno potrebbe cambiare.
+index.html              text eol=lf
+dist/CronoStrada.html   text eol=lf
+sw.js                   text eol=lf
+manifest.webmanifest    text eol=lf
+
+# Le icone del guscio sono binarie: nell'impronta ci entrano, ma guai a
+# toccarle. "binary" vuol dire nessuna conversione e nessun diff testuale.
+icone/*.png     binary
+*.png           binary
+*.xlsx          binary
+*.ico           binary

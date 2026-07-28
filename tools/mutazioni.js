@@ -24,6 +24,7 @@ const fs = require('fs');
 const path = require('path');
 const crypto = require('crypto');
 const { spawnSync } = require('child_process');
+const { scriviTesto } = require('./testo');
 
 const RADICE = path.resolve(__dirname, '..');
 const APP = path.join(RADICE, 'index.html');
@@ -214,22 +215,23 @@ process.on('uncaughtException', e => {
 // ---------------------------------------------------------------- esecuzione
 const scappa = s => s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 
-/* L'ancoraggio si cerca senza badare a come sono scritti gli a capo:
-   index.html sta su Windows con CRLF, e una rottura che ne attraversa due
-   righe non si troverebbe mai cercando '\n'. Lo si è scoperto qui: due
-   rotture su dodici risultavano "ancoraggio non trovato" e passavano per
-   applicate a vuoto — cioè per rotture che nessuno stava provando. */
+/* L'ancoraggio si cerca senza badare a come sono scritti gli a capo.
+   Adesso index.html è a fine-riga LF e ci resta (vedi .gitattributes e
+   tools/testo.js), ma quando era passato a CRLF una rottura che attraversava
+   due righe non si trovava più: risultava "ancoraggio non trovato", e lo
+   strumento si fermava dicendo che quella rottura non era stata provata.
+   La tolleranza resta perché costa una riga e toglie un modo di rompersi. */
 function applica(m) {
   const testo = ORIGINALE.toString('utf8');
   const rx = new RegExp(m.cerca.split('\n').map(scappa).join('\\r?\\n'));
   if (!rx.test(testo)) return null;
-  const aCapo = testo.includes('\r\n') ? '\r\n' : '\n';
-  const nuovo = m.sostituisci.split('\n').join(aCapo);
-  const mutato = testo.replace(rx, () => nuovo);
+  const mutato = testo.replace(rx, () => m.sostituisci);
   if (mutato === testo) return null;
   ripristinato = false;
-  fs.writeFileSync(APP, mutato, 'utf8');
-  fs.writeFileSync(COPIA, mutato, 'utf8');
+  // scriviTesto e non writeFileSync: index.html e la sua copia restano a LF
+  // anche mentre sono rotti di proposito, così l'impronta non balla.
+  scriviTesto(APP, mutato);
+  scriviTesto(COPIA, mutato);
   return true;
 }
 
