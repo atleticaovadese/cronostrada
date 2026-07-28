@@ -3,13 +3,14 @@
  * PROVA DELLA RETE DI SICUREZZA
  *
  *     npm run mutazioni
+ *     npm run mutazioni -- troncamento     solo quelle che contengono la parola
  *
  * Rompe la app di proposito, una rottura per volta, e verifica che i test se
  * ne accorgano. Una suite verde non dice niente finché non si è visto che sa
  * anche diventare rossa: questo script lo dimostra ogni volta, invece di
  * lasciarlo alla memoria di chi c'era.
  *
- * Le quattro rotture sono quelle che farebbero il danno peggiore: sbagliano i
+ * Le rotture sono quelle che farebbero il danno peggiore: sbagliano i
  * risultati in silenzio, senza errori a schermo, e ci si accorgerebbe di loro
  * a premiazione già fatta.
  *
@@ -105,14 +106,6 @@ const MUTAZIONI = [
     test: 'non si scarica e non si sovrascrive',
   },
   {
-    nome: "l'invio si ferma alla fotografia iniziale",
-    spiega: 'il giro non rilegge la coda: quello che entra mentre invia resta dentro',
-    danno: 'A gara finita nessuno tocca più niente, e quelle righe non partono mai. L\'indicatore dice "Da inviare" per sempre.',
-    cerca: "      if (!partite) { aggiornaStato('attesa', await contaCoda()); return; }",
-    sostituisci: "      aggiornaStato('attesa', await contaCoda()); return;",
-    test: 'non si ferma a metà',
-  },
-  {
     nome: 'quello che è appena sceso risale',
     spiega: 'dopo lo scarico le impronte restano vuote',
     danno: 'Trecento richieste inutili dal telefono e una correzione doppia per ogni arrivo, ogni volta che si apre una gara.',
@@ -140,9 +133,19 @@ const MUTAZIONI = [
     nome: 'le righe rifiutate restano da parte per sempre',
     spiega: 'la coda non rimette mai in gioco quello che il server ha respinto',
     danno: 'Un rifiuto passeggero diventa definitivo: quelle righe non partono più, e nessuno ci riprova.',
-    cerca: '    await sbloccaCoda();',
-    sostituisci: '    ;',
+    cerca: '      await sbloccaCoda();',
+    sostituisci: '      ;',
     test: 'riprova al giro dopo',
+  },
+  {
+    nome: "una richiesta di invio arrivata durante un invio si perde",
+    spiega: 'chi chiede di inviare mentre si sta gia\' inviando viene ignorato',
+    danno: 'La coda si ferma a meta\' e non riparte piu\': a gara finita quelle righe non partono mai, e l\'indicatore dice "Da inviare" per sempre.',
+    cerca: '  if (invioInCorso) { invioRichiesto = true; return; }',
+    sostituisci: '  if (invioInCorso) return;',
+    // Anche il collaudo finale: e' la rottura per cui esiste, ed e' l'unica
+    // prova che percorre il volume in cui il difetto compariva davvero.
+    test: 'riprova al giro dopo|non si ferma a metà|dall.inizio alla fine',
   },
   {
     nome: 'la sessione azzerata torna in gara',
@@ -239,13 +242,27 @@ function girano(grep) {
   return { passati: r.status === 0, quanti, uscita };
 }
 
+/* Un filtro sul nome, per riprovarne una sola senza aspettare le altre.
+   Non cambia niente per chi lancia `npm run mutazioni` e basta. */
+const filtro = process.argv.slice(2).filter(a => !a.startsWith('-')).join(' ').toLowerCase();
+const SCELTE = filtro
+  ? MUTAZIONI.filter(m => m.nome.toLowerCase().includes(filtro))
+  : MUTAZIONI;
+
+if (!SCELTE.length) {
+  console.error(`Nessuna rottura contiene "${filtro}". Ci sono:`);
+  for (const m of MUTAZIONI) console.error('  ' + m.nome);
+  process.exit(1);
+}
+
 console.log('Prova della rete di sicurezza: rompo la app di proposito, una volta per rottura.');
+if (filtro) console.log(`filtro: "${filtro}" — ${SCELTE.length} rotture su ${MUTAZIONI.length}`);
 console.log(`index.html   ${IMPRONTA.slice(0, 16)}…  (${ORIGINALE.length} byte)\n`);
 
 const esiti = [];
 try {
-  for (const [i, m] of MUTAZIONI.entries()) {
-    process.stdout.write(`${i + 1}/${MUTAZIONI.length}  ${m.nome}\n`);
+  for (const [i, m] of SCELTE.entries()) {
+    process.stdout.write(`${i + 1}/${SCELTE.length}  ${m.nome}\n`);
     process.stdout.write(`        ${m.spiega}\n`);
 
     if (!applica(m)) {
@@ -295,9 +312,9 @@ if (!integro) {
   process.exit(1);
 }
 if (sfuggite.length) {
-  console.error(`\n${sfuggite.length} rotture su ${MUTAZIONI.length} non sono state intercettate.`);
+  console.error(`\n${sfuggite.length} rotture su ${SCELTE.length} non sono state intercettate.`);
   console.error('La rete di sicurezza ha dei buchi: quei difetti arriverebbero in gara senza');
   console.error('che nessun test se ne accorga. Vanno coperti prima di andare avanti.');
   process.exit(1);
 }
-console.log(`\nTutte e ${MUTAZIONI.length} le rotture sono state intercettate: la rete tiene.`);
+console.log(`\nTutte e ${SCELTE.length} le rotture sono state intercettate: la rete tiene.`);

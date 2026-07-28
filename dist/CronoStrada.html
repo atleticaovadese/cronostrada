@@ -3560,6 +3560,7 @@ function nomeDispositivo() {
 /* ---------------- invio ---------------- */
 let statoSincronia = { fase: 'locale', coda: 0 };
 let invioInCorso = false;
+let invioRichiesto = false;   // qualcuno ha chiesto di inviare mentre inviavo
 
 const PERCORSI = {
   gara: '/rest/v1/gare',
@@ -3601,77 +3602,102 @@ async function sbloccaCoda() {
   } catch (e) { }
 }
 
-/* SI VA AVANTI FINCHÉ SI FA STRADA.
-   Il giro legge la coda, la manda e ricomincia: mentre il primo giro invia,
-   altre operazioni possono essere entrate — un arrivo registrato nel
-   frattempo, o semplicemente il resto di una gara grossa accodato mentre il
-   primo pezzo partiva. Fermarsi alla fotografia iniziale lasciava quelle
-   dentro finché qualcuno non toccava qualcosa: a gara finita, cioè quando
-   nessuno tocca più niente, restavano lì per sempre con l'indicatore che
-   diceva "Da inviare" e nessuno che ci riprovasse.
-   Si smette quando la coda è vuota, oppure quando un giro intero non è
-   riuscito a mandare niente — così le operazioni rifiutate dal server non
-   fanno girare a vuoto. */
+/* SI VA AVANTI FINCHÉ QUALCUNO CHIEDE.
+
+   Il difetto da cui viene tutto questo: l'invio leggeva la coda una volta
+   sola e mandava quella fotografia. Con la gara vera si fermava a 555 righe
+   su 834, perché mentre mandava le prime ne stavano entrando altre, e non
+   ripartiva finché qualcuno non toccava qualcosa. Al traguardo non si
+   vedeva — ogni arrivo fa partire una sincronia nuova — ma a gara finita,
+   cioè quando nessuno tocca più niente, quelle righe restavano lì per
+   sempre con l'indicatore che diceva "Da inviare".
+
+   LA REGOLA CHE LO IMPEDISCE, ed è una sola: una richiesta di invio
+   arrivata mentre si sta già inviando non si butta via. Si prende nota, e
+   prima di smettere si fa un altro giro. Siccome ogni cosa che entra in
+   coda viene accodata e SUBITO dopo si chiede di inviare — lo fanno
+   sincronizzaSubito e programmaSincronia, che sono le uniche due strade —
+   niente può restare dentro senza che qualcuno abbia chiesto un giro in
+   più. Vale anche quando a cambiare non è la coda ma il mondo: il server
+   che ricomincia a rispondere, l'accesso rinnovato.
+
+   Un ciclo interno che rileggesse la coda finché fa strada sarebbe una
+   seconda difesa per la stessa cosa. C'era, e l'ho tolta: nessun test
+   riusciva a distinguerla da questa — togliendola i test restavano verdi —
+   e una difesa che non si può mettere alla prova non è una difesa, è del
+   codice in più da leggere. */
 async function inviaCoda() {
-  if (invioInCorso || !sincroniaPossibile() || !collegato()) return;
+  if (invioInCorso) { invioRichiesto = true; return; }
+  if (!sincroniaPossibile() || !collegato()) return;
   if (!navigator.onLine) { aggiornaStato('offline'); return; }
   invioInCorso = true;
   try {
-    /* Le rifiutate si riprovano una volta per giro di sincronizzazione, non
-       una volta per sempre: se il motivo del rifiuto era passeggero — la
-       riga della gara non ancora arrivata, una connessione a metà — al giro
-       dopo passano. Dentro un giro invece restano da parte, per non fare
-       girare a vuoto tutto il resto. */
-    await sbloccaCoda();
-
-    for (;;) {
-      const coda = (await leggiCoda())
-        .filter(o => !o.bloccata)                   // rifiutate poco fa: non ora
-        .sort(perOrdineDiInvio);
-      if (!coda.length) { aggiornaStato(await contaCoda() ? 'attesa' : 'allineato'); return; }
-      aggiornaStato('invio', coda.length);
-
-      let partite = 0;
-      for (const op of coda) {
-        // Le righe immutabili si ignorano se già presenti; le altre si
-        // sovrascrivono con l'ultimo valore. In entrambi i casi rimandare la
-        // stessa operazione non produce doppioni.
-        const prefer = op.immutabile
-          ? 'resolution=ignore-duplicates,return=minimal'
-          : 'resolution=merge-duplicates,return=minimal';
-        let r;
-        try {
-          r = await chiamaRest(PERCORSI[op.tipo], { metodo: 'POST', corpo: op.corpo, prefer });
-        } catch (e) {
-          aggiornaStato('offline', coda.length);      // rete caduta: si riprova dopo
-          return;
-        }
-        if (r.ok || r.status === 409) {
-          await togliDallaCoda(op.id);
-          if (op.immutabile) await segnaInviato(op.id);
-          partite++;
-        } else if (r.status === 401) {
-          if (await rinnovaSessione()) { invioInCorso = false; return inviaCoda(); }
-          aggiornaStato('scollegato', coda.length);
-          return;
-        } else if (r.status >= 500) {
-          aggiornaStato('attesa', coda.length);        // problema del server: si riprova
-          return;
-        } else {
-          // Rifiutata dal server: non si perde, si mette da parte e si va avanti
-          // con le altre invece di bloccare tutta la coda.
-          op.bloccata = true;
-          op.motivo = r.status + ' ' + (await r.text().catch(() => '')).slice(0, 120);
-          await accoda(op);
-        }
-      }
-      if (!partite) { aggiornaStato('attesa', await contaCoda()); return; }
-    }
+    do {
+      invioRichiesto = false;
+      /* Le rifiutate si riprovano una volta per giro, non una volta per
+         sempre: se il motivo del rifiuto era passeggero — la riga della gara
+         non ancora arrivata, una connessione a metà — al giro dopo passano.
+         Dentro un giro invece restano da parte, per non fare girare a vuoto
+         tutto il resto. */
+      await sbloccaCoda();
+      if (!await unaPassata()) return;         // conviene fermarsi e riprovare dopo
+    } while (invioRichiesto);
   } catch (e) {
     aggiornaStato('attesa');
   } finally {
     invioInCorso = false;
   }
+}
+
+/**
+ * Una passata sulla coda: la legge e prova a mandarla tutta.
+ * Torna false quando conviene smettere del tutto — rete caduta, accesso
+ * scaduto, server in difficoltà — e true quando la passata è arrivata in
+ * fondo. A decidere se farne un'altra è inviaCoda, guardando se nel
+ * frattempo qualcuno ha chiesto di inviare.
+ */
+async function unaPassata() {
+  const coda = (await leggiCoda())
+    .filter(o => !o.bloccata)                   // rifiutate poco fa: non ora
+    .sort(perOrdineDiInvio);
+  if (!coda.length) { aggiornaStato(await contaCoda() ? 'attesa' : 'allineato'); return true; }
+  aggiornaStato('invio', coda.length);
+
+  for (const op of coda) {
+    // Le righe immutabili si ignorano se già presenti; le altre si
+    // sovrascrivono con l'ultimo valore. In entrambi i casi rimandare la
+    // stessa operazione non produce doppioni.
+    const prefer = op.immutabile
+      ? 'resolution=ignore-duplicates,return=minimal'
+      : 'resolution=merge-duplicates,return=minimal';
+    let r;
+    try {
+      r = await chiamaRest(PERCORSI[op.tipo], { metodo: 'POST', corpo: op.corpo, prefer });
+    } catch (e) {
+      aggiornaStato('offline', coda.length);      // rete caduta: si riprova dopo
+      return false;
+    }
+    if (r.ok || r.status === 409) {
+      await togliDallaCoda(op.id);
+      if (op.immutabile) await segnaInviato(op.id);
+    } else if (r.status === 401) {
+      // Rinnovato l'accesso si riparte da capo, con la passata successiva.
+      if (await rinnovaSessione()) { invioRichiesto = true; return true; }
+      aggiornaStato('scollegato', coda.length);
+      return false;
+    } else if (r.status >= 500) {
+      aggiornaStato('attesa', coda.length);        // problema del server: si riprova
+      return false;
+    } else {
+      // Rifiutata dal server: non si perde, si mette da parte e si va avanti
+      // con le altre invece di bloccare tutta la coda.
+      op.bloccata = true;
+      op.motivo = r.status + ' ' + (await r.text().catch(() => '')).slice(0, 120);
+      await accoda(op);
+    }
+  }
+  aggiornaStato(await contaCoda() ? 'attesa' : 'allineato');
+  return true;
 }
 
 function aggiornaStato(fase, coda) {

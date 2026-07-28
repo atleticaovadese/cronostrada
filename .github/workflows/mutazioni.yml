@@ -3,8 +3,8 @@ name: Prova della rete di sicurezza
 # Rompe la app di proposito e verifica che i test se ne accorgano.
 #
 # Gira UNA VOLTA A SETTIMANA, non a ogni push: è una verifica della qualità
-# dei test, non della modifica in arrivo, e richiede quattro esecuzioni
-# complete della suite. A ogni push continuano a girare i test normali
+# dei test, non della modifica in arrivo, e richiede una esecuzione completa
+# della suite per ogni rottura. A ogni push continuano a girare i test normali
 # (workflow "Test e pubblicazione"), che sono quelli che bloccano il deploy.
 #
 # Si può lanciare anche a mano dalla scheda Actions, con "Run workflow".
@@ -35,8 +35,8 @@ jobs:
       - name: Installa le dipendenze
         run: npm ci
 
-      # Le quattro rotture riguardano i calcoli e girano sul solo profilo
-      # "computer": basta Chromium, WebKit qui non serve.
+      # Le rotture girano tutte sul solo profilo "computer": basta Chromium,
+      # WebKit qui non serve.
       - name: Installa il browser
         run: npx playwright install --with-deps chromium
 

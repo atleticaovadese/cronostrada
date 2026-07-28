@@ -953,6 +953,69 @@ test.describe('La coda non si ferma a metà', () => {
 
     await pc.contesto.close();
   });
+
+  test("una richiesta arrivata durante l'invio non si perde", async ({ browser }) => {
+    /* Trovato dalla contesa fra i test, non a tavolino: se qualcuno chiede
+       di sincronizzare mentre un invio è già in volo, quella richiesta
+       veniva buttata via. Quando il motivo della richiesta era che qualcosa
+       ERA CAMBIATO — il server aveva ripreso a funzionare, per esempio — la
+       coda restava indietro fino al gesto successivo, che a gara finita non
+       arriva mai. */
+    const db = nuovoServer();
+    const pc = await dispositivo(browser, db);
+    await accediNellaApp(pc.page);
+
+    db.lento = 40;                 // l'invio dura, così ci si può cadere dentro
+    db.rifiuta = 'iscritti';       // e intanto il server respinge gli iscritti
+
+    /* Si accoda a mano e si fa partire l'invio senza passare da touched():
+       touched() programma una sincronia fra quattrocento millisecondi, e
+       quella basterebbe da sola a rimettere in gioco le righe respinte.
+       Qui devono esserci due sole richieste — questa e quella di sotto —
+       altrimenti la prova non prova niente. */
+    await pc.page.evaluate(async iscritti => {
+      nuovaGara(); S.cfg.nome = 'Richiesta durante invio';
+      S.iscritti = iscritti.map(x => ({
+        id: nid(), pett: x.pett, cognome: x.cognome, nome: x.nome, sesso: x.sesso,
+        societa: x.societa, nascita: x.nascita, conferma: x.conferma,
+      }));
+      save();
+      const inviati = new Set(await leggiInviati());
+      for (const op of operazioniDaMandare(inviati)) {
+        await accoda(Object.assign({ creato: Date.now() }, op));
+      }
+      inviaCoda();                 // parte e NON si aspetta
+    }, iscrittiFinti(25));
+
+    /* Si aspetta che qualche iscritto sia stato davvero respinto: prima di
+       allora non c'è niente da rimettere in gioco, e il tolto-il-difetto
+       passerebbe lo stesso. */
+    const respinti = () => db.richieste
+      .filter(r => r.metodo === 'POST' && r.percorso.startsWith('/rest/v1/iscritti')).length;
+    const fine = Date.now() + 15_000;
+    while (respinti() < 5 && Date.now() < fine) await pc.page.waitForTimeout(50);
+    expect(respinti(), 'il server deve aver respinto qualche iscritto').toBeGreaterThanOrEqual(5);
+
+    // Il server riprende a funzionare e si richiede l'invio: siamo dentro
+    // il primo, che di quel cambiamento non sa niente.
+    db.rifiuta = null;
+    const durante = await pc.page.evaluate(() => {
+      inviaCoda();                 // cade sul ramo "sto già inviando"
+      return { inCorso: invioInCorso, presaNota: invioRichiesto };
+    });
+    expect(durante.inCorso, "la prova ha senso solo se l'invio era ancora in volo").toBe(true);
+
+    db.lento = 0;
+    /* E adesso nessuno chiede più niente. La coda deve arrivare a zero da
+       sola, grazie al giro in più che la richiesta di prima ha prenotato. */
+    await attendiCoda(pc.page, n => n === 0, {
+      timeout: 12_000,
+      cosa: "la richiesta arrivata durante l'invio è stata buttata via",
+    });
+    confrontaNumero('iscritti arrivati sul server', 25, db.tabelle.iscritti.length);
+
+    await pc.contesto.close();
+  });
 });
 
 /* ============================================================

@@ -423,7 +423,7 @@ semplicemente: apri la chiavetta USB, che ha la versione che funzionava.
 
 ## La rete di sicurezza: i test automatici
 
-Ogni volta che si manda una modifica su GitHub, **17 test verificano da soli**
+Ogni volta che si manda una modifica su GitHub, **140 test verificano da soli**
 che la app dia ancora gli stessi risultati di una gara vera già disputata: la
 7ª Stradolcetto, 280 iscritti e 265 arrivi, con categorie e posizioni prese dal
 foglio Excel.
@@ -445,6 +445,22 @@ Cosa controllano, in breve:
   STOP e ripresa, spostamento dell'orario di partenza, azzeramento, e i dati
   che sopravvivono a un ricaricamento della pagina
 - che `dist/CronoStrada.html` sia ancora identica a `index.html`
+
+### Il collaudo finale
+
+Uno di questi test non prova un pezzo: prova la giornata. Rifà la gara vera
+dall'inizio alla fine — i 280 iscritti importati dal file WISE, i 265 arrivi,
+una parte con il pettorale dettato dopo, qualche tempo corretto a mano, un
+ritiro, la partenza spostata — con **la rete che manca** per il grosso della
+gara e che torna **mentre la gara è ancora in corso**. Alla fine nessuno tocca
+più niente e la coda deve arrivare a zero da sola, con sul server i conteggi
+esatti; poi due sincronizzazioni in più che non devono aggiungere una riga.
+
+Esiste per un difetto vero: l'invio si fermava a 555 righe su 834 e non
+ripartiva più. Nessun test se n'era accorto perché nessuno percorreva una gara
+intera — con venti righe la coda si svuota al primo giro e il difetto non ha
+modo di comparire. Serviva il volume vero per farlo uscire, e da allora quel
+volume si percorre a ogni pubblicazione.
 
 Quando un test fallisce dice **quale atleta** e **quale valore** non torna:
 
@@ -473,17 +489,25 @@ npm test
 ### Chi controlla i controllori
 
 Una suite tutta verde non dimostra niente finché non si è visto che sa anche
-diventare rossa. Questo comando rompe la app di proposito, quattro volte, e
-verifica che i test se ne accorgano:
+diventare rossa. Questo comando rompe la app di proposito, una rottura per
+volta, e verifica che i test se ne accorgano:
 
 ```bash
 npm run mutazioni
+npm run mutazioni -- troncamento    # solo quelle che contengono la parola
 ```
 
-Le quattro rotture sono quelle che farebbero il danno peggiore, perché
-sbagliano i risultati **in silenzio**: arrotondamento al posto del
+Le rotture sono quelle che farebbero il danno peggiore, perché sbagliano
+**in silenzio**. Quattro sui calcoli — arrotondamento al posto del
 troncamento, soglia di categoria spostata di un anno, premiati assoluti non
-più esclusi dalla loro fascia, rilevamento degli omonimi che non scatta più.
+più esclusi dalla loro fascia, rilevamento degli omonimi che non scatta più —
+e dieci sulla sincronizzazione: una gara che arriva a metà, l'invio che si
+ferma, una riga rifiutata che non riparte più, i tempi che si spostano
+scendendo dal server.
+
+Serve anche a togliere: se una rottura non fa diventare rosso nessun test,
+o si scopre un buco nei test, oppure quel pezzo di codice non stava
+difendendo niente. È già successo.
 
 Alla fine `index.html` torna identico al byte, sempre: anche se un test va
 storto, anche se interrompi lo script a metà, anche se chiudi la finestra di
@@ -491,7 +515,7 @@ brutto (in quel caso se ne accorge al lancio successivo e ripara da solo).
 
 Gira anche su GitHub Actions, ma **una volta a settimana** e non a ogni
 modifica: è una verifica della qualità dei test, non della modifica in arrivo,
-e richiede quattro esecuzioni complete della suite.
+e richiede una esecuzione completa della suite per ogni rottura.
 
 ### I dati su cui girano
 
