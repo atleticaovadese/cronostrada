@@ -58,6 +58,20 @@ const tuttoInCoda = page => page.evaluate(async () => {
   catch (e) { return []; }
 });
 
+/** Aspetta che almeno una riga sia stata messa da parte, e torna quelle. */
+async function attendiMotivo(page, timeout = 15_000) {
+  const fine = Date.now() + timeout;
+  for (;;) {
+    const messe = (await tuttoInCoda(page)).filter(o => o.motivo);
+    if (messe.length) return messe;
+    if (Date.now() > fine) {
+      throw new Error('\nIl server ha respinto delle righe ma nessuna risulta messa da parte ' +
+        'con il suo motivo.\n');
+    }
+    await page.waitForTimeout(100);
+  }
+}
+
 /** Entra nella porta Organizzatore, come farebbe chiunque. */
 async function apriPortaOrganizzatore(page) {
   await page.evaluate(() => { tornaAlMenu('organizzatore'); });
@@ -1085,9 +1099,12 @@ test.describe("L'ordine di invio", () => {
       touched();
       await sincronizzaSubito();
     }, iscrittiFinti(4));
-    await attendiCoda(pc.page, n => n > 0, { timeout: 15_000, cosa: 'nessuna riga è stata rifiutata' });
+    /* Si aspetta che le righe siano state DAVVERO messe da parte, non solo
+       che la coda abbia qualcosa dentro: con una macchina carica il primo
+       controllo arriva prima che il server abbia risposto, e il resto della
+       prova girerebbe a vuoto. */
+    const messeDaParte = await attendiMotivo(pc.page, 15_000);
     confrontaNumero('iscritti sul server mentre li respinge', 0, db.tabelle.iscritti.length);
-    const messeDaParte = (await tuttoInCoda(pc.page)).filter(o => o.motivo);
     expect(messeDaParte.length, 'le righe respinte devono risultare messe da parte, con il motivo')
       .toBeGreaterThan(0);
 

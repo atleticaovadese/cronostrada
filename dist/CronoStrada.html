@@ -487,6 +487,21 @@ body.inMenu #top,body.inMenu main{display:none!important}
 .garariga.remota .gnome{color:var(--ink-2)}
 .garariga .gscarico{font-size:12px;font-weight:650;color:var(--accent-ink);white-space:nowrap}
 
+/* LA CLASSIFICA IN LIVE, SU UN TELEFONO.
+   Chi guarda da bordo strada vuole due cose: chi è arrivato e in che tempo.
+   Con sette colonne il tempo finisce fuori dallo schermo e bisogna trascinare
+   la tabella di lato per leggerlo — cioè la cosa per cui uno ha aperto la
+   pagina. Sotto i 560 punti società e fascia escono dalla riga e tornano
+   sotto il nome, in piccolo: non si perde niente e non si trascina niente. */
+.tabellalive .sottonome{display:none}
+@media (max-width:560px){
+  .tabellalive th.c-soc,.tabellalive td.c-soc,
+  .tabellalive th.c-fascia,.tabellalive td.c-fascia{display:none}
+  .tabellalive .sottonome{display:block;font-size:11.5px;color:var(--ink-2);
+    margin-top:2px;line-height:1.25}
+  .tabellalive td,.tabellalive th{padding-left:7px;padding-right:7px}
+}
+
 @media print{
   #menu{display:none!important}
   #top,nav,.noprint,#toast,.pad,#flash{display:none!important}
@@ -3198,19 +3213,24 @@ function renderPortaLive() {
         el('span', { class: 'hint' }, liveRisultati ? plur(liveRisultati.length, 'arrivato', 'arrivati') : 'caricamento…')),
       el('div', { class: 'body flush' }, el('div', { class: 'tw', id: 'liveTabella' }))));
 
-    const t = el('table');
+    const t = el('table', { class: 'tabellalive' });
     t.append(el('thead', {}, el('tr', {},
       el('th', { class: 'num' }, 'Pos.'), el('th', { class: 'num' }, 'Pett.'),
-      el('th', {}, 'Cognome'), el('th', {}, 'Nome'), el('th', {}, 'Società'),
-      el('th', {}, 'Fascia'), el('th', { class: 'num' }, 'Tempo'))));
+      el('th', {}, 'Cognome'), el('th', {}, 'Nome'),
+      el('th', { class: 'c-soc' }, 'Società'),
+      el('th', { class: 'c-fascia' }, 'Fascia'), el('th', { class: 'num' }, 'Tempo'))));
     const tb = el('tbody');
     for (const r of (liveRisultati || [])) {
+      // Su schermo stretto società e fascia scendono sotto il nome: vedi
+      // .tabellalive nel foglio di stile. Il DOM è uno solo, decide la CSS.
+      const sotto = [r.societa || null, r.etichetta || null].filter(Boolean).join(' · ');
       tb.append(el('tr', {},
         el('td', { class: 'num', style: 'font-weight:700' }, r.pos),
         el('td', { class: 'num mono' }, r.pett ?? ''),
-        el('td', {}, el('b', {}, r.cognome || '')), el('td', {}, r.nome || ''),
-        el('td', { style: 'font-size:12.5px;color:var(--ink-2)' }, r.societa || ''),
-        el('td', {}, r.etichetta ? el('span', { class: 'tag acc' }, r.etichetta) : ''),
+        el('td', {}, el('b', {}, r.cognome || '')),
+        el('td', {}, r.nome || '', sotto ? el('span', { class: 'sottonome' }, sotto) : null),
+        el('td', { class: 'c-soc', style: 'font-size:12.5px;color:var(--ink-2)' }, r.societa || ''),
+        el('td', { class: 'c-fascia' }, r.etichetta ? el('span', { class: 'tag acc' }, r.etichetta) : ''),
         el('td', { class: 't num' }, fmtHMS(r.tempo_ms))));
     }
     t.append(tb);

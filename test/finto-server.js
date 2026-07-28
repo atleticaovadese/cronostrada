@@ -65,9 +65,35 @@ function nuovoServer(opzioni = {}) {
 
 const chiave = (t, r) => CHIAVI[t].map(k => String(r[k])).join('|');
 
+/* LE DUE VISTE PUBBLICHE, come in 0003_vista_pubblica_e_pubblicazione.sql.
+   Sono l'unica cosa che il pubblico può leggere, e mostrano solo le gare
+   pubblicate. Le colonne sono scritte per esteso, come là: se un domani a
+   monte comparisse una data di nascita, qui non spunterebbe da sola. */
+const VISTE = {
+  live_gare: db => db.tabelle.gare.filter(g => g.pubblicata).map(g => ({
+    id: g.id, nome: g.nome, data: g.data, luogo: g.luogo, km: g.km,
+    organizzatore: g.organizzatore, in_corso: g.in_corso,
+    risultati_aggiornati_il: g.risultati_aggiornati_il ?? null,
+  })),
+  live_risultati: db => {
+    const pubblicate = new Set(db.tabelle.gare.filter(g => g.pubblicata).map(g => g.id));
+    return db.tabelle.risultati_pubblici.filter(r => pubblicate.has(r.gara_id)).map(r => ({
+      gara_id: r.gara_id, pos: r.pos, pett: r.pett, cognome: r.cognome,
+      nome: r.nome, societa: r.societa, fascia: r.fascia,
+      etichetta: r.etichetta, tempo_ms: r.tempo_ms,
+    }));
+  },
+};
+
+/* Chi sta chiedendo. Un token "tok:xxx" è un organizzatore collegato; la
+   chiave pubblicabile è chiunque, senza accesso — e per lui esistono solo
+   le due viste, esattamente come sul server vero. */
+const ANONIMO = Symbol('anonimo');
+
 function idUtente(db, autorizzazione) {
-  const m = /^Bearer\s+tok:(.+)$/.exec(autorizzazione || '');
-  return m ? m[1] : null;
+  const m = /^Bearer\s+(.+)$/.exec(autorizzazione || '');
+  if (!m) return null;
+  return m[1].startsWith('tok:') ? m[1].slice(4) : ANONIMO;
 }
 
 /** Le gare di un utente: è la politica gare_proprie, tradotta. */
@@ -173,14 +199,50 @@ async function servi(db, rotta) {
       });
     }
 
-    /* ---- classifica pubblica: qui non serve, si accetta e basta ---- */
-    if (url.pathname.startsWith('/rest/v1/rpc/')) return rispondi(200, null);
-
-    const tabella = url.pathname.replace('/rest/v1/', '');
-    if (!CHIAVI[tabella]) return rispondi(404, { message: 'tabella sconosciuta: ' + tabella });
-
+    const tabella = url.pathname.replace('/rest/v1/', '').replace(/^rpc\//, 'rpc:');
     const utente = idUtente(db, testa.authorization);
     if (!utente) return rispondi(401, { message: 'non autenticato' });
+
+    /* ---- la fotografia della classifica ----
+       Come pubblica_risultati in 0003: cancella e reinserisce l'INTERA
+       classifica. Non un upsert: un arrivo annullato dopo la pubblicazione
+       resterebbe lì, e il pubblico continuerebbe a vedere in classifica
+       qualcuno che non c'è più. Solo l'organizzatore, e solo sulle sue. */
+    if (tabella === 'rpc:pubblica_risultati') {
+      if (utente === ANONIMO) return rispondi(403, { message: 'permission denied for function' });
+      const c = JSON.parse(richiesta.postData() || '{}');
+      const mieOra = gareDi(db, utente);
+      if (!mieOra.has(c.p_gara)) return rispondi(403, { message: 'non è una tua gara' });
+      db.tabelle.risultati_pubblici = db.tabelle.risultati_pubblici.filter(r => r.gara_id !== c.p_gara);
+      for (const x of (c.p_righe || [])) {
+        db.tabelle.risultati_pubblici.push(Object.assign({ gara_id: c.p_gara }, x));
+      }
+      const g = db.tabelle.gare.find(x => x.id === c.p_gara);
+      if (g) g.risultati_aggiornati_il = new Date(Date.UTC(2026, 0, 1) + (++db.orologio)).toISOString();
+      return rispondi(200, (c.p_righe || []).length);
+    }
+    if (tabella.startsWith('rpc:')) return rispondi(404, { message: 'funzione sconosciuta' });
+
+    /* ---- le due viste pubbliche ----
+       L'unica cosa che il pubblico può leggere. Sola lettura: su una vista
+       non si scrive, e infatti non c'è nessun ramo che lo permetta. */
+    if (VISTE[tabella]) {
+      if (metodo !== 'GET') return rispondi(405, { message: 'una vista non si scrive' });
+      const righe = applicaOrdine(
+        applicaFiltri(VISTE[tabella](db), [...url.searchParams.entries()]),
+        url.searchParams.get('order'));
+      return rispondi(200, righe, { 'Content-Range': `0-${Math.max(righe.length - 1, 0)}/${righe.length}` });
+    }
+
+    if (!CHIAVI[tabella]) return rispondi(404, { message: 'tabella sconosciuta: ' + tabella });
+
+    /* Per il pubblico anonimo le tabelle non esistono proprio: niente
+       politiche, niente privilegi. È la risposta che dà il server vero. */
+    if (utente === ANONIMO) {
+      return rispondi(401, {
+        code: '42501', message: `permission denied for table ${tabella}`,
+      });
+    }
 
     if (db.rompi === tabella) return rispondi(500, { message: 'guasto simulato' });
     if (db.rifiuta === tabella) return rispondi(422, { message: 'riga respinta per prova' });
