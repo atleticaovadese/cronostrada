@@ -529,8 +529,28 @@ body.inMenu #top,body.inMenu main{display:none!important}
      vuole centodieci, sborda dalla cella e si stampa sopra la colonna
      accanto. È l'accavallamento che si vedeva in premiazione. Qui le
      colonne se le misura il browser sul contenuto. */
-  .stretta{table-layout:auto!important}
+  .stretta{table-layout:auto!important;width:100%}
   .stretta col{width:auto!important}
+
+  /* E LA TABELLA NON PUÒ ESSERE PIÙ LARGA DEL SUO RIQUADRO.
+     Senza questo la larghezza dipende da quanto è largo il carattere di
+     sistema: la stessa pagina che sul mio computer ci sta, su un altro
+     spinge il tempo mezzo dito oltre il bordo. Con width:100% più la
+     possibilità di spezzare le parole lunghe, il conto torna sempre,
+     qualunque carattere ci sia — e nessuno deve trascinare niente.
+     I numeri no: un tempo spezzato a metà non si legge. */
+  .stretta td,.stretta th{overflow-wrap:anywhere}
+  .stretta td.t,.stretta td.num,.stretta th.num,.stretta .mono{
+    overflow-wrap:normal;white-space:nowrap}
+}
+
+/* Sotto i 400 punti — un iPhone SE, e sono ancora in giro — anche la
+   correzione in secondi esce: è una casella che si usa a gara finita, non
+   con il cronometro che cammina, e il suo posto lo prende il nome. Il
+   pettorale invece resta largo com'è: 105 che si legge "10" al traguardo è
+   un errore che si scopre a premiazione fatta. */
+@media (max-width:400px){
+  .stretta th.c-stretto,.stretta td.c-stretto{display:none}
 }
 
 /* ============================================================
@@ -1975,7 +1995,7 @@ function renderArrivi() {
   const t = el('table', { class: 'stretta' });
   t.append(el('thead', {}, el('tr', {},
     el('th', { class: 'num' }, '#'), el('th', { class: 'num' }, 'Pett.'), el('th', {}, 'Atleta'),
-    el('th', {}, 'Tempo'), el('th', { class: 'num' }, 'Corr. s'),
+    el('th', {}, 'Tempo'), el('th', { class: 'num c-stretto' }, 'Corr. s'),
     el('th', { class: 'c-fuori' }, 'Fascia'), el('th', {}, ''))));
   const tb = el('tbody');
   if (!rows.length) { t.append(tb); setHTML('#arrTable', t); $('#arrTable').append(emptyTbl('Nessun arrivo registrato.')); return; }
@@ -2015,7 +2035,7 @@ function renderArrivi() {
             [r.societa || '—', r.etichetta || null].filter(Boolean).join(' · ')))
         : el('span', { style: 'color:var(--bad);font-weight:600' }, noBib ? 'pettorale da inserire' : 'pettorale non iscritto')),
       el('td', { class: 't' }, fmtHMS(r.tempo, true)),
-      el('td', { class: 'num' }, el('input', { class: 'cell mono', style: 'width:52px;text-align:right', type: 'number', step: '1', value: r.corr || '', placeholder: '0', onchange: e => setCorr(e.target.value) })),
+      el('td', { class: 'num c-stretto' }, el('input', { class: 'cell mono', style: 'width:52px;text-align:right', type: 'number', step: '1', value: r.corr || '', placeholder: '0', onchange: e => setCorr(e.target.value) })),
       el('td', { class: 'c-fuori' }, r.etichetta ? el('span', { class: 'tag ' + (r.assoluto ? 'gold' : 'acc') }, r.etichetta) : ''),
       el('td', {}, el('div', { class: 'rowbtns' },
         el('button', { class: 'ib danger', title: 'Elimina arrivo', onclick: () => { S.arrivi = S.arrivi.filter(x => x.id !== r.id); touched(); } }, '×')))

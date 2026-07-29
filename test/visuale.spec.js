@@ -43,10 +43,15 @@ const dentroAlRiquadro = (page, selettore) => page.evaluate(sel => {
     });
   const intestazione = t.querySelector('thead tr');
   const prima = t.querySelector('tbody tr');
+  const cont = box || document.documentElement;
   return {
     intestazione: intestazione ? leggi(intestazione) : [],
     riga: prima ? leggi(prima) : [],
-    scorreDiLato: (box || document.documentElement).scrollWidth > lim.width + 1,
+    scorreDiLato: cont.scrollWidth > lim.width + 1,
+    // le misure vanno nel messaggio: un fallimento che dice solo "non ci
+    // sta" non si sistema, e su un altro computer i caratteri sono diversi
+    larghezzaTabella: Math.round(t.getBoundingClientRect().width),
+    larghezzaRiquadro: Math.round(lim.width),
   };
 }, selettore);
 
@@ -83,12 +88,16 @@ test.describe('Su un telefono ci sta quello che conta', () => {
 
     const v = await dentroAlRiquadro(page, '#clsBody table');
     const fuori = v.riga.filter(c => !c.dentro);
-    if (fuori.length) {
+    if (fuori.length || v.scorreDiLato) {
       throw new Error(
-        '\nIn classifica, su uno schermo da telefono, queste colonne restano fuori:\n' +
-        fuori.map(c => `  "${c.testo}"`).join('\n') +
-        '\n\n  Il tempo è la colonna per cui uno apre la classifica: se per leggerlo\n' +
-        '  bisogna trascinare la tabella di lato, la pagina non serve.\n');
+        '\nIn classifica, su uno schermo da telefono, non ci sta tutto.\n' +
+        `  tabella ${v.larghezzaTabella}px, riquadro ${v.larghezzaRiquadro}px\n` +
+        (fuori.length ? '  restano fuori: ' + fuori.map(c => `"${c.testo}"`).join(', ') + '\n' : '') +
+        '\n  Il tempo è la colonna per cui uno apre la classifica: se per leggerlo\n' +
+        '  bisogna trascinare la tabella di lato, la pagina non serve.\n' +
+        '  La tabella non deve mai essere più larga del suo riquadro, qualunque\n' +
+        '  carattere abbia il sistema: le larghezze cambiano da un computer\n' +
+        "  all'altro, e questo test gira anche su Linux.\n");
     }
     // e il tempo c'è davvero, non è sparito insieme alle colonne di contorno
     const testi = v.riga.map(c => c.testo).join(' | ');
@@ -158,7 +167,29 @@ test.describe('Su un telefono ci sta quello che conta', () => {
   });
 
   test('nessuna delle otto schede lascia fuori una colonna essenziale', async ({ page }) => {
-    await gara(page, TELEFONO);
+    /* Si prova anche a 320 punti, la larghezza di un iPhone SE. Non è
+       pignoleria: le larghezze dipendono dal carattere di sistema, e una
+       pagina tarata sui 390 punti del computer di chi la scrive sfonda su
+       una macchina con caratteri diversi. Se ci sta a 320 ci sta ovunque.
+       Questo test è caduto in CI, su Linux, dopo essere passato qui. */
+    for (const larghezza of [320, 390]) {
+      await provaLeColonne(page, larghezza);
+    }
+    // e una volta con un carattere largo: è il modo di provare qui quello
+    // che succede là, dove il carattere di sistema non è lo stesso
+    await provaLeColonne(page, 390, 'Verdana, DejaVu Sans, sans-serif');
+  });
+
+  async function provaLeColonne(page, larghezza, carattere) {
+    await gara(page, { width: larghezza, height: 844 });
+    if (carattere) {
+      await page.evaluate(f => {
+        const s = document.createElement('style');
+        s.textContent = `body,input,select,button,table{font-family:${f}!important}`;
+        document.head.append(s);
+      }, carattere);
+      await page.waitForTimeout(120);
+    }
     const essenziali = {
       classifiche: ['#clsBody table', ['Pos.', 'Pett.', 'Cognome', 'Nome', 'Tempo']],
       traguardo: ['#arrTable table', ['#', 'Pett.', 'Atleta', 'Tempo']],
@@ -170,16 +201,22 @@ test.describe('Su un telefono ci sta quello che conta', () => {
       await page.waitForTimeout(120);
       const v = await dentroAlRiquadro(page, sel);
       if (!v) { guasti.push(`${vista}: non trovo la tabella (${sel})`); continue; }
+      const misure = `(tabella ${v.larghezzaTabella}px, riquadro ${v.larghezzaRiquadro}px)`;
+      if (v.scorreDiLato) guasti.push(`${vista}: la tabella è più larga del riquadro ${misure}`);
       const visibili = v.intestazione.filter(c => c.dentro).map(c => c.testo);
       for (const a of attese) {
-        if (!visibili.includes(a)) guasti.push(`${vista}: la colonna "${a}" non è sullo schermo`);
+        if (!visibili.includes(a)) guasti.push(`${vista}: la colonna "${a}" non è sullo schermo ${misure}`);
       }
     }
     if (guasti.length) {
-      throw new Error('\nColonne essenziali fuori dallo schermo del telefono:\n' +
-        guasti.map(g => '  ' + g).join('\n') + '\n');
+      throw new Error(`\nColonne essenziali fuori dallo schermo, a ${larghezza} punti` +
+        (carattere ? ` con il carattere ${carattere}` : '') + ':\n' +
+        guasti.map(g => '  ' + g).join('\n') +
+        '\n\n  La tabella non deve mai essere più larga del suo riquadro: le\n' +
+        "  larghezze dipendono dal carattere di sistema e cambiano da un\n" +
+        '  computer all\'altro.\n');
     }
-  });
+  }
 });
 
 test.describe('Da computer lo spazio va a chi lo usa', () => {
