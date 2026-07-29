@@ -2,7 +2,16 @@
 <html lang="it">
 <head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<!-- NIENTE ZOOM.
+     Al traguardo si preme con una mano sola, spesso senza guardare: un
+     pizzico involontario che ingrandisce la pagina sposta il pulsante ARRIVO
+     sotto il dito, e il tocco dopo finisce altrove. maximum-scale e
+     user-scalable bastano su Android e sulla app installata; su Safari da
+     browser vengono ignorati, e lì ci pensano i gestori di gesto in fondo
+     alla pagina. Il doppio tocco è già fermo da touch-action:manipulation.
+     Si perde la possibilità di ingrandire con le dita: è una rinuncia vera,
+     fatta apposta, e in cambio il testo non è mai sotto i 13px. -->
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
 <title>CronoStrada — Gestione gare su strada</title>
 <!-- App installabile. Sono tutti riferimenti facoltativi: se mancano (per
      esempio aprendo il file dalla chiavetta USB) la app funziona identica. -->
@@ -135,7 +144,12 @@ td input.cell:focus{outline:none;border-color:var(--accent);background:var(--sur
 td input.cell.mono{font-family:var(--mono);font-variant-numeric:tabular-nums}
 
 /* ---------- finish line ---------- */
-.finish{display:grid;grid-template-columns:minmax(300px,1fr) minmax(340px,1.3fr);gap:16px;align-items:start}
+/* Da computer il cronometro è un pannello di comando: gli serve la sua
+   larghezza e non una di più. Prima si prendeva quasi metà schermo e sotto
+   restava un vuoto alto quanto la pagina, mentre l'elenco arrivi accanto
+   mandava a capo nome e società a ogni riga. Adesso il pannello sta in
+   380px e tutto il resto va all'elenco, che è quello che si legge. */
+.finish{display:grid;grid-template-columns:minmax(290px,380px) minmax(340px,1fr);gap:16px;align-items:start}
 @media(max-width:900px){.finish{grid-template-columns:1fr}}
 .clockcard{background:var(--ink);color:#fff;border-radius:var(--radius);padding:20px;box-shadow:var(--shadow-lg);position:sticky;top:96px}
 /* pulsante per comprimere il pannello in una barra sottile (solo su telefono) */
@@ -487,19 +501,71 @@ body.inMenu #top,body.inMenu main{display:none!important}
 .garariga.remota .gnome{color:var(--ink-2)}
 .garariga .gscarico{font-size:12px;font-weight:650;color:var(--accent-ink);white-space:nowrap}
 
-/* LA CLASSIFICA IN LIVE, SU UN TELEFONO.
-   Chi guarda da bordo strada vuole due cose: chi è arrivato e in che tempo.
-   Con sette colonne il tempo finisce fuori dallo schermo e bisogna trascinare
-   la tabella di lato per leggerlo — cioè la cosa per cui uno ha aperto la
-   pagina. Sotto i 560 punti società e fascia escono dalla riga e tornano
-   sotto il nome, in piccolo: non si perde niente e non si trascina niente. */
-.tabellalive .sottonome{display:none}
+/* ============================================================
+   LE TABELLE SU UNO SCHERMO STRETTO
+
+   Il problema, in una riga: nove colonne su 390 punti non ci stanno, e
+   quella che finisce fuori è sempre l'ultima — cioè il TEMPO, che è la
+   ragione per cui uno ha aperto la pagina. In premiazione era anche peggio:
+   con table-layout:fixed la colonna del nome si stringeva quasi a zero e il
+   nome andava a stamparsi SOPRA la società.
+
+   La regola, una sola per tutte le tabelle di sola lettura: sotto i 560
+   punti le colonne di contorno — società, sesso, fascia, passo — escono
+   dalla riga e tornano sotto il nome, in piccolo. Non si perde un dato, e
+   non si trascina niente di lato.
+   ============================================================ */
+.stretta .sottonome{display:none}
 @media (max-width:560px){
-  .tabellalive th.c-soc,.tabellalive td.c-soc,
-  .tabellalive th.c-fascia,.tabellalive td.c-fascia{display:none}
-  .tabellalive .sottonome{display:block;font-size:11.5px;color:var(--ink-2);
-    margin-top:2px;line-height:1.25}
-  .tabellalive td,.tabellalive th{padding-left:7px;padding-right:7px}
+  .stretta th.c-fuori,.stretta td.c-fuori{display:none}
+  /* quello che di là stava accanto al nome, qui ci va sotto */
+  .stretta .accanto{display:none}
+  .stretta .sottonome{display:block;font-size:11px;color:var(--ink-2);
+    margin-top:1px;line-height:1.25;font-weight:400}
+  .stretta td,.stretta th{padding-left:7px;padding-right:7px}
+  /* LE LARGHEZZE FISSE VANNO VIA.
+     table-layout:fixed con sei larghezze pensate per un monitor lascia alla
+     colonna del nome una novantina di punti: "MARTINELLI" in grassetto ne
+     vuole centodieci, sborda dalla cella e si stampa sopra la colonna
+     accanto. È l'accavallamento che si vedeva in premiazione. Qui le
+     colonne se le misura il browser sul contenuto. */
+  .stretta{table-layout:auto!important}
+  .stretta col{width:auto!important}
+}
+
+/* ============================================================
+   ISCRITTI SU TELEFONO: una scheda per atleta
+
+   Undici colonne, e nove sono caselle da compilare. In tabella i cognomi si
+   leggevano "ESPOSIT", "COLOMI", "MARINC", e per arrivare alla data di
+   nascita bisognava trascinare. È lo stesso rimedio già usato per la
+   matrice delle categorie: ogni riga diventa un riquadro, e l'intestazione
+   della tabella si trasforma nelle etichette dei campi.
+   ============================================================ */
+@media (max-width:560px){
+  .schede thead{display:none}
+  .schede,.schede tbody,.schede tr,.schede td{display:block;width:auto}
+  .schede tr{border:1px solid var(--line);border-radius:10px;background:var(--surface);
+    padding:8px 42px 9px 9px;margin-bottom:9px;position:relative}
+  .schede tr:hover{background:var(--surface)}
+  .schede tr.dim{opacity:1;background:var(--surface-2)}
+  .schede td{border:0;padding:3px 0;text-align:left}
+  .schede td[data-col]::before{
+    content:attr(data-col);display:block;
+    font-size:10px;font-weight:650;text-transform:uppercase;letter-spacing:.04em;
+    color:var(--ink-3);margin-bottom:2px;
+  }
+  .schede td input.cell{width:100%!important;min-height:40px;font-size:15px;
+    border:1px solid var(--line);background:var(--surface-2);border-radius:7px;padding:4px 8px}
+  .schede td input.cell.mono{text-align:left!important}
+  /* i campi corti stanno in fila fra loro invece di sprecare una riga a testa */
+  .schede td.s-corto{display:inline-block;width:31%;vertical-align:top;margin-right:2%}
+  .schede td.s-medio{display:inline-block;width:48%;vertical-align:top;margin-right:2%}
+  .schede td.s-tag{display:inline-block;width:auto;vertical-align:top;margin-right:8px}
+  .schede td.s-elimina{position:absolute;top:7px;right:7px;padding:0;width:auto}
+  .schede select{min-height:40px;width:100%;border:1px solid var(--line);
+    background:var(--surface-2);border-radius:7px;padding:4px 6px;font-size:15px}
+  .schede input[type=checkbox]{width:26px;height:26px}
 }
 
 @media print{
@@ -1667,9 +1733,11 @@ function renderIscritti() {
   if (ui.iscF === 'alert') rows = rows.filter(i => i.alert.length);
   if (q) rows = rows.filter(i => norm(i.cognome + ' ' + i.nome + ' ' + i.societa + ' ' + i.pett).includes(q));
 
-  const t = el('table');
+  /* .schede: su telefono ogni iscritto diventa un riquadro. In tabella le
+     undici colonne non ci stavano e i cognomi si leggevano a metà. */
+  const t = el('table', { class: 'schede' });
   t.append(el('thead', {}, el('tr', {},
-    ...['Pett.', 'Cognome', 'Nome', 'M/F', 'Società', 'Nascita', 'Conf.', 'FIDAL', 'Fascia', '', ''].map((h, i) =>
+    ...['Pett.', 'Cognome', 'Nome', 'M/F', 'Conf.', 'Società', 'Nascita', 'FIDAL', 'Fascia', '', ''].map((h, i) =>
       el('th', { class: i === 0 ? 'num' : '' }, h)))));
   const tb = el('tbody');
   if (!rows.length) { t.append(tb); setHTML('#iscTable', t); $('#iscTable').append(emptyTbl(S.iscritti.length ? 'Nessun iscritto corrisponde ai filtri.' : 'Nessun iscritto. Importa il file da WISE o aggiungili a mano.')); return; }
@@ -1681,18 +1749,22 @@ function renderIscritti() {
       class: 'cell ' + (cls || ''), value: i[k] ?? '', style: w ? 'width:' + w : '',
       onchange: e => upd(i, k, e.target.value)
     });
+    /* data-col diventa l'etichetta del campo quando la riga si trasforma in
+       riquadro: l'intestazione della tabella sparisce, e senza quelle
+       parole "M" e una data non direbbero di cosa si tratta. */
     tr.append(
-      el('td', { class: 'num' }, el('input', { class: 'cell mono', style: 'width:56px;text-align:right', value: i.pett ?? '', onchange: e => upd(i, 'pett', e.target.value === '' ? null : +e.target.value) })),
-      el('td', {}, inp('cognome')), el('td', {}, inp('nome')),
-      el('td', {}, el('select', { style: 'border:0;background:transparent;padding:3px', onchange: e => upd(i, 'sesso', e.target.value) },
+      el('td', { class: 'num s-corto', 'data-col': 'Pett.' }, el('input', { class: 'cell mono', style: 'width:56px;text-align:right', value: i.pett ?? '', onchange: e => upd(i, 'pett', e.target.value === '' ? null : +e.target.value) })),
+      el('td', { class: 's-medio', 'data-col': 'Cognome' }, inp('cognome')),
+      el('td', { class: 's-medio', 'data-col': 'Nome' }, inp('nome')),
+      el('td', { class: 's-corto', 'data-col': 'M/F' }, el('select', { style: 'border:0;background:transparent;padding:3px', onchange: e => upd(i, 'sesso', e.target.value) },
         ...['M', 'F'].map(s => el('option', { value: s, selected: String(i.sesso).toUpperCase().startsWith(s) || null }, s)))),
-      el('td', {}, inp('societa')),
-      el('td', {}, el('input', { class: 'cell mono', type: 'date', value: i.nascita || '', style: 'width:130px', onchange: e => upd(i, 'nascita', e.target.value) })),
-      el('td', {}, el('input', { type: 'checkbox', checked: i.confermato || null, onchange: e => upd(i, 'conferma', e.target.checked ? 'S' : 'N') })),
-      el('td', {}, el('span', { class: 'tag' }, i.catFidal || '—')),
-      el('td', {}, el('span', { class: 'tag ' + (i.catGara ? 'acc' : 'bad') }, i.catGara || 'nessuna')),
-      el('td', {}, ...i.alert.map(a => el('span', { class: 'tag bad', style: 'margin-right:3px' }, a))),
-      el('td', {}, el('button', { class: 'ib danger', title: 'Elimina', onclick: () => { S.iscritti = S.iscritti.filter(x => x.id !== i.id); touched(); } }, '×'))
+      el('td', { class: 's-corto', 'data-col': 'Conf.' }, el('input', { type: 'checkbox', checked: i.confermato || null, onchange: e => upd(i, 'conferma', e.target.checked ? 'S' : 'N') })),
+      el('td', { 'data-col': 'Società' }, inp('societa')),
+      el('td', { class: 's-medio', 'data-col': 'Nascita' }, el('input', { class: 'cell mono', type: 'date', value: i.nascita || '', style: 'width:130px', onchange: e => upd(i, 'nascita', e.target.value) })),
+      el('td', { class: 's-tag', 'data-col': 'FIDAL' }, el('span', { class: 'tag' }, i.catFidal || '—')),
+      el('td', { class: 's-tag', 'data-col': 'Fascia' }, el('span', { class: 'tag ' + (i.catGara ? 'acc' : 'bad') }, i.catGara || 'nessuna')),
+      el('td', { class: 's-tag' }, ...i.alert.map(a => el('span', { class: 'tag bad', style: 'margin-right:3px' }, a))),
+      el('td', { class: 's-elimina' }, el('button', { class: 'ib danger', title: 'Elimina', onclick: () => { S.iscritti = S.iscritti.filter(x => x.id !== i.id); touched(); } }, '×'))
     );
     tb.append(tr);
   }
@@ -1715,7 +1787,10 @@ function renderTraguardo() {
   if (started) {
     sr.append(el('span', { class: 'ok' }, 'Partenza alle ' + fmtOra(S.start)));
     sr.append(el('button', { class: 'minibtn', onclick: apriStart }, 'Modifica orario'));
-    if (fermo) sr.append(el('span', {}, '· stop alle ' + fmtOra(S.stop)));
+    /* Niente puntino davanti: la riga va a capo appena il pannello si
+       stringe, e un "·" da solo a inizio riga sembra un errore di stampa.
+       A separare bastano i 8px di spazio fra un pezzo e l'altro. */
+    if (fermo) sr.append(el('span', {}, 'stop alle ' + fmtOra(S.stop)));
   } else {
     sr.append(el('span', {}, 'Non ancora partita'));
     sr.append(el('button', { class: 'minibtn', onclick: apriStart }, 'Imposta orario a mano'));
@@ -1892,10 +1967,16 @@ function renderArrivi() {
   let rows = C.ris.slice().reverse();
   if (q) rows = rows.filter(r => norm((r.pett ?? '') + ' ' + r.cognome + ' ' + r.nome + ' ' + r.societa).includes(q));
 
-  const t = el('table');
+  /* .stretta: al traguardo, su telefono, la fascia esce dalla riga e la
+     società scende sotto il nome. Prima ogni arrivo occupava tre righe di
+     testo — nome e società di seguito, che andavano a capo — e se ne
+     vedevano cinque per schermata; la fascia e il cestino stavano oltre il
+     bordo destro. */
+  const t = el('table', { class: 'stretta' });
   t.append(el('thead', {}, el('tr', {},
     el('th', { class: 'num' }, '#'), el('th', { class: 'num' }, 'Pett.'), el('th', {}, 'Atleta'),
-    el('th', {}, 'Tempo'), el('th', { class: 'num' }, 'Corr. s'), el('th', {}, 'Fascia'), el('th', {}, ''))));
+    el('th', {}, 'Tempo'), el('th', { class: 'num' }, 'Corr. s'),
+    el('th', { class: 'c-fuori' }, 'Fascia'), el('th', {}, ''))));
   const tb = el('tbody');
   if (!rows.length) { t.append(tb); setHTML('#arrTable', t); $('#arrTable').append(emptyTbl('Nessun arrivo registrato.')); return; }
 
@@ -1927,12 +2008,15 @@ function renderArrivi() {
         }
         return inp;
       })()),
-      el('td', {}, r.iscr ? el('span', {}, el('b', {}, r.cognome + ' ' + r.nome),
-        el('span', { style: 'color:var(--ink-3)' }, ' · ' + (r.societa || '—')))
+      el('td', {}, r.iscr
+        ? el('span', {}, el('b', {}, r.cognome + ' ' + r.nome),
+          el('span', { class: 'accanto', style: 'color:var(--ink-3)' }, ' · ' + (r.societa || '—')),
+          el('span', { class: 'sottonome' },
+            [r.societa || '—', r.etichetta || null].filter(Boolean).join(' · ')))
         : el('span', { style: 'color:var(--bad);font-weight:600' }, noBib ? 'pettorale da inserire' : 'pettorale non iscritto')),
       el('td', { class: 't' }, fmtHMS(r.tempo, true)),
       el('td', { class: 'num' }, el('input', { class: 'cell mono', style: 'width:52px;text-align:right', type: 'number', step: '1', value: r.corr || '', placeholder: '0', onchange: e => setCorr(e.target.value) })),
-      el('td', {}, r.etichetta ? el('span', { class: 'tag ' + (r.assoluto ? 'gold' : 'acc') }, r.etichetta) : ''),
+      el('td', { class: 'c-fuori' }, r.etichetta ? el('span', { class: 'tag ' + (r.assoluto ? 'gold' : 'acc') }, r.etichetta) : ''),
       el('td', {}, el('div', { class: 'rowbtns' },
         el('button', { class: 'ib danger', title: 'Elimina arrivo', onclick: () => { S.arrivi = S.arrivi.filter(x => x.id !== r.id); touched(); } }, '×')))
     );
@@ -2007,22 +2091,30 @@ function renderClassifiche() {
 
 function tabellaRis(rows, mostraPosAss, posCat) {
   const km = S.cfg.km;
-  const t = el('table');
+  /* .stretta: su telefono sesso, società, fascia e passo escono dalla riga e
+     tornano sotto il nome. Senza, il TEMPO finisce oltre il bordo destro e
+     per leggerlo bisogna trascinare la tabella di lato. */
+  const t = el('table', { class: 'stretta' });
   t.append(el('thead', {}, el('tr', {},
     el('th', { class: 'num' }, posCat ? 'Cat.' : 'Pos.'),
     el('th', { class: 'num' }, 'Pett.'), el('th', {}, 'Cognome'), el('th', {}, 'Nome'),
-    el('th', {}, 'M/F'), el('th', {}, 'Società'), el('th', {}, 'Fascia'),
-    el('th', { class: 'num' }, 'Tempo'), km ? el('th', { class: 'num' }, 'Passo') : null)));
+    el('th', { class: 'c-fuori' }, 'M/F'), el('th', { class: 'c-fuori' }, 'Società'),
+    el('th', { class: 'c-fuori' }, 'Fascia'),
+    el('th', { class: 'num' }, 'Tempo'), km ? el('th', { class: 'num c-fuori' }, 'Passo') : null)));
   const tb = el('tbody');
   for (const r of rows) {
+    const fascia = r.assoluto ? r.etichetta : r.catGara;
+    const sotto = [r.societa || null, fascia || null].filter(Boolean).join(' · ');
     tb.append(el('tr', {},
       el('td', { class: 'num', style: 'font-weight:700' }, posCat ? (r.assoluto ? '★' : r.posCat) : r.pos),
       el('td', { class: 'num mono' }, r.pett ?? ''),
-      el('td', {}, el('b', {}, r.cognome)), el('td', {}, r.nome),
-      el('td', {}, r.sesso), el('td', { style: 'font-size:12.5px;color:var(--ink-2)' }, r.societa),
-      el('td', {}, el('span', { class: 'tag ' + (r.assoluto ? 'gold' : '') }, r.assoluto ? r.etichetta : r.catGara)),
+      el('td', {}, el('b', {}, r.cognome)),
+      el('td', {}, r.nome, sotto ? el('span', { class: 'sottonome' }, sotto) : null),
+      el('td', { class: 'c-fuori' }, r.sesso),
+      el('td', { class: 'c-fuori', style: 'font-size:12.5px;color:var(--ink-2)' }, r.societa),
+      el('td', { class: 'c-fuori' }, el('span', { class: 'tag ' + (r.assoluto ? 'gold' : '') }, fascia)),
       el('td', { class: 't num' }, fmtHMS(r.tempo)),
-      km ? el('td', { class: 'num mono', style: 'color:var(--ink-2)' }, fmtPace(r.tempo, km)) : null));
+      km ? el('td', { class: 'num mono c-fuori', style: 'color:var(--ink-2)' }, fmtPace(r.tempo, km)) : null));
   }
   t.append(tb); return t;
 }
@@ -2035,9 +2127,17 @@ function renderPremiazioni() {
     el('div', { class: 'hint' }, [S.cfg.luogo, S.cfg.data ? new Date(S.cfg.data + 'T00:00').toLocaleDateString('it-IT', { day: 'numeric', month: 'long', year: 'numeric' }) : ''].filter(Boolean).join(' · ')));
   box.append(head);
   if (!C.blocchi.length) { box.append(emptyTbl('Nessun premiato: servono arrivi con pettorale assegnato.')); setHTML('#premBody', box); return; }
-  const cols = () => el('colgroup', {}, ...['38px', '62px', '', '32%', '80px', '92px'].map(w => el('col', { style: w ? 'width:' + w : '' })));
+  /* La colonna della società ha una classe, non solo una larghezza: su
+     telefono sparisce, e con table-layout:fixed deve azzerarsi anche qui nel
+     colgroup. Prima non lo faceva, la colonna del nome si stringeva quasi a
+     zero, e il nome finiva stampato SOPRA la società: l'accavallamento che
+     si vedeva in premiazione. */
+  const cols = () => el('colgroup', {},
+    el('col', { style: 'width:38px' }), el('col', { style: 'width:62px' }),
+    el('col'), el('col', { style: 'width:32%' }),
+    el('col', { style: 'width:80px' }), el('col', { style: 'width:92px' }));
   for (const b of C.blocchi) {
-    const t = el('table', { style: 'table-layout:fixed' });
+    const t = el('table', { class: 'stretta', style: 'table-layout:fixed' });
     t.append(cols());
     const tb = el('tbody');
     for (const r of b.righe) {
@@ -2045,9 +2145,11 @@ function renderPremiazioni() {
       tb.append(el('tr', {},
         el('td', { style: 'font-weight:700' }, r.n),
         el('td', { class: 'num mono' }, r.r.pett),
-        el('td', {}, el('b', {}, r.r.cognome + ' ' + r.r.nome)),
-        el('td', { style: 'color:var(--ink-2);overflow:hidden;text-overflow:ellipsis;white-space:nowrap' }, r.r.societa),
-        el('td', {}, el('span', { class: 'tag' }, r.r.catGara)),
+        el('td', {}, el('b', {}, r.r.cognome + ' ' + r.r.nome),
+          el('span', { class: 'sottonome' },
+            [r.r.societa || null, r.r.catGara || null].filter(Boolean).join(' · '))),
+        el('td', { class: 'c-fuori', style: 'color:var(--ink-2);overflow:hidden;text-overflow:ellipsis;white-space:nowrap' }, r.r.societa),
+        el('td', { class: 'c-fuori' }, el('span', { class: 'tag' }, r.r.catGara)),
         el('td', { class: 't num' }, fmtHMS(r.r.tempo))));
     }
     t.append(tb);
@@ -2112,17 +2214,28 @@ function renderStati() {
   rows = rows.slice().sort((a, b) => (a.pett ?? 0) - (b.pett ?? 0));
 
   const dnfSet = new Set(S.dnf);
-  const t = el('table');
-  t.append(el('thead', {}, el('tr', {}, el('th', { class: 'num' }, 'Pett.'), el('th', {}, 'Cognome'), el('th', {}, 'Nome'),
-    el('th', {}, 'M/F'), el('th', {}, 'Società'), el('th', {}, 'Fascia'), el('th', {}, 'Stato'), el('th', {}, 'Ritirato'))));
+  // Su telefono restano pettorale, nome, stato e la casella del ritiro: è
+  // quello che si guarda con l'elenco in mano a fine gara.
+  /* Qui la colonna che si TOCCA è l'ultima, "Ritirato": se resta oltre il
+     bordo destro la scheda non serve a niente. Su telefono esce dalla riga
+     anche il nome di battesimo, che torna in cima alla riga di servizio
+     sotto il cognome. Restano pettorale, cognome, stato e la casella. */
+  const t = el('table', { class: 'stretta' });
+  t.append(el('thead', {}, el('tr', {}, el('th', { class: 'num' }, 'Pett.'), el('th', {}, 'Cognome'),
+    el('th', { class: 'c-fuori' }, 'Nome'),
+    el('th', { class: 'c-fuori' }, 'M/F'), el('th', { class: 'c-fuori' }, 'Società'),
+    el('th', { class: 'c-fuori' }, 'Fascia'), el('th', {}, 'Stato'), el('th', {}, 'Ritirato'))));
   const tb = el('tbody');
   for (const s of rows) {
     const cls = { DNS: 'warn', DNF: 'bad', Arrivato: 'go', Atteso: '' }[s.stato];
+    const sotto = [s.nome || null, s.societa || null, s.catGara || null].filter(Boolean).join(' · ');
     tb.append(el('tr', { class: s.stato === 'Arrivato' ? '' : 'dim' },
       el('td', { class: 'num mono' }, s.pett),
-      el('td', {}, el('b', {}, s.cognome)), el('td', {}, s.nome), el('td', {}, s.sesso),
-      el('td', { style: 'font-size:12.5px;color:var(--ink-2)' }, s.societa),
-      el('td', {}, el('span', { class: 'tag' }, s.catGara || '—')),
+      el('td', {}, el('b', {}, s.cognome), sotto ? el('span', { class: 'sottonome' }, sotto) : null),
+      el('td', { class: 'c-fuori' }, s.nome),
+      el('td', { class: 'c-fuori' }, s.sesso),
+      el('td', { class: 'c-fuori', style: 'font-size:12.5px;color:var(--ink-2)' }, s.societa),
+      el('td', { class: 'c-fuori' }, el('span', { class: 'tag' }, s.catGara || '—')),
       el('td', {}, el('span', { class: 'tag ' + cls }, s.stato)),
       el('td', {}, el('input', {
         type: 'checkbox', checked: dnfSet.has(s.pett) || null,
@@ -3213,24 +3326,24 @@ function renderPortaLive() {
         el('span', { class: 'hint' }, liveRisultati ? plur(liveRisultati.length, 'arrivato', 'arrivati') : 'caricamento…')),
       el('div', { class: 'body flush' }, el('div', { class: 'tw', id: 'liveTabella' }))));
 
-    const t = el('table', { class: 'tabellalive' });
+    const t = el('table', { class: 'stretta' });
     t.append(el('thead', {}, el('tr', {},
       el('th', { class: 'num' }, 'Pos.'), el('th', { class: 'num' }, 'Pett.'),
       el('th', {}, 'Cognome'), el('th', {}, 'Nome'),
-      el('th', { class: 'c-soc' }, 'Società'),
-      el('th', { class: 'c-fascia' }, 'Fascia'), el('th', { class: 'num' }, 'Tempo'))));
+      el('th', { class: 'c-fuori' }, 'Società'),
+      el('th', { class: 'c-fuori' }, 'Fascia'), el('th', { class: 'num' }, 'Tempo'))));
     const tb = el('tbody');
     for (const r of (liveRisultati || [])) {
       // Su schermo stretto società e fascia scendono sotto il nome: vedi
-      // .tabellalive nel foglio di stile. Il DOM è uno solo, decide la CSS.
+      // .stretta nel foglio di stile. Il DOM è uno solo, decide la CSS.
       const sotto = [r.societa || null, r.etichetta || null].filter(Boolean).join(' · ');
       tb.append(el('tr', {},
         el('td', { class: 'num', style: 'font-weight:700' }, r.pos),
         el('td', { class: 'num mono' }, r.pett ?? ''),
         el('td', {}, el('b', {}, r.cognome || '')),
         el('td', {}, r.nome || '', sotto ? el('span', { class: 'sottonome' }, sotto) : null),
-        el('td', { class: 'c-soc', style: 'font-size:12.5px;color:var(--ink-2)' }, r.societa || ''),
-        el('td', { class: 'c-fascia' }, r.etichetta ? el('span', { class: 'tag acc' }, r.etichetta) : ''),
+        el('td', { class: 'c-fuori', style: 'font-size:12.5px;color:var(--ink-2)' }, r.societa || ''),
+        el('td', { class: 'c-fuori' }, r.etichetta ? el('span', { class: 'tag acc' }, r.etichetta) : ''),
         el('td', { class: 't num' }, fmtHMS(r.tempo_ms))));
     }
     t.append(tb);
@@ -4475,6 +4588,15 @@ function renderFsHint() {
   window.addEventListener('beforeunload', e => {
     if (serveAvvisoChiusura()) { e.preventDefault(); e.returnValue = ''; }
   });
+
+  /* Il pizzico, su iPhone da browser.
+     Safari ignora user-scalable dal 2016: l'unico modo di fermare il pizzico
+     è dire di no a questi tre gesti, che esistono solo lì. Su Android non
+     arrivano mai e il meta tag basta da solo.
+     passive:false è obbligatorio: senza, preventDefault non ha effetto. */
+  for (const gesto of ['gesturestart', 'gesturechange', 'gestureend']) {
+    document.addEventListener(gesto, e => e.preventDefault(), { passive: false });
+  }
 })();
 </script>
 </body>
