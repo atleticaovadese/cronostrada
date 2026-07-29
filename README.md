@@ -106,6 +106,18 @@ Tre cose che la app non fa, e non per dimenticanza:
 - **non tocca una gara in corso.** Col cronometro che cammina non si scarica
   niente, per nessun motivo.
 
+**Per eliminarne una** premi la × nell'elenco. Se la gara sta in due posti ti
+chiede cosa vuoi fare, e sono due cose diverse:
+
+| Scelta | Cosa succede |
+|---|---|
+| **Solo da questo dispositivo** | Sparisce di qui e resta sul server. La rivedi subito nell'elenco come «solo sul server». |
+| **Anche dal server, per sempre** | Se ne va da tutte e due, con iscritti, arrivi, correzioni, ritiri e classifica pubblicata. Non si recupera. |
+
+In tutti e due i casi va scritta la parola `ELIMINA`. Le gare nate su un altro
+dispositivo, quelle che risultano «solo sul server», si eliminano da qui allo
+stesso modo.
+
 **Quindi:** decidi in anticipo quale dispositivo sta al traguardo, e usa solo
 quello per tutta la gara.
 
@@ -606,7 +618,4 @@ aprendo il file dalla chiavetta, gira identica.
   il verso è uno solo: aprire una gara la scarica, e da quel momento la manda su
   questo dispositivo. Il caso di due postazioni insieme si affronterà quando
   servirà davvero, cioè con il giudice arrivi.
-- **Le gare non si cancellano dal server** dalla app: eliminandone una,
-  sparisce da questo dispositivo e resta là.
-
 Sono i passaggi successivi, previsti e nell'ordine giusto.

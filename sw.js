@@ -27,7 +27,7 @@
  * passa dalla rete e non viene mai conservato.
  */
 
-const VERSIONE = 'g-e445d3582a1e';
+const VERSIONE = 'g-c866eb87b719';
 const CACHE = 'cronostrada-' + VERSIONE;
 
 // Tutto ciò che serve alla app per partire da sola, e nient'altro.

@@ -3081,10 +3081,14 @@ function renderPortaOrganizzatore() {
       scarico ? el('span', { class: 'gscarico' }, 'Scarico ' + scarico.passo + '…') : null,
       g.inCorso ? el('span', { class: 'garacorsa' }, el('span', { class: 'dot' }), 'in corso') : null,
       scarico ? null : etichettaDove(g.dove),
-      remota
-        ? null
-        : el('span', { class: 'ib danger', title: 'Elimina questa gara', 'data-elimina': g.id,
-          onclick: e => { e.stopPropagation(); chiediEliminazione(g); } }, '×'));
+      /* Il cestino c'è anche sulle gare che stanno solo sul server: sono
+         quelle nate su un altro dispositivo, e senza questo pulsante da qui
+         non ci sarebbe modo di togliere di mezzo una prova venuta male. */
+      el('span', {
+        class: 'ib danger', 'data-elimina': g.id,
+        title: remota ? 'Elimina questa gara dal server' : 'Elimina questa gara',
+        onclick: e => { e.stopPropagation(); chiediEliminazione(g); },
+      }, '×'));
     elenco.append(riga);
   }
   box.append(testa, el('div', { style: 'margin-top:14px' }, elenco));
@@ -3206,31 +3210,79 @@ function renderAccessoOrganizzatore(box) {
         el('b', {}, 'Una password dimenticata non deve mai fermare una gara.')))));
 }
 
-/* Eliminare una gara deve costare fatica e dire cosa si sta buttando via. */
+/* Eliminare una gara deve costare fatica e dire cosa si sta buttando via.
+   Quando la gara sta anche sul server sono due gesti diversi, e vanno
+   chiesti come due gesti diversi: toglierla di qui la lascia là e la si
+   rivede subito come «solo sul server»; toglierla anche di là non si
+   recupera più da nessuna parte. */
 async function chiediEliminazione(g) {
+  const nome = g.nome || 'gara senza nome';
   const cosa = [
     plur(g.arrivi || 0, 'arrivo registrato', 'arrivi registrati'),
     plur(g.iscritti || 0, 'iscritto', 'iscritti'),
   ].join(' e ');
-  /* Se la gara sta anche sul server, eliminarla di qui non la elimina di là:
-     sparisce dal dispositivo e ricompare nell'elenco come «solo sul server».
-     Vederla tornare senza saperlo sembra un guasto, quindi lo si dice prima. */
-  const staAncheSulServer = (gareRemote || []).some(r => r.id === g.id);
-  const ok = await confirmDlg(
-    'Elimina «' + (g.nome || 'gara senza nome') + '»',
-    `Vengono cancellati ${cosa}. L'operazione non si può annullare: se ti ` +
-    `servono, apri la gara e scarica prima un backup .json.` +
-    (staAncheSulServer
-      ? ' Questa gara sta anche sul server: viene tolta da questo dispositivo, ' +
-        'non da là, e resterà nell\'elenco come «solo sul server».'
-      : ''));
-  if (!ok) return;
-  // Due conferme, non una: la seconda chiede di scrivere, così non la si
-  // supera premendo due volte di seguito nello stesso punto.
+  const suServer = g.dove === 'server' || (gareRemote || []).some(r => r.id === g.id);
+  const soloSuServer = g.dove === 'server';
+
+  let dove = 'qui';                       // cosa si è deciso di cancellare
+  if (soloSuServer) {
+    dove = 'server';
+    const ok = await confirmDlg('Elimina «' + nome + '» dal server',
+      `Questa gara sta solo sul server: non ce n'è copia su questo dispositivo. ` +
+      `Vengono cancellati ${cosa}, e non si recuperano da nessuna parte.`);
+    if (!ok) return;
+  } else if (suServer) {
+    const scelta = await chiediScelta('Elimina «' + nome + '»',
+      el('div', {},
+        el('p', { style: 'margin:0 0 10px' },
+          'Questa gara con i suoi ', el('b', {}, cosa), ' sta in due posti: su ',
+          'questo dispositivo e sul server.'),
+        el('p', { class: 'hint', style: 'margin:0' },
+          'Toglierla solo di qui la lascia sul server, e la rivedrai in questo ',
+          'elenco come «solo sul server». Toglierla anche di là non si annulla: ',
+          'se ti servono, apri la gara e scarica prima un backup .json.')),
+      [
+        { k: 'annulla', testo: 'Lascia stare', classe: 'primary' },
+        { k: 'qui', testo: 'Solo da questo dispositivo' },
+        { k: 'tutto', testo: 'Anche dal server, per sempre', classe: 'danger' },
+      ]);
+    if (scelta !== 'qui' && scelta !== 'tutto') return;
+    dove = scelta === 'tutto' ? 'ovunque' : 'qui';
+  } else {
+    const ok = await confirmDlg('Elimina «' + nome + '»',
+      `Vengono cancellati ${cosa}. L'operazione non si può annullare: se ti ` +
+      `servono, apri la gara e scarica prima un backup .json.`);
+    if (!ok) return;
+  }
+
+  // Seconda conferma: chiede di SCRIVERE, così non la si supera premendo due
+  // volte di seguito nello stesso punto dello schermo.
   const parola = await chiediParola(g);
   if (!parola) return;
-  eliminaGara(g.id);
-  toast('Gara eliminata', 'bad');
+
+  if (dove === 'qui') {
+    eliminaGara(g.id);
+    toast('Gara eliminata da questo dispositivo', 'bad');
+    render();
+    return;
+  }
+
+  /* Prima di là, poi di qui: vedi il commento sopra eliminaGaraSulServer. */
+  const esito = await eliminaGaraSulServer(g.id);
+  if (!esito.ok) {
+    const perche = {
+      rete: 'Senza connessione non si può togliere niente dal server. Riprova quando c\'è rete.',
+      scollegato: 'L\'accesso è scaduto: rientra dalla porta Organizzatore e riprova.',
+      server: `Il server ha risposto ${esito.stato}: la gara non è stata toccata.`,
+    }[esito.motivo] || 'Non è stato possibile contattare il server.';
+    await confirmDlg('Non è stata cancellata', perche +
+      ' Su questo dispositivo è rimasto tutto come prima.');
+    return;
+  }
+
+  if (dove === 'ovunque') eliminaGara(g.id);
+  scordaGareRemote();          // l'elenco del server va richiesto da capo
+  toast(esito.cera ? 'Gara eliminata anche dal server' : 'Sul server non c\'era più', 'bad');
   render();
 }
 
@@ -3603,8 +3655,22 @@ const cambiata = (chiave, valore) => {
   return true;
 };
 
+/** Una gara ancora completamente vuota: nessun nome, nessuno, niente.
+    È la stessa regola con cui il menu decide di non mostrarla. */
+const garaVuota = () => !S.cfg.nome &&
+  !(S.iscritti || []).length && !(S.arrivi || []).length && !S.start;
+
 /** Le operazioni che descrivono lo stato attuale della gara. */
 function operazioniDaMandare(inviati) {
+  /* UNA GARA VUOTA NON VA SUL SERVER.
+     Eliminando la gara aperta ne resta in mano una nuova e vuota; se la app
+     resta lì un momento, la sincronia le crea comunque la sua riga. È così
+     che nascono le gare senza nome e senza niente che poi uno si ritrova
+     nell'elenco e non sa da dove vengano — quattro su cinque, sul server
+     vero, prima di questa regola. Finché non c'è almeno un nome, un
+     iscritto, un arrivo o una partenza, non c'è niente da mandare. */
+  if (garaVuota()) return [];
+
   const ops = [];
   const G = S.garaId;
   const dispositivo = nomeDispositivo();
@@ -3812,6 +3878,7 @@ async function inviaCoda() {
 async function unaPassata() {
   const coda = (await leggiCoda())
     .filter(o => !o.bloccata)                   // rifiutate poco fa: non ora
+    .filter(o => o.gara !== garaInCancellazione) // la si sta togliendo: non si ricrea
     .sort(perOrdineDiInvio);
   if (!coda.length) { aggiornaStato(await contaCoda() ? 'attesa' : 'allineato'); return true; }
   aggiornaStato('invio', coda.length);
@@ -3910,6 +3977,7 @@ function disegnaStatoSincronia() {
     espliciti — pubblicare, ritirare, "Sincronizza ora" — mai dal traguardo. */
 async function sincronizzaSubito() {
   if (!sincroniaPossibile() || !collegato()) return;
+  if (S.garaId === garaInCancellazione) return;   // la si sta togliendo dal server
   try {
     const inviati = new Set(await leggiInviati());
     for (const op of operazioniDaMandare(inviati)) {
@@ -3922,6 +3990,7 @@ async function sincronizzaSubito() {
 const programmaSincronia = debounce(async () => {
   if (!sincroniaPossibile()) { disegnaStatoSincronia(); return; }
   if (!collegato()) { aggiornaStato('locale'); return; }
+  if (S.garaId === garaInCancellazione) return;   // la si sta togliendo dal server
   try {
     const inviati = new Set(await leggiInviati());
     const ops = operazioniDaMandare(inviati);
@@ -4289,6 +4358,66 @@ async function scaricaGara(id, avanzamento) {
   };
 }
 
+/* ============================================================
+   CANCELLARE UNA GARA DAL SERVER, PER SEMPRE
+
+   Basta togliere la riga della gara: tutto il resto se ne va da solo, per
+   via del "on delete cascade" dichiarato nello schema — configurazione,
+   fasce, iscritti, arrivi, correzioni, ritiri, classifica pubblicata.
+   Vale anche per gli arrivi, che all'organizzatore sono revocati in
+   scrittura: quella cancellazione la esegue il database per conto del
+   vincolo, non l'utente. È stato verificato sul server vero, dentro una
+   transazione poi annullata, mettendosi nei panni dell'organizzatore: otto
+   tabelle su otto svuotate, e un altro account che ci prova non ottiene
+   niente.
+
+   L'ORDINE CONTA, e non è quello che verrebbe da fare.
+   Prima si toglie di là, poi si svuota la coda, poi si toglie di qui.
+   - Al contrario — prima di qui — se il server rifiutasse resterebbe una
+     gara che si vede ancora nell'elenco come «solo sul server», e sembrerebbe
+     tornata dal nulla.
+   - E se restasse in coda anche una sola operazione di quella gara, il primo
+     invio la ricreerebbe sul server un attimo dopo averla cancellata.
+   Mentre dura, garaInCancellazione tiene ferma la sincronia per quella gara:
+   la finestra è di millisecondi, ma è la finestra in cui si ricrea da sola. */
+let garaInCancellazione = null;
+
+async function eliminaGaraSulServer(id) {
+  if (!sincroniaPossibile() || !collegato()) return { ok: false, motivo: 'scollegato' };
+  if (!navigator.onLine) return { ok: false, motivo: 'rete' };
+
+  garaInCancellazione = id;
+  try {
+    let r;
+    try {
+      r = await chiamaRest('/rest/v1/gare?id=eq.' + encodeURIComponent(id),
+        { metodo: 'DELETE', prefer: 'return=representation' });
+    } catch (e) { return { ok: false, motivo: 'rete' }; }
+
+    if (r.status === 401) {
+      if (await rinnovaSessione()) {
+        garaInCancellazione = null;
+        return eliminaGaraSulServer(id);
+      }
+      return { ok: false, motivo: 'scollegato' };
+    }
+    /* return=representation e poi si CONTANO le righe: un DELETE che non
+       trova niente risponde lo stesso 200, e senza guardare quante righe
+       sono tornate si direbbe "fatto" anche quando non è stato fatto niente. */
+    if (!r.ok) return { ok: false, motivo: 'server', stato: r.status };
+    const righe = await r.json().catch(() => []);
+
+    try {
+      for (const o of await leggiCoda()) if (o.gara === id) await togliDallaCoda(o.id);
+    } catch (e) { /* IndexedDB assente: non c'era coda da svuotare */ }
+
+    return { ok: true, cera: Array.isArray(righe) && righe.length > 0 };
+  } finally {
+    garaInCancellazione = null;
+    verificaCoda();
+  }
+}
+
 /* ---------------- l'elenco che sta sul server ----------------
    Non è mai sul percorso di nessuno: l'elenco locale si disegna subito e
    questo arriva dopo, se arriva. Se non arriva non si dice niente — la app
@@ -4338,6 +4467,7 @@ function segnalaClassificaCambiata() { daRipubblicare = true; }
 
 async function pubblicaClassifica(forzata) {
   if (!sincroniaPossibile() || !collegato() || !S.pubblicata) return;
+  if (S.garaId === garaInCancellazione) return;   // la si sta togliendo dal server
   if (pubblicazioneInCorso) return;                 // il giro precedente non è finito
   if (!forzata && !daRipubblicare) return;
   if (!navigator.onLine) return;

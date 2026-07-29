@@ -249,6 +249,7 @@ async function servi(db, rotta) {
 
     const mie = gareDi(db, utente);
     const miaRiga = r => tabella === 'gare' ? r.proprietario === utente : mie.has(r.gara_id);
+    const prefer = testa.prefer || '';
 
     /* ---- lettura ---- */
     if (metodo === 'GET') {
@@ -275,7 +276,6 @@ async function servi(db, rotta) {
     if (metodo === 'POST') {
       const corpo = JSON.parse(richiesta.postData() || '{}');
       const righe = Array.isArray(corpo) ? corpo : [corpo];
-      const prefer = testa.prefer || '';
       const ignora = prefer.includes('ignore-duplicates');
 
       for (const r of righe) {
@@ -293,6 +293,31 @@ async function servi(db, rotta) {
         // l'immutabilità degli arrivi, che qui viene messa alla prova
       }
       return rispondi(201, prefer.includes('return=minimal') ? null : righe);
+    }
+
+    /* ---- cancellazione ----
+       Con la cascata dichiarata nello schema: togliendo la riga della gara
+       se ne vanno anche configurazione, fasce, iscritti, arrivi, correzioni,
+       ritiri e classifica pubblicata. Vale anche per gli arrivi, che
+       all'organizzatore sono revocati in scrittura: quella cancellazione la
+       fa il database per conto del vincolo, non l'utente. Verificato sul
+       server vero, in una transazione poi annullata. */
+    if (metodo === 'DELETE') {
+      const bersagli = applicaFiltri(db.tabelle[tabella].filter(miaRiga),
+        [...url.searchParams.entries()]);
+      const chiavi = new Set(bersagli.map(r => chiave(tabella, r)));
+      db.tabelle[tabella] = db.tabelle[tabella].filter(r => !chiavi.has(chiave(tabella, r)));
+
+      if (tabella === 'gare') {
+        const idi = new Set(bersagli.map(g => g.id));
+        for (const t of Object.keys(db.tabelle)) {
+          if (t === 'gare') continue;
+          db.tabelle[t] = db.tabelle[t].filter(r => !idi.has(r.gara_id));
+        }
+      }
+      return prefer.includes('return=representation')
+        ? rispondi(200, bersagli)
+        : rispondi(204, null);
     }
 
     return rispondi(405, { message: 'metodo non previsto: ' + metodo });

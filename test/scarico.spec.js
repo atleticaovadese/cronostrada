@@ -169,35 +169,10 @@ test.describe("L'elenco tiene insieme il locale e il server", () => {
     await pc.contesto.close(); await tel.contesto.close();
   });
 
-  test('eliminando una gara che sta anche sul server, lo dice prima', async ({ browser }) => {
-    /* Eliminarla di qui non la elimina di là: sparisce dal dispositivo e
-       ricompare subito nell'elenco come «solo sul server». Vederla tornare
-       senza saperlo sembra un guasto della app. */
-    const db = nuovoServer();
-    const pc = await dispositivo(browser, db);
-    await accediNellaApp(pc.page);
-    const id = await preparaEInvia(pc.page, 'Sta in tutti e due', iscrittiFinti(3));
-
-    await apriPortaOrganizzatore(pc.page);
-    await pc.page.waitForFunction(() => gareRemote !== null);
-    await pc.page.evaluate(() => renderMenu());
-
-    // la prima conferma si legge e si annulla
-    await rispondoIo(pc.page);
-    const detto = await pc.page.evaluate(async gara => {
-      const g = elencoOrganizzatore().find(x => x.id === gara);
-      const p = chiediEliminazione(g);
-      const testo = document.querySelector('#cfMsg').textContent;
-      document.querySelector('#cfNo').click();
-      await p;
-      return testo;
-    }, id);
-
-    expect(detto, 'deve dire che sul server resta').toContain('sta anche sul server');
-    expect(detto, 'e come si vedrà dopo').toContain('solo sul server');
-
-    await pc.contesto.close();
-  });
+  /* Il caso "eliminando una gara che sta anche sul server, lo dice prima"
+     stava qui. Adesso quella domanda non è più un avviso da leggere ma una
+     scelta fra tre strade, e la prova sta in
+     "dal menu si sceglie fra togliere solo di qui e togliere ovunque". */
 
   test('le gare di un altro account non compaiono', async ({ browser }) => {
     const db = nuovoServer();
@@ -382,6 +357,203 @@ test.describe('La sequenza vera', () => {
       .toEqual(ordinato(primaDelGiro.csv));
 
     await pc.contesto.close(); await tel.contesto.close();
+  });
+});
+
+/* ============================================================
+   1b. Cancellare una gara dal server, per sempre
+   ============================================================ */
+test.describe('Eliminare una gara anche dal server', () => {
+  test('sparisce tutto: gara, iscritti, arrivi, correzioni, ritiri', async ({ browser }) => {
+    const db = nuovoServer();
+    const pc = await dispositivo(browser, db);
+    await accediNellaApp(pc.page);
+    const id = await preparaEInvia(pc.page, 'Da buttare', iscrittiFinti(6));
+    await pc.page.evaluate(async () => {
+      S.start = Date.now() - 600_000;
+      for (let i = 0; i < 4; i++) S.arrivi.push({ id: nid(), pett: i + 1, ms: 60_000 + i * 1000, corr: 0 });
+      S.dnf = [5];
+      S.stop = Date.now(); touched();
+      await sincronizzaSubito();
+    });
+    await attendiCodaVuota(pc.page);
+
+    const prima = Object.fromEntries(Object.entries(db.tabelle).map(([k, v]) => [k, v.length]));
+    expect(prima.arrivi, 'la gara è sul server con i suoi arrivi').toBe(4);
+
+    const esito = await pc.page.evaluate(gara => eliminaGaraSulServer(gara), id);
+    expect(esito.ok).toBe(true);
+    expect(esito.cera, 'e il server dice di averla trovata e tolta').toBe(true);
+
+    const dopo = Object.fromEntries(Object.entries(db.tabelle).map(([k, v]) => [k, v.length]));
+    const rimasti = Object.entries(dopo).filter(([, n]) => n > 0);
+    if (rimasti.length) {
+      throw new Error('\nDopo aver cancellato la gara sul server è rimasto qualcosa:\n' +
+        rimasti.map(([t, n]) => `  ${t}: ${n} righe`).join('\n') +
+        "\n\n  Basta togliere la riga della gara: il resto se ne va per cascata.\n" +
+        '  Se resta, la cascata non sta funzionando.\n');
+    }
+
+    await pc.contesto.close();
+  });
+
+  test('non risorge dalla coda: quello che era in attesa non la ricrea', async ({ browser }) => {
+    /* Il modo in cui una cancellazione si annulla da sola. La gara viene
+       tolta dal server, ma nella coda di uscita è rimasta qualche operazione
+       sua: al primo invio il server se la ritrova davanti, identica, un
+       attimo dopo averla cancellata. */
+    const db = nuovoServer();
+    const pc = await dispositivo(browser, db);
+    await accediNellaApp(pc.page);
+    const id = await preparaEInvia(pc.page, 'Da buttare', iscrittiFinti(5));
+
+    // roba non ancora partita, come capita staccando la rete un momento
+    db.giu = true;
+    await pc.page.evaluate(async () => {
+      S.start = Date.now() - 60_000;
+      S.arrivi.push({ id: nid(), pett: 2, ms: 3210, corr: 0 });
+      S.stop = Date.now(); touched();
+      await sincronizzaSubito();
+    });
+    await attendiCodaPiena(pc.page);
+    db.giu = false;
+
+    // come fa la app: prima di là, poi di qui
+    const esito = await pc.page.evaluate(async gara => {
+      const r = await eliminaGaraSulServer(gara);
+      if (r.ok) eliminaGara(gara);
+      return r;
+    }, id);
+    expect(esito.ok).toBe(true);
+
+    // e adesso si insiste: due giri di sincronia, come farebbe la app da sola
+    await pc.page.evaluate(async () => { await sincronizzaSubito(); await inviaCoda(); });
+    await attendiCodaVuota(pc.page, 20_000);
+
+    const risorte = db.tabelle.gare.length + db.tabelle.arrivi.length + db.tabelle.iscritti.length;
+    if (risorte) {
+      throw new Error(
+        `\nLa gara è tornata sul server dopo essere stata cancellata: ` +
+        `${db.tabelle.gare.length} gare, ${db.tabelle.iscritti.length} iscritti, ` +
+        `${db.tabelle.arrivi.length} arrivi.\n\n` +
+        '  Le operazioni rimaste in coda l\'hanno ricreata. Vanno tolte insieme\n' +
+        '  alla gara, e mentre si cancella la sincronia deve stare ferma.\n');
+    }
+
+    await pc.contesto.close();
+  });
+
+  test('una gara vuota non arriva mai sul server', async ({ browser }) => {
+    /* Eliminando la gara aperta ne resta in mano una nuova e vuota. Se la
+       sincronia le crea comunque la riga, l'elenco si riempie di gare senza
+       nome e senza niente, che uno si ritrova lì e non sa da dove vengano.
+       Sul server vero erano quattro su cinque. */
+    const db = nuovoServer();
+    const pc = await dispositivo(browser, db);
+    await accediNellaApp(pc.page);
+    const id = await preparaEInvia(pc.page, 'La prima', iscrittiFinti(3));
+
+    await pc.page.evaluate(async gara => {
+      const r = await eliminaGaraSulServer(gara);
+      if (r.ok) eliminaGara(gara);          // in mano resta una gara nuova e vuota
+      await sincronizzaSubito();
+      await inviaCoda();
+    }, id);
+    await attendiCodaVuota(pc.page, 20_000);
+
+    confrontaNumero('gare sul server dopo aver eliminato tutto', 0, db.tabelle.gare.length,
+      'Una gara senza nome, senza iscritti, senza arrivi e senza partenza non ha niente da mandare.');
+
+    // ma appena le si dà un nome, quella sì che parte
+    await pc.page.evaluate(async () => {
+      S.cfg.nome = 'La seconda'; touched();
+      await sincronizzaSubito();
+    });
+    await attendiCodaVuota(pc.page, 20_000);
+    confrontaNumero('e appena ha un nome parte', 1, db.tabelle.gare.length);
+    expect(db.tabelle.gare[0].nome).toBe('La seconda');
+
+    await pc.contesto.close();
+  });
+
+  test('senza rete non cancella niente, e lo dice', async ({ browser }) => {
+    const db = nuovoServer();
+    const pc = await dispositivo(browser, db);
+    await accediNellaApp(pc.page);
+    const id = await preparaEInvia(pc.page, 'Da buttare', iscrittiFinti(3));
+
+    db.giu = true;
+    const esito = await pc.page.evaluate(gara => eliminaGaraSulServer(gara), id);
+    expect(esito.ok, 'senza rete non si cancella').toBe(false);
+    expect(esito.motivo).toBe('rete');
+    db.giu = false;
+    confrontaNumero('la gara è ancora tutta sul server', 1, db.tabelle.gare.length);
+    confrontaNumero('con i suoi iscritti', 3, db.tabelle.iscritti.length);
+
+    await pc.contesto.close();
+  });
+
+  test("la gara di un altro account non si tocca", async ({ browser }) => {
+    const db = nuovoServer();
+    const A = await dispositivo(browser, db);
+    await accediNellaApp(A.page, 'primo@esempio.it');
+    const id = await preparaEInvia(A.page, 'Del primo', iscrittiFinti(4));
+
+    const B = await dispositivo(browser, db);
+    await accediNellaApp(B.page, 'secondo@esempio.it');
+    const esito = await B.page.evaluate(gara => eliminaGaraSulServer(gara), id);
+
+    expect(esito.ok, 'la chiamata riesce, ma non trova niente da cancellare').toBe(true);
+    expect(esito.cera, "e lo dice: non c'era nessuna gara sua da togliere").toBe(false);
+    confrontaNumero('la gara del primo è intatta', 1, db.tabelle.gare.length);
+    confrontaNumero('e i suoi iscritti pure', 4, db.tabelle.iscritti.length);
+
+    await A.contesto.close(); await B.contesto.close();
+  });
+
+  test('dal menu si sceglie fra togliere solo di qui e togliere ovunque', async ({ browser }) => {
+    const db = nuovoServer();
+    const pc = await dispositivo(browser, db);
+    await accediNellaApp(pc.page);
+    const id = await preparaEInvia(pc.page, 'In due posti', iscrittiFinti(4));
+    await apriPortaOrganizzatore(pc.page);
+    await pc.page.waitForFunction(() => gareRemote !== null);
+    await pc.page.evaluate(() => renderMenu());
+
+    // la riga risulta in entrambi i posti, e ha il cestino
+    const riga = await pc.page.evaluate(() => {
+      const r = document.querySelector('#elencoGare .garariga');
+      return { dove: r.dataset.dove, cestino: !!r.querySelector('[data-elimina]') };
+    });
+    expect(riga.dove).toBe('entrambi');
+    expect(riga.cestino, 'il cestino c\'è').toBe(true);
+
+    await rispondoIo(pc.page);
+    await pc.page.click('#elencoGare .garariga [data-elimina]');
+    await pc.page.waitForSelector('#dlgScelte[open]');
+
+    const scelte = await pc.page.evaluate(() => ({
+      testo: document.querySelector('#dlgScelte').textContent,
+      tasti: Array.from(document.querySelectorAll('#scPiede button')).map(b => b.dataset.scelta),
+    }));
+    expect(scelte.tasti, 'tre strade, e la prima non fa danni')
+      .toEqual(['annulla', 'qui', 'tutto']);
+    expect(scelte.testo, 'e spiega la differenza').toContain('solo di qui la lascia sul server');
+
+    // si sceglie "anche dal server", poi si scrive la parola
+    await pc.page.click('#scPiede button[data-scelta="tutto"]');
+    await pc.page.waitForSelector('#dlgConfirm[open]');
+    await pc.page.fill('#cfMsg input', 'ELIMINA');
+    await pc.page.click('#cfYes');
+
+    await pc.page.waitForFunction(() => document.querySelectorAll('#elencoGare .garariga').length === 0,
+      null, { timeout: 15_000 });
+    confrontaNumero('sul server non è rimasta nessuna gara', 0, db.tabelle.gare.length);
+    confrontaNumero('e nemmeno un iscritto', 0, db.tabelle.iscritti.length);
+    confrontaNumero('e in locale è sparita', 0,
+      await pc.page.evaluate(() => elencoGareTutte().length));
+
+    await pc.contesto.close();
   });
 });
 
