@@ -148,6 +148,32 @@ const MUTAZIONI = [
     // prova che percorre il volume in cui il difetto compariva davvero.
     test: 'riprova al giro dopo|non si ferma a metà|dall.inizio alla fine',
   },
+  /* La data di nascita: da lei dipende la categoria FIDAL, cioe' chi sale
+     sul podio. Nessuna di queste rotture da' un errore a schermo. */
+  {
+    nome: 'le date storte dei backup non vengono raddrizzate',
+    spiega: "all'apertura una data scritta 07/03/1990 resta com'e'",
+    danno: 'La casella si vede vuota mentre la categoria e\' calcolata: chi prova a rimetterla a posto cancella quella che c\'era.',
+    cerca: '    if (!i.nascita || eDataIso(i.nascita)) continue;',
+    sostituisci: '    if (true) continue;',
+    test: 'backup vecchi',
+  },
+  {
+    nome: 'il 31 febbraio diventa una data',
+    spiega: 'dataIso non controlla piu\' che il giorno esista davvero',
+    danno: 'Una data inventata manda un atleta in una categoria sbagliata senza dire niente a nessuno.',
+    cerca: '  if (d.getUTCFullYear() !== A || d.getUTCMonth() !== M - 1 || d.getUTCDate() !== G) return \'\';',
+    sostituisci: '  ;',
+    test: 'come la scrive la gente',
+  },
+  {
+    nome: 'una data storta parte verso il server come testo',
+    spiega: 'si manda su il valore cosi\' com\'e\', senza guardare se e\' una data',
+    danno: 'Il server respinge la riga - quella colonna e\' di tipo date - e l\'iscritto resta in coda per sempre.',
+    cerca: "      societa: i.societa || '', nascita: eDataIso(i.nascita) ? i.nascita : null,",
+    sostituisci: "      societa: i.societa || '', nascita: i.nascita || null,",
+    test: 'non parte verso il server',
+  },
   {
     nome: 'la sessione azzerata torna in gara',
     spiega: 'scendendo non si filtra più per sessione',

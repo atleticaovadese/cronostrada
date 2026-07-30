@@ -141,6 +141,8 @@ tr.bad td{background:var(--bad-soft)}
 td input.cell{width:100%;border:1px solid transparent;background:transparent;padding:3px 5px;border-radius:5px;font-size:13px}
 td input.cell:hover{border-color:var(--line)}
 td input.cell:focus{outline:none;border-color:var(--accent);background:var(--surface)}
+/* quello che è stato scritto ma non è una data: resta lì, e si vede */
+td input.cell.storta{border-color:var(--bad);background:var(--bad-soft)}
 td input.cell.mono{font-family:var(--mono);font-variant-numeric:tabular-nums}
 
 /* ---------- finish line ---------- */
@@ -1368,12 +1370,104 @@ function aggiornaFormato() {
   if (rifatti.size && padBersaglio && rifatti.has(padBersaglio)) {
     padBersaglio = rifatti.get(padBersaglio);
   }
+
+  /* LE DATE DI NASCITA SI RIMETTONO IN RIGA ALL'APERTURA.
+     Un backup vecchio può avere "07/03/1990" al posto di "1990-03-07": la
+     app se lo teneva così, la casella risultava vuota, e il server — dove
+     quella colonna è di tipo date — avrebbe respinto la riga lasciandola in
+     coda per sempre. Qui diventano tutte ISO, una volta sola. Quello che
+     non è una data non si tocca: resta in vista, con il suo avviso. */
+  for (const i of S.iscritti) {
+    if (!i.nascita || eDataIso(i.nascita)) continue;
+    const iso = dataInserita(i.nascita);
+    if (iso) i.nascita = iso;
+  }
+
   S.v = 2;
+}
+
+/* ---------- la data di nascita ----------
+   COM'È ANDATA. Il campo era un <input type="date">, cioè quello con il
+   calendarietto. Sembra la scelta ovvia e invece è la peggiore proprio qui:
+
+   1. Mostra soltanto le date scritte in ISO. Un iscritto arrivato da un
+      backup vecchio con "07/03/1990" dentro si vedeva con la casella VUOTA,
+      mentre la app la categoria la calcolava lo stesso. Uno guarda, non
+      vede niente, riscrive — e la data di prima sparisce senza che nessuno
+      l'abbia deciso.
+   2. Per una data di nascita il calendario non serve a nulla: nessuno
+      arriva al marzo 1948 sfogliando i mesi. Si scrive, e basta.
+   3. Sul telefono apre la rotella di sistema, che parte da oggi.
+
+   Adesso è un campo di testo che si legge e si scrive in italiano,
+   gg/mm/aaaa, e che accetta come lo scrive la gente: 7/3/1948, 07-03-1948,
+   07.03.48, 07031948, e anche 1948-03-07. Dentro resta sempre ISO, che è
+   quello che il server si aspetta. */
+
+const anniDue = v => { const a = +v; return a >= 100 ? a : a + (a > 30 ? 1900 : 2000); };
+
+/** Compone una data ISO, ma solo se esiste davvero: il 31 febbraio no. */
+function dataIso(anno, mese, giorno) {
+  const A = +anno, M = +mese, G = +giorno;
+  if (!(A >= 1900 && A <= 2100) || !(M >= 1 && M <= 12) || !(G >= 1 && G <= 31)) return '';
+  const d = new Date(Date.UTC(A, M - 1, G));
+  if (d.getUTCFullYear() !== A || d.getUTCMonth() !== M - 1 || d.getUTCDate() !== G) return '';
+  return `${A}-${String(M).padStart(2, '0')}-${String(G).padStart(2, '0')}`;
+}
+
+/** Quello che una persona ha scritto -> ISO, oppure '' se non è una data. */
+function dataInserita(testo) {
+  const s = String(testo ?? '').trim();
+  if (!s) return '';
+
+  let m = s.match(/^(\d{4})[-\/.](\d{1,2})[-\/.](\d{1,2})$/);       // 1948-03-07
+  if (m) return dataIso(m[1], m[2], m[3]);
+
+  m = s.match(/^(\d{1,2})[-\/.](\d{1,2})[-\/.](\d{2,4})$/);          // 7/3/1948
+  if (m) return dataIso(anniDue(m[3]), m[2], m[1]);
+
+  /* Otto cifre di fila sono ambigue: 19480307 o 07031948? Decide il primo
+     gruppo di quattro — se può essere un anno, lo è. */
+  if (/^\d{8}$/.test(s)) {
+    const testa = +s.slice(0, 4);
+    return (testa >= 1900 && testa <= 2100)
+      ? dataIso(s.slice(0, 4), s.slice(4, 6), s.slice(6, 8))
+      : dataIso(s.slice(4, 8), s.slice(2, 4), s.slice(0, 2));
+  }
+  if (/^\d{6}$/.test(s)) return dataIso(anniDue(s.slice(4, 6)), s.slice(2, 4), s.slice(0, 2));
+
+  return '';
+}
+
+/** ISO -> gg/mm/aaaa. Quello che non è ISO si mostra com'è: mai nascosto. */
+function dataItaliana(iso) {
+  const m = String(iso ?? '').match(/^(\d{4})-(\d{2})-(\d{2})$/);
+  return m ? `${m[3]}/${m[2]}/${m[1]}` : String(iso ?? '');
+}
+
+const eDataIso = v => /^\d{4}-\d{2}-\d{2}$/.test(String(v ?? ''));
+
+/* Quello che si è scritto nella casella della nascita.
+   Se non è una data non si butta via e non si salva: resta lì sotto gli
+   occhi, con il bordo rosso e la spiegazione di cosa ci va. Salvarla come
+   viene riempirebbe l'anagrafica di caratteri a caso; cancellarla farebbe
+   sparire quello che uno ha appena battuto. */
+function scriviNascita(casella, iscritto, upd) {
+  const scritto = casella.value.trim();
+  if (!scritto) { casella.classList.remove('storta'); upd(iscritto, 'nascita', ''); return; }
+  const iso = dataInserita(scritto);
+  if (iso) { casella.classList.remove('storta'); upd(iscritto, 'nascita', iso); return; }
+  casella.classList.add('storta');
+  toast('«' + scritto + '» non è una data. Si scrive gg/mm/aaaa, per esempio 07/03/1948.', 'bad');
 }
 
 /* ---------- motore ---------- */
 function annoDi(iscr) {
   if (!iscr.nascita) return null;
+  // prima la data vera, e solo come ripiego il primo gruppo di quattro
+  // cifre: "07031990" non deve diventare l'anno 703.
+  const iso = dataInserita(iscr.nascita);
+  if (iso) return +iso.slice(0, 4);
   const m = String(iscr.nascita).match(/(\d{4})/);
   return m ? +m[1] : null;
 }
@@ -1780,7 +1874,11 @@ function renderIscritti() {
         ...['M', 'F'].map(s => el('option', { value: s, selected: String(i.sesso).toUpperCase().startsWith(s) || null }, s)))),
       el('td', { class: 's-corto', 'data-col': 'Conf.' }, el('input', { type: 'checkbox', checked: i.confermato || null, onchange: e => upd(i, 'conferma', e.target.checked ? 'S' : 'N') })),
       el('td', { 'data-col': 'Società' }, inp('societa')),
-      el('td', { class: 's-medio', 'data-col': 'Nascita' }, el('input', { class: 'cell mono', type: 'date', value: i.nascita || '', style: 'width:130px', onchange: e => upd(i, 'nascita', e.target.value) })),
+      el('td', { class: 's-medio', 'data-col': 'Nascita' }, el('input', {
+        class: 'cell mono', inputmode: 'numeric', autocomplete: 'off',
+        placeholder: 'gg/mm/aaaa', value: dataItaliana(i.nascita), style: 'width:118px',
+        onchange: e => scriviNascita(e.target, i, upd),
+      })),
       el('td', { class: 's-tag', 'data-col': 'FIDAL' }, el('span', { class: 'tag' }, i.catFidal || '—')),
       el('td', { class: 's-tag', 'data-col': 'Fascia' }, el('span', { class: 'tag ' + (i.catGara ? 'acc' : 'bad') }, i.catGara || 'nessuna')),
       el('td', { class: 's-tag' }, ...i.alert.map(a => el('span', { class: 'tag bad', style: 'margin-right:3px' }, a))),
@@ -2447,9 +2545,13 @@ function parseData(v) {
   if (v === null || v === undefined || v === '') return '';
   if (typeof v === 'number') return serialToISO(v) || '';
   const s = String(v).trim();
-  let m = s.match(/^(\d{4})-(\d{2})-(\d{2})/); if (m) return `${m[1]}-${m[2]}-${m[3]}`;
-  m = s.match(/^(\d{1,2})[\/\.\-](\d{1,2})[\/\.\-](\d{2,4})/);
-  if (m) { let y = +m[3]; if (y < 100) y += y > 30 ? 1900 : 2000; return `${y}-${String(+m[2]).padStart(2, '0')}-${String(+m[1]).padStart(2, '0')}`; }
+  // ISO, anche con l'ora attaccata dietro come la scrivono certi export
+  const m = s.match(/^(\d{4})-(\d{2})-(\d{2})/);
+  if (m) return `${m[1]}-${m[2]}-${m[3]}`;
+  // tutto il resto lo legge la stessa funzione della casella: un parlante
+  // solo, così importazione e digitazione non possono divergere
+  const letta = dataInserita(s);
+  if (letta) return letta;
   const d = new Date(s); return isNaN(d) ? '' : d.toISOString().slice(0, 10);
 }
 
@@ -3710,7 +3812,9 @@ function operazioniDaMandare(inviati) {
     const riga = {
       id: i.id, gara_id: G, pett: i.pett ?? null,
       cognome: i.cognome || '', nome: i.nome || '', sesso: i.sesso || null,
-      societa: i.societa || '', nascita: i.nascita || null,
+      // solo una data vera esce di qui: la colonna sul server è di tipo
+      // date, e una riga respinta resterebbe in coda senza mai partire
+      societa: i.societa || '', nascita: eDataIso(i.nascita) ? i.nascita : null,
       conferma: String(i.conferma || '').toUpperCase().startsWith('S'),
       eliminato: false, dispositivo,
     };

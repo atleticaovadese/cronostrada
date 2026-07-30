@@ -162,8 +162,12 @@ test.describe('Su un telefono ci sta quello che conta', () => {
     expect(scheda.cognome.largo, 'il campo del cognome deve essere leggibile')
       .toBeGreaterThan(120);
     expect(scheda.cognome.alto, 'e premibile con un dito').toBeGreaterThanOrEqual(38);
-    expect(scheda.nascita.valore, 'la data di nascita si raggiunge senza trascinare')
-      .toMatch(/^\d{4}-\d{2}-\d{2}$/);
+    /* La data si legge in italiano, gg/mm/aaaa. Dentro resta ISO, ma nella
+       casella no: era proprio quello il difetto della vecchia casella col
+       calendarietto, che mostrava solo l'ISO e lasciava vuoto tutto il
+       resto. Le prove per intero stanno in nascita.spec.js. */
+    expect(scheda.nascita.valore, 'la data di nascita si legge, e in italiano')
+      .toMatch(/^\d{2}\/\d{2}\/\d{4}$/);
   });
 
   test('nessuna delle otto schede lascia fuori una colonna essenziale', async ({ page }) => {
