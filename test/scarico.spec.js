@@ -1341,3 +1341,163 @@ test.describe('Dopo lo scarico la sincronizzazione non rifà il lavoro', () => {
     await pc.contesto.close(); await tel.contesto.close();
   });
 });
+
+/* ============================================================
+   RIPRENDERE DAL SERVER UNA GARA CHE C'È GIÀ QUI
+
+   Da una domanda: "prima modificavo la gara dal computer e la vedevo dal
+   telefono, adesso no, come mai?". L'invio non era rotto — le modifiche
+   partivano, in tutte e due le direzioni. Mancava il verso opposto: una
+   gara che sta già su questo dispositivo si apre da qui, e la copia del
+   server non la va a leggere nessuno. La prima volta sembrava funzionare
+   perché quella prima volta era uno scarico: sul telefono la gara non
+   c'era ancora.
+
+   Resta la regola di sempre: premere la riga apre quello che c'è QUI, e non
+   chiede niente alla rete. Andarsi a prendere le modifiche è un gesto in
+   più, esplicito, con gli stessi controlli dello scarico.
+   ============================================================ */
+test.describe("Riprendere dal server una gara che c'è già qui", () => {
+  test('il gesto c\'è solo dove ha senso: nelle gare che stanno in due posti', async ({ browser }) => {
+    /* Le tre condizioni si costruiscono decidendo cosa risulta sul server,
+       invece di provare a farcele capitare: una gara che resti "solo qui"
+       dipenderebbe da quando parte la coda, e la coda parte da sola. Qui si
+       prova la regola del disegno — su quali righe compare il gesto — e
+       quella si guarda dalle tre condizioni, comunque ci si sia arrivati. */
+    const db = nuovoServer();
+    const pc = await dispositivo(browser, db);
+    await accediNellaApp(pc.page);
+    const idLocale = await preparaEInvia(pc.page, 'La mia gara', iscrittiFinti(3));
+
+    await pc.page.evaluate(() => { riponiGaraAttiva(); });
+    await apriPortaOrganizzatore(pc.page);
+
+    const guarda = (page, gareFinte) => page.evaluate(remote => {
+      gareRemote = remote;
+      renderMenu();
+      return Array.from(document.querySelectorAll('#elencoGare .garariga')).map(r => ({
+        nome: r.querySelector('.gnome').textContent,
+        dove: r.dataset.dove,
+        aggiorna: !!r.querySelector('[data-aggiorna]'),
+      }));
+    }, gareFinte);
+
+    // 1. il server non ha niente: la gara sta solo qui
+    let righe = await guarda(pc.page, []);
+    expect(righe[0].dove).toBe('qui');
+    expect(righe[0].aggiorna, 'su una gara che il server non ha, non ha senso').toBe(false);
+
+    // 2. il server ha anche lei: adesso il gesto serve
+    righe = await guarda(pc.page, [{ id: idLocale, nome: 'La mia gara', iscritti: 3, arrivi: 0 }]);
+    expect(righe[0].dove).toBe('entrambi');
+    expect(righe[0].aggiorna, "dove c'è da riprendere, il gesto c'è").toBe(true);
+
+    // 3. una che sta solo sul server: basta premere la riga, che la scarica
+    righe = await guarda(pc.page, [{ id: 'altra-gara-uuid', nome: 'Di un altro coso', iscritti: 9, arrivi: 0 }]);
+    const soloServer = righe.find(r => r.nome === 'Di un altro coso');
+    expect(soloServer.dove).toBe('server');
+    expect(soloServer.aggiorna, 'e su quella da scaricare basta premere la riga').toBe(false);
+
+    await pc.contesto.close();
+  });
+
+  test('la sequenza vera: modifico dal computer, riprendo dal telefono', async ({ browser }) => {
+    test.setTimeout(120_000);
+    const db = nuovoServer();
+
+    const pc = await dispositivo(browser, db);
+    await accediNellaApp(pc.page);
+    const id = await preparaEInvia(pc.page, 'Stradolcetto', iscrittiFinti(5));
+
+    // il telefono la scarica una prima volta
+    const tel = await dispositivo(browser, db);
+    await accediNellaApp(tel.page);
+    await tel.page.evaluate(async gara => { await caricaGareRemote(); await scaricaGara(gara); }, id);
+    confrontaNumero('iscritti sul telefono dopo il primo scarico', 5,
+      await tel.page.evaluate(() => S.iscritti.length));
+
+    // il computer modifica: cambia il nome e aggiunge un iscritto
+    await pc.page.evaluate(async () => {
+      S.cfg.nome = 'Stradolcetto 2026';
+      S.iscritti.push({
+        id: nid(), pett: 99, cognome: 'ARRIVATO', nome: 'DOPO', sesso: 'M',
+        societa: 'ATL. OVADESE', nascita: '1985-05-05', conferma: 'S',
+      });
+      touched(); await sincronizzaSubito();
+    });
+    await attendiCodaVuota(pc.page);
+
+    // dal telefono: aprire la riga NON deve andare a chiedere niente
+    await tel.page.evaluate(() => { riponiGaraAttiva(); scordaGareRemote(); });
+    await apriPortaOrganizzatore(tel.page);
+    await tel.page.waitForFunction(() => gareRemote !== null);
+    await tel.page.evaluate(() => renderMenu());
+    await tel.page.click('#elencoGare .garariga');
+    await tel.page.waitForTimeout(200);
+    const aperta = await tel.page.evaluate(() => ({ nome: S.cfg.nome, iscritti: S.iscritti.length }));
+    expect(aperta.nome, "premendo la riga si apre quello che c'è qui, senza rete di mezzo")
+      .toBe('Stradolcetto');
+    confrontaNumero('e con gli iscritti che aveva qui', 5, aperta.iscritti);
+
+    // e adesso il gesto in più: riprendi dal server
+    await tel.page.evaluate(() => { riponiGaraAttiva(); scordaGareRemote(); });
+    await apriPortaOrganizzatore(tel.page);
+    await tel.page.waitForFunction(() => gareRemote !== null);
+    await tel.page.evaluate(() => renderMenu());
+    await tel.page.click('#elencoGare [data-aggiorna]');
+    await tel.page.waitForFunction(() => S.cfg.nome === 'Stradolcetto 2026', null, { timeout: 30_000 });
+
+    const dopo = await tel.page.evaluate(() => ({
+      nome: S.cfg.nome,
+      iscritti: S.iscritti.length,
+      ultimo: S.iscritti.map(i => i.cognome).includes('ARRIVATO'),
+    }));
+    expect(dopo.nome, 'il nome è quello nuovo').toBe('Stradolcetto 2026');
+    confrontaNumero("e l'iscritto aggiunto sul computer è arrivato", 6, dopo.iscritti);
+    expect(dopo.ultimo).toBe(true);
+
+    await pc.contesto.close(); await tel.contesto.close();
+  });
+
+  test("se qui c'è roba non inviata, si ferma e chiede prima di sostituire", async ({ browser }) => {
+    const db = nuovoServer();
+    const pc = await dispositivo(browser, db);
+    await accediNellaApp(pc.page);
+    const id = await preparaEInvia(pc.page, 'Stradolcetto', iscrittiFinti(4));
+
+    const tel = await dispositivo(browser, db);
+    await accediNellaApp(tel.page);
+    await tel.page.evaluate(async gara => { await caricaGareRemote(); await scaricaGara(gara); }, id);
+
+    // il telefono registra due arrivi senza rete
+    db.giu = true;
+    await tel.page.evaluate(async () => {
+      S.start = Date.now() - 60_000; touched();
+      S.arrivi.push({ id: nid(), pett: 1, ms: 3000, corr: 0 });
+      S.arrivi.push({ id: nid(), pett: 2, ms: 5000, corr: 0 });
+      S.stop = Date.now(); touched();
+      await sincronizzaSubito();
+    });
+    await attendiCodaPiena(tel.page);
+    db.giu = false;
+
+    await tel.page.evaluate(() => { riponiGaraAttiva(); scordaGareRemote(); });
+    await apriPortaOrganizzatore(tel.page);
+    await tel.page.waitForFunction(() => gareRemote !== null);
+    await tel.page.evaluate(() => renderMenu());
+    await tel.page.click('#elencoGare [data-aggiorna]');
+
+    // la domanda a tre strade, quella dello scarico
+    await tel.page.waitForSelector('#dlgScelte[open]', { timeout: 15_000 });
+    const testo = await tel.page.evaluate(() => document.querySelector('#dlgScelte').textContent);
+    expect(testo, "dice che qui c'è roba non ancora inviata").toContain('non ancora inviata');
+    expect(testo, 'e che sono arrivi').toContain('arrivi');
+    await tel.page.click('#scPiede button[data-scelta="tieni"]');
+    await tel.page.waitForTimeout(300);
+
+    confrontaNumero('gli arrivi registrati qui sono ancora tutti', 2,
+      await tel.page.evaluate(() => S.arrivi.length));
+
+    await pc.contesto.close(); await tel.contesto.close();
+  });
+});

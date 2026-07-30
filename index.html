@@ -3254,6 +3254,22 @@ function renderPortaOrganizzatore() {
       scarico ? el('span', { class: 'gscarico' }, 'Scarico ' + scarico.passo + '…') : null,
       g.inCorso ? el('span', { class: 'garacorsa' }, el('span', { class: 'dot' }), 'in corso') : null,
       scarico ? null : etichettaDove(g.dove),
+      /* AGGIORNA DA SERVER, solo sulle gare che stanno in tutti e due i
+         posti. Premere la riga apre quello che c'è QUI, e deve continuare a
+         fare così: nessuno vuole che aprire una gara al traguardo vada a
+         chiedere qualcosa alla rete. Ma quando si lavora in due momenti su
+         due dispositivi — si prepara al computer, si cronometra col
+         telefono — le modifiche fatte di là non arrivano da sole, e questo
+         è il gesto per andarsele a prendere. Passa dagli stessi controlli
+         dello scarico: se qui c'è roba non ancora inviata si ferma e
+         chiede, e una gara in corso non si tocca. */
+      (g.dove === 'entrambi' && !scarico)
+        ? el('span', {
+          class: 'ib', 'data-aggiorna': g.id,
+          title: 'Prendi dal server la versione di questa gara',
+          onclick: e => { e.stopPropagation(); chiediAggiornamento(g); },
+        }, '↓')
+        : null,
       /* Il cestino c'è anche sulle gare che stanno solo sul server: sono
          quelle nate su un altro dispositivo, e senza questo pulsante da qui
          non ci sarebbe modo di togliere di mezzo una prova venuta male. */
@@ -3306,6 +3322,22 @@ function elencoOrganizzatore() {
     });
   }
   return [...perId.values()].sort(perData);
+}
+
+/* Riprendere dal server una gara che c'è già qui.
+   Si chiede prima, perché a differenza di una gara nuova qui c'è qualcosa
+   da sostituire: chi preme deve sapere che la copia locale viene rimpiazzata
+   da quella del server. Quello che è ancora in coda lo intercetta scaricaGara
+   con la sua domanda a tre strade. */
+async function chiediAggiornamento(g) {
+  const ok = await confirmDlg(
+    'Aggiorna «' + (g.nome || 'gara senza nome') + '» dal server',
+    'La copia che hai su questo dispositivo viene sostituita con quella del ' +
+    'server, che è dove sono finite le modifiche fatte dagli altri dispositivi. ' +
+    'Se qui c\'è qualcosa che il server non ha ancora, te lo dico prima di ' +
+    'toccare niente.');
+  if (!ok) return;
+  await avviaScarico(g);
 }
 
 /* Lo scaricamento visto da chi guarda: la riga dice a che punto è, e finché
