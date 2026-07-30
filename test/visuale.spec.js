@@ -302,3 +302,144 @@ test.describe('Niente zoom mentre si cronometra', () => {
     expect(piccoli.orologio, 'e il cronometro deve restare grande').toBeGreaterThan(20);
   });
 });
+
+/* ============================================================
+   LA SCHEDA GARA SUL TELEFONO
+
+   Era la pagina peggiore della app: cinquemila punti di altezza, quasi
+   tutti presi dalla matrice delle categorie, e dentro una quantità di
+   bersagli che un dito non prende — le crocette delle categorie erano alte
+   quattordici punti. Per arrivare ai backup, che stanno in fondo, bisognava
+   scorrere per mezzo minuto.
+   ============================================================ */
+test.describe('La scheda Gara si usa anche con le dita', () => {
+  /** Tutto quello che si preme dentro la scheda Gara, con la sua misura. */
+  const bersagli = page => page.evaluate(() => {
+    const sez = document.querySelector('section.view[data-v="gara"]');
+    const out = [];
+    for (const e of sez.querySelectorAll('button, input, select')) {
+      const r = e.getBoundingClientRect();
+      if (r.width === 0 && r.height === 0) continue;          // nascosto
+      if (e.type === 'checkbox') continue;                     // ha una regola sua
+      out.push({
+        cosa: (e.id || e.textContent || e.value || e.tagName).toString().trim().slice(0, 28),
+        alto: Math.round(r.height),
+      });
+    }
+    return out;
+  });
+
+  const misure = page => page.evaluate(() => ({
+    altezza: document.documentElement.scrollHeight,
+    scorrimentoDiLato: document.documentElement.scrollWidth - innerWidth,
+    matriceVisibile: !!document.querySelector('#matrixBox table')
+      && getComputedStyle(document.querySelector('#matrixBox')).display !== 'none',
+    sunto: (document.querySelector('#matriceSunto').textContent || '').trim(),
+    bottone: (document.querySelector('#btnMatrice').textContent || '').trim(),
+    bottoneVisibile: getComputedStyle(document.querySelector('#btnMatrice')).display !== 'none',
+  }));
+
+  test('la matrice delle categorie sta chiusa, e il riassunto dice cosa c\'è dentro', async ({ page }) => {
+    await gara(page, TELEFONO);
+    await page.evaluate(() => go('gara'));
+
+    const m = await misure(page);
+    expect(m.matriceVisibile, 'di suo la matrice sta chiusa: sono diciotto fasce').toBe(false);
+    expect(m.bottoneVisibile, 'e c\'è il pulsante per aprirla').toBe(true);
+    expect(m.bottone).toBe('Apri');
+    expect(m.sunto, 'il riassunto dice quante sono').toMatch(/18 fasce/);
+    expect(m.sunto, 'e se c\'è qualcosa da sistemare').toMatch(/assegnate|fuori/);
+
+    if (m.altezza > 2600) {
+      throw new Error(
+        `\nLa scheda Gara sul telefono è alta ${m.altezza} punti.\n\n` +
+        '  Con la matrice aperta erano cinquemila, e per arrivare ai backup in\n' +
+        '  fondo si scorreva per mezzo minuto. Se torna a crescere così, è\n' +
+        '  perché qualcosa si è riaperto da solo.\n');
+    }
+    confrontaNumero('scorrimento orizzontale della scheda Gara', 0, m.scorrimentoDiLato);
+  });
+
+  test('aprendola si vede tutta, e resta aperta anche dopo', async ({ page }) => {
+    await gara(page, TELEFONO);
+    await page.evaluate(() => go('gara'));
+    await page.click('#btnMatrice');
+    await page.waitForFunction(() => !!document.querySelector('#matrixBox table'));
+
+    let m = await misure(page);
+    expect(m.matriceVisibile, 'premendo Apri la matrice compare').toBe(true);
+    expect(m.bottone, 'e il pulsante cambia parola').toBe('Chiudi');
+
+    // la scelta si ricorda: riaprendo la app resta com'era
+    await page.reload();
+    await page.waitForFunction(() => typeof S !== 'undefined' && C !== null);
+    await page.evaluate(() => { entraNellaApp('gara'); go('gara'); });
+    m = await misure(page);
+    expect(m.matriceVisibile, 'e la si ritrova aperta').toBe(true);
+  });
+
+  test('niente di quello che si preme è più piccolo di un polpastrello', async ({ page }) => {
+    await gara(page, TELEFONO);
+    await page.evaluate(() => { apriMatrice(true); go('gara'); });
+    await page.waitForFunction(() => !!document.querySelector('#matrixBox table'));
+
+    /* E il cestino della fascia non deve finire sopra la casella del nome:
+       il riquadro gli lascia il suo posto a destra, non ci si sovrappone. */
+    const accavallato = await page.evaluate(() => {
+      const riga = document.querySelector('.matrix tbody tr');
+      const nome = riga.querySelector('td:first-child input').getBoundingClientRect();
+      const cestino = riga.querySelector('td:nth-child(5) button').getBoundingClientRect();
+      const tocca = !(cestino.left >= nome.right || cestino.right <= nome.left ||
+        cestino.top >= nome.bottom || cestino.bottom <= nome.top);
+      return tocca ? { nome: Math.round(nome.right), cestino: Math.round(cestino.left) } : null;
+    });
+    if (accavallato) {
+      throw new Error(
+        '\nIl cestino della fascia si stampa sopra la casella del nome:\n' +
+        `  la casella arriva a ${accavallato.nome}px, il cestino comincia a ${accavallato.cestino}px\n\n` +
+        '  Premendo per correggere il nome si rischia di cancellare la fascia.\n');
+    }
+
+    const piccoli = (await bersagli(page)).filter(b => b.alto < 38);
+    if (piccoli.length) {
+      throw new Error(
+        '\nNella scheda Gara si preme roba troppo piccola per un dito:\n' +
+        piccoli.slice(0, 12).map(b => `  "${b.cosa}" alto ${b.alto}px`).join('\n') +
+        (piccoli.length > 12 ? `\n  … e altri ${piccoli.length - 12}` : '') +
+        '\n\n  Le crocette delle categorie erano alte 14 punti: per toglierne una\n' +
+        '  bisognava azzeccare il pixel. Sotto i 38 non ci si va.\n');
+    }
+  });
+
+  test('l\'avviso delle categorie senza fascia si vede anche a matrice chiusa', async ({ page }) => {
+    /* È l'unica cosa lì dentro che va vista subito: quegli atleti non
+       compaiono in nessuna classifica di categoria. */
+    await gara(page, TELEFONO);
+    await page.evaluate(() => {
+      apriMatrice(false);
+      S.matrice = S.matrice.slice(0, 2);      // le altre categorie restano orfane
+      touched(); go('gara');
+    });
+
+    const r = await page.evaluate(() => ({
+      // chiusa vuol dire NON VISIBILE: la tabella nel documento c'è comunque
+      matriceVisibile: getComputedStyle(document.querySelector('#matrixBox')).display !== 'none',
+      avviso: (document.querySelector('#matrixOrphans').textContent || '').trim(),
+      avvisoVisibile: document.querySelector('#matrixOrphans .banner') !== null,
+      sunto: (document.querySelector('#matriceSunto').textContent || '').trim(),
+    }));
+
+    expect(r.matriceVisibile, 'la matrice resta chiusa').toBe(false);
+    expect(r.avvisoVisibile, 'ma l\'avviso no: quello si vede sempre').toBe(true);
+    expect(r.avviso).toContain('Categorie senza fascia');
+    expect(r.sunto, 'e il riassunto lo dice anche lui').toMatch(/fuori/);
+  });
+
+  test('da computer resta com\'era: matrice aperta e nessun pulsante in più', async ({ page }) => {
+    await gara(page, { width: 1280, height: 900 });
+    await page.evaluate(() => go('gara'));
+    const m = await misure(page);
+    expect(m.matriceVisibile, 'da computer la matrice si vede senza aprire niente').toBe(true);
+    expect(m.bottoneVisibile, 'e il pulsante Apri non ha motivo di esserci').toBe(false);
+  });
+});

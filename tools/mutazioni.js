@@ -148,6 +148,36 @@ const MUTAZIONI = [
     // prova che percorre il volume in cui il difetto compariva davvero.
     test: 'riprova al giro dopo|non si ferma a metà|dall.inizio alla fine',
   },
+  /* La scheda Gara sul telefono. Rotture che non danno nessun errore: la
+     pagina si vede lo stesso, solo che non si riesce a usarla. */
+  {
+    nome: 'la matrice delle categorie si apre da sola sul telefono',
+    spiega: 'senza una scelta salvata, la matrice risulta aperta invece che chiusa',
+    danno: 'La scheda Gara torna alta cinquemila punti: per arrivare ai backup si scorre per mezzo minuto.',
+    // NB: rompere "let matriceAperta = false" non serve a niente, la riga
+    // subito dopo lo risistema leggendo la memoria. Il valore vero di
+    // partenza e' qui.
+    cerca: "try { matriceAperta = localStorage.getItem(KEY_MATRICE) === '1'; } catch (e) { }",
+    sostituisci: "try { matriceAperta = localStorage.getItem(KEY_MATRICE) !== '0'; } catch (e) { }",
+    test: 'sta chiusa',
+  },
+  {
+    nome: 'le crocette delle categorie tornano piccole',
+    spiega: 'il tasto per togliere una categoria FIDAL perde la misura minima',
+    danno: 'Alto quattordici punti: per toglierne una bisogna azzeccare il pixel, e intanto se ne tolgono altre.',
+    cerca: '  .chip button{min-width:38px;min-height:38px;font-size:16px}',
+    sostituisci: '  .chip button{font-size:16px}',
+    test: 'polpastrello',
+  },
+  {
+    nome: 'il cestino della fascia finisce sopra il nome',
+    spiega: 'il riquadro della fascia non lascia piu\' posto al cestino',
+    danno: 'Premendo per correggere il nome della fascia si rischia di cancellarla.',
+    cerca: '    padding:9px 54px 9px 9px;margin-bottom:9px;position:relative;',
+    sostituisci: '    padding:9px 38px 9px 9px;margin-bottom:9px;position:relative;',
+    test: 'polpastrello',
+  },
+
   /* La data di nascita: da lei dipende la categoria FIDAL, cioe' chi sale
      sul podio. Nessuna di queste rotture da' un errore a schermo. */
   {

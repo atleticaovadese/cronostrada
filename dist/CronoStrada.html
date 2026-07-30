@@ -84,6 +84,10 @@ main{padding:18px 16px 80px;max-width:1400px;margin:0 auto}
 .card>.body.flush{padding:0}
 .hint{font-size:12.5px;color:var(--ink-2);margin:0}
 .hint.warn{color:var(--warn)}
+/* Da computer il pulsante che apre e chiude la matrice non serve: lì lo
+   spazio c'è, e la matrice si tiene aperta. Anche il riassunto è roba da
+   telefono. */
+#btnMatrice,#matriceSunto{display:none}
 .grid{display:grid;gap:14px}
 .g2{grid-template-columns:repeat(auto-fit,minmax(260px,1fr))}
 .g3{grid-template-columns:repeat(auto-fit,minmax(200px,1fr))}
@@ -434,7 +438,9 @@ html,body{overscroll-behavior-y:contain}
   .matrix,.matrix tbody,.matrix tr,.matrix td{display:block;width:auto}
   .matrix tr{
     border:1px solid var(--line);border-radius:9px;
-    padding:9px 38px 9px 9px;margin-bottom:9px;position:relative;
+    /* 54 a destra: il cestino è largo 38 e sta a 8 dal bordo, quindi sotto
+       i 54 finirebbe sopra la casella del nome della fascia. */
+    padding:9px 54px 9px 9px;margin-bottom:9px;position:relative;
   }
   .matrix tr:hover{background:transparent}
   .matrix td{border:0;padding:3px 0;text-align:left}
@@ -588,6 +594,32 @@ body.inMenu #top,body.inMenu main{display:none!important}
   .schede select{min-height:40px;width:100%;border:1px solid var(--line);
     background:var(--surface-2);border-radius:7px;padding:4px 6px;font-size:15px}
   .schede input[type=checkbox]{width:26px;height:26px}
+
+  /* ---- LA SCHEDA GARA, SUL TELEFONO ----
+     Era la pagina peggiore: cinquemila punti di altezza, quasi tutti presi
+     dalla matrice delle categorie, e dentro una quantità di bersagli che un
+     dito non prende — le crocette delle categorie erano alte 14 punti. */
+
+  /* La matrice sta chiusa: al suo posto il riassunto. L'avviso delle
+     categorie senza fascia resta fuori e si vede sempre. */
+  #cardMatrice.chiusa #matrixBox,
+  #cardMatrice.chiusa .hint{display:none}
+  #btnMatrice{display:inline-flex}
+  #matriceSunto{display:block;margin-bottom:10px}
+  .sunto{display:flex;align-items:center;gap:8px;flex-wrap:wrap;font-size:14px}
+
+  /* Quello che si preme, grande quanto un polpastrello. */
+  .card>.body input,.card>.body select{min-height:40px;font-size:15px}
+  .card>.body input[type=checkbox]{min-height:0;width:26px;height:26px}
+  .card>header .btn.sm{min-height:38px;padding:7px 12px}
+  .btnrow .btn{min-height:42px}
+  /* Le crocette delle categorie erano 14 punti. Portarle a 38 fa crescere
+     un po' le righe della matrice, ma la matrice sul telefono sta chiusa e
+     si apre solo per lavorarci: quando ci si lavora, si deve prendere. */
+  .chip{font-size:13px;padding:2px 4px 2px 10px;min-height:40px}
+  .chip button{min-width:38px;min-height:38px;font-size:16px}
+  .matrix select{min-height:38px!important;font-size:14px!important;border-radius:10px!important}
+  .matrix .ib{min-width:38px;min-height:38px}
 }
 
 @media print{
@@ -673,10 +705,12 @@ body.inMenu #top,body.inMenu main{display:none!important}
     <p class="hint" style="margin-top:12px">I premiati assoluti vengono <b>esclusi</b> dalla classifica della loro categoria, come nel file originale.</p>
   </div></div>
 
-  <div class="card"><header><h2>Categorie di premiazione</h2><div class="topspace"></div>
+  <div class="card" id="cardMatrice"><header><h2>Categorie di premiazione</h2><div class="topspace"></div>
+    <button class="btn sm" id="btnMatrice">Apri</button>
     <button class="btn sm" id="btnMatrixReset">Ripristina standard</button>
     <button class="btn sm primary" id="btnMatrixAdd">+ Fascia</button></header>
     <div class="body">
+      <div id="matriceSunto"></div>
       <p class="hint" style="margin-bottom:12px">Ogni riga è una fascia premiata. Trascina dentro le categorie FIDAL da accorpare: chi rientra in una di queste categorie gareggia nella fascia indicata. Le categorie non assegnate a nessuna fascia vengono segnalate tra gli iscritti.</p>
       <div id="matrixBox"></div>
       <div id="matrixOrphans"></div>
@@ -1809,6 +1843,24 @@ function renderMatrice() {
   t.append(tb); box.append(t);
 
   const orfani = [...conteggio.keys()].filter(k => !usate.has(k));
+
+  /* Il riassunto che si legge a matrice chiusa. Deve bastare a capire se
+     c'è qualcosa da sistemare senza doverla aprire. */
+  const card = $('#cardMatrice');
+  if (card) card.classList.toggle('chiusa', !matriceAperta);
+  const bott = $('#btnMatrice');
+  if (bott) bott.textContent = matriceAperta ? 'Chiudi' : 'Apri';
+  const sunto = $('#matriceSunto');
+  if (sunto) {
+    sunto.innerHTML = '';
+    const conPremi = S.matrice.filter(f => (f.premi ?? S.cfg.premCat) > 0).length;
+    sunto.append(el('div', { class: 'sunto' },
+      el('b', {}, plur(S.matrice.length, 'fascia', 'fasce')),
+      el('span', {}, ' · ' + plur(conPremi, 'con premi', 'con premi')),
+      orfani.length
+        ? el('span', { class: 'tag bad' }, plur(orfani.length, 'categoria fuori', 'categorie fuori'))
+        : el('span', { class: 'tag go' }, 'tutte assegnate')));
+  }
   const ob = $('#matrixOrphans'); ob.innerHTML = '';
   if (orfani.length) ob.append(el('div', { class: 'banner warn', style: 'margin-top:12px' },
     el('div', {}, el('b', {}, 'Categorie senza fascia: '), orfani.join(', '),
@@ -2699,6 +2751,25 @@ let padBersaglio = null;
 /* --- pannello del cronometro compresso ---
    Chiave sua, separata dai dati della gara: è una preferenza di chi usa la
    app, non deve finire nei backup né sparire con "Azzera tutto". */
+/* LA MATRICE DELLE CATEGORIE, SUL TELEFONO, STA CHIUSA.
+   Diciotto fasce, ognuna con le sue categorie FIDAL, i premi e il conteggio
+   iscritti: aperta occupa cinquemila punti di altezza e per arrivare ai
+   backup che stanno sotto bisogna scorrere per mezzo minuto. È anche la
+   parte che sul telefono non si tocca quasi mai — accorpare categorie è un
+   lavoro da tavolino, si fa una volta e resta. Quindi di suo sta chiusa,
+   con sopra il riassunto di cosa c'è dentro, e si apre quando serve.
+   L'avviso delle categorie senza fascia resta SEMPRE fuori dalla chiusura:
+   è l'unica cosa lì dentro che va vista subito, perché quegli atleti non
+   compaiono in nessuna classifica. */
+const KEY_MATRICE = 'cronostrada.matriceAperta';
+let matriceAperta = false;
+try { matriceAperta = localStorage.getItem(KEY_MATRICE) === '1'; } catch (e) { }
+function apriMatrice(v) {
+  matriceAperta = !!v;
+  try { localStorage.setItem(KEY_MATRICE, matriceAperta ? '1' : '0'); } catch (e) { }
+  render();
+}
+
 const KEY_COMPATTO = 'cronostrada.compatto';
 let compatto = false;
 try { compatto = localStorage.getItem(KEY_COMPATTO) === '1'; } catch (e) { }
@@ -4731,7 +4802,15 @@ function wire() {
   $('#stSearch').oninput = debounce(e => { ui.stQ = e.target.value; renderStati(); }, 180);
 
   // --- gara
-  $('#btnMatrixAdd').onclick = () => { S.matrice.push({ nome: 'NUOVA', fidal: [], premi: S.cfg.premCat }); touched(); };
+  $('#btnMatrice').onclick = () => apriMatrice(!matriceAperta);
+  // aggiungere una fascia apre la matrice: altrimenti sul telefono si
+  // preme "+ Fascia" e non succede niente di visibile
+  $('#btnMatrixAdd').onclick = () => {
+    S.matrice.push({ nome: 'NUOVA', fidal: [], premi: S.cfg.premCat });
+    matriceAperta = true;
+    try { localStorage.setItem(KEY_MATRICE, '1'); } catch (e) { }
+    touched();
+  };
   $('#btnMatrixReset').onclick = async () => {
     if (!await confirmDlg('Ripristina', 'Sostituire la matrice attuale con quella standard a 18 fasce?')) return;
     S.matrice = JSON.parse(JSON.stringify(MATRICE_STD)); touched();
