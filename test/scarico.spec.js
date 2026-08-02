@@ -1501,3 +1501,143 @@ test.describe("Riprendere dal server una gara che c'è già qui", () => {
     await pc.contesto.close(); await tel.contesto.close();
   });
 });
+
+/* ============================================================
+   I PETTORALI DEGLI ARRIVI ARRIVANO SUL SERVER
+
+   Da una segnalazione: "prendo certi arrivi da un dispositivo e poi
+   dall'altro non si leggono". Sul server gli arrivi c'erano — il tempo, la
+   sessione, tutto — e non c'era nessun pettorale: l'altro dispositivo
+   scaricava cinque righe senza numero, cioè cinque tempi di nessuno.
+
+   Il pettorale di un arrivo non sta nella riga dell'arrivo: quella è
+   immutabile e nasce col solo tempo. Sta in una riga di CORREZIONE, e
+   l'identificativo di quella riga veniva scritto dentro l'arrivo mentre la
+   lista veniva COSTRUITA. Ma costruire non è mandare. Se la lista finiva
+   buttata via — o se accodare non arrivava in fondo, per esempio perché la
+   app veniva chiusa in quel mezzo secondo — il pettorale risultava "già
+   mandato" senza essere mai partito, e da lì non lo rigenerava più nessuno.
+
+   Adesso la firma la mette chi accoda, dopo che l'operazione è al sicuro.
+   ============================================================ */
+test.describe('I pettorali arrivano sul server', () => {
+  test('costruire la lista e buttarla via non fa sparire il pettorale', async ({ browser }) => {
+    const db = nuovoServer();
+    const pc = await dispositivo(browser, db);
+    await accediNellaApp(pc.page);
+
+    const r = await pc.page.evaluate(async () => {
+      nuovaGara();
+      S.cfg.nome = 'Stradolcetto';
+      S.start = Date.now() - 600_000;
+      S.arrivi = [1, 2, 3].map((p, i) => ({ id: nid(), pett: p, ms: 60_000 + i * 1000, corr: 0 }));
+      S.stop = Date.now();
+      touched();
+
+      // qualcuno costruisce la lista e non la accoda: è quello che fa
+      // prendiImpronteDelloScarico, ed è anche quello che succede se la app
+      // muore fra la costruzione e la scrittura in coda
+      const buttata = operazioniDaMandare(new Set());
+
+      // e adesso il giro vero
+      await sincronizzaSubito();
+      return {
+        correzioniNellaListaButtata: buttata.filter(o => o.tipo === 'arrivi_correzioni').length,
+        garaId: S.garaId,
+      };
+    });
+    await attendiCodaVuota(pc.page);
+
+    confrontaNumero('correzioni nella lista costruita e buttata', 3, r.correzioniNellaListaButtata);
+    confrontaNumero('correzioni arrivate sul server', 3, db.tabelle.arrivi_correzioni.length,
+      'Costruire la lista non è mandarla: chi la butta via non deve poter ' +
+      'far risultare mandato un pettorale che non è mai partito.');
+    expect(db.tabelle.arrivi_correzioni.map(c => c.pett).sort((a, b) => a - b))
+      .toEqual([1, 2, 3]);
+
+    await pc.contesto.close();
+  });
+
+  test('e non ne fa nemmeno due: stesso contenuto, stessa riga', async ({ browser }) => {
+    const db = nuovoServer();
+    const pc = await dispositivo(browser, db);
+    await accediNellaApp(pc.page);
+
+    await pc.page.evaluate(async () => {
+      nuovaGara();
+      S.cfg.nome = 'Stradolcetto';
+      S.start = Date.now() - 600_000;
+      S.arrivi = [{ id: nid(), pett: 7, ms: 61_000, corr: 0 }];
+      S.stop = Date.now();
+      touched();
+      operazioniDaMandare(new Set());        // costruita una prima volta
+      operazioniDaMandare(new Set());        // e una seconda
+      await sincronizzaSubito();
+    });
+    await attendiCodaVuota(pc.page);
+
+    confrontaNumero('correzioni sul server dopo tre costruzioni della stessa', 1,
+      db.tabelle.arrivi_correzioni.length,
+      'Lo stesso contenuto deve produrre lo stesso identificativo, o si ' +
+      'riempie la tabella di righe uguali.');
+
+    await pc.contesto.close();
+  });
+
+  test('la sequenza vera: prendo gli arrivi da qui, li leggo di là col pettorale', async ({ browser }) => {
+    test.setTimeout(120_000);
+    const db = nuovoServer();
+
+    const pc = await dispositivo(browser, db);
+    await accediNellaApp(pc.page);
+    const id = await preparaEInvia(pc.page, 'Stradolcetto', iscrittiFinti(10));
+
+    const tel = await dispositivo(browser, db);
+    await accediNellaApp(tel.page);
+    await tel.page.evaluate(async gara => { await caricaGareRemote(); await scaricaGara(gara); }, id);
+
+    /* Al traguardo, dai gesti veri: tre col pettorale digitato, due senza,
+       e quei due assegnati subito dopo con lo stesso tastierino. */
+    await tel.page.evaluate(() => { entraNellaApp('traguardo'); go('traguardo'); });
+    await tel.page.click('#btnStart');
+    for (const pett of ['1', '2', '3', '', '']) {
+      await tel.page.evaluate(p => {
+        document.querySelector('#quickBib').value = p;
+        padConferma();
+      }, pett);
+      await tel.page.waitForTimeout(60);
+    }
+    await tel.page.evaluate(() => {
+      S.arrivi.filter(a => a.pett === null).forEach((a, i) => {
+        apriAssegnazione(a.id);
+        document.querySelector('#quickBib').value = String(8 + i);
+        padConferma();
+      });
+    });
+
+    confrontaNumero('arrivi registrati sul telefono', 5,
+      await tel.page.evaluate(() => S.arrivi.length));
+
+    // si ferma il cronometro: una gara in corso non si scarica, ed è giusto
+    // così — il computer se la riprende quando il traguardo ha chiuso
+    await tel.page.evaluate(() => { S.stop = Date.now(); touched(); });
+
+    // si aspetta che arrivino DAVVERO sul server: "coda vuota" non basta,
+    // è vuota anche prima che il raggruppamento l'abbia riempita
+    await attendiCoda(tel.page, () => db.tabelle.arrivi_correzioni.length >= 5,
+      { timeout: 30_000, cosa: 'i pettorali non sono arrivati sul server' });
+    await attendiCodaVuota(tel.page);
+
+    confrontaNumero('arrivi sul server', 5, db.tabelle.arrivi.length);
+    confrontaNumero('pettorali sul server', 5, db.tabelle.arrivi_correzioni.length,
+      "Senza la riga di correzione l'arrivo sul server è un tempo di nessuno.");
+
+    // e il computer se li riprende, col numero
+    await pc.page.evaluate(async gara => { await caricaGareRemote(); await scaricaGara(gara); }, id);
+    const letti = await pc.page.evaluate(() => S.arrivi.map(a => a.pett).sort((a, b) => a - b));
+    expect(letti, "dall'altro dispositivo si leggono i pettorali, non cinque righe vuote")
+      .toEqual([1, 2, 3, 8, 9]);
+
+    await pc.contesto.close(); await tel.contesto.close();
+  });
+});

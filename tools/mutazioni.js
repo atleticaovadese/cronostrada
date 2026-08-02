@@ -148,6 +148,26 @@ const MUTAZIONI = [
     // prova che percorre il volume in cui il difetto compariva davvero.
     test: 'riprova al giro dopo|non si ferma a metà|dall.inizio alla fine',
   },
+  /* GUARDARE NON E' MANDARE. Le due rotture qui sotto sono quelle vere,
+     quelle che facevano sparire i dati fra un dispositivo e l'altro. */
+  {
+    nome: "l'impronta si segna mentre si costruisce la lista",
+    spiega: 'cambiata() prende nota da sola, invece di lasciarlo fare a chi accoda',
+    danno: 'Se la lista finisce buttata via, la app crede di aver mandato la gara e manda solo gli arrivi: il server li respinge con un 403 perche\' quella gara non esiste.',
+    cerca: 'const cambiata = (chiave, valore) => impronte.get(chiave) !== JSON.stringify(valore);',
+    sostituisci: 'const cambiata = (chiave, valore) => { const s = JSON.stringify(valore);\n' +
+      '  if (impronte.get(chiave) === s) return false; impronte.set(chiave, s); return true; };',
+    test: 'pettorali arrivano',
+  },
+  {
+    nome: 'il pettorale si segna come mandato prima di mandarlo',
+    spiega: "l'identificativo della correzione viene scritto nell'arrivo durante la costruzione",
+    danno: 'Il pettorale risulta gia\' mandato senza essere mai partito: sul server resta il tempo, e di chi fosse non lo sa piu\' nessuno.',
+    cerca: '    correzioniInVolo.set(a.id, { corrId, chiave });',
+    sostituisci: '    correzioniInVolo.set(a.id, { corrId, chiave }); a.corrId = corrId; a.corrKey = chiave;',
+    test: 'pettorali arrivano',
+  },
+
   /* La scheda Gara sul telefono. Rotture che non danno nessun errore: la
      pagina si vede lo stesso, solo che non si riesce a usarla. */
   {

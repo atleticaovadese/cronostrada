@@ -3853,12 +3853,38 @@ const impronte = new Map();
    gare diverse: non c'è niente da ripulire cambiando gara. */
 const giaSulServer = new Set();
 
-const cambiata = (chiave, valore) => {
-  const s = JSON.stringify(valore);
-  if (impronte.get(chiave) === s) return false;
-  impronte.set(chiave, s);
+/* GUARDARE NON È MANDARE.
+   Questa funzione dice soltanto se una riga è cambiata rispetto all'ultima
+   mandata: NON prende nota di niente. La nota la mette chi accoda, dopo che
+   l'operazione è al sicuro (vedi accodaTutte).
+
+   Prima segnava qui, durante la costruzione della lista, e bastava che la
+   lista finisse buttata via — o che accodare non arrivasse in fondo —
+   perché la app credesse di aver mandato righe mai partite. Sul server
+   mancava la gara, e allora gli arrivi venivano respinti uno per uno con un
+   403: il tempo c'era, la gara a cui appartenevano no. */
+const cambiata = (chiave, valore) => impronte.get(chiave) !== JSON.stringify(valore);
+
+/** L'impronta da segnare DOPO, attaccata all'operazione. */
+const firma = (chiave, valore) => [chiave, JSON.stringify(valore)];
+
+/* Le correzioni costruite ma non ancora accodate: arrivo -> {corrId, chiave}.
+   Serve a non farne due righe se la lista viene costruita due volte prima
+   che qualcuno la accodi — stesso contenuto, stesso identificativo, quindi
+   la seconda sovrascrive la prima invece di aggiungersi. */
+const correzioniInVolo = new Map();
+
+/** Scrive dentro l'arrivo che quella correzione è partita. Da chiamare
+    DOPO che l'operazione è entrata in coda, mai prima. */
+function segnaCorrezione(m) {
+  const a = (S.arrivi || []).find(x => x.id === m.arrivo);
+  if (!a) return false;
+  a.corrId = m.corrId;
+  a.corrKey = m.chiave;
+  const inVolo = correzioniInVolo.get(m.arrivo);
+  if (inVolo && inVolo.corrId === m.corrId) correzioniInVolo.delete(m.arrivo);
   return true;
-};
+}
 
 /** Una gara ancora completamente vuota: nessun nome, nessuno, niente.
     È la stessa regola con cui il menu decide di non mostrarla. */
@@ -3887,7 +3913,9 @@ function operazioniDaMandare(inviati) {
     pubblicata: !!S.pubblicata,
     in_corso: !!S.start && !S.stop,
   };
-  if (cambiata('gara', gara)) ops.push({ id: 'gara:' + G, gara: G, tipo: 'gara', corpo: gara });
+  if (cambiata('gara', gara)) {
+    ops.push({ id: 'gara:' + G, gara: G, tipo: 'gara', corpo: gara, impronta: firma('gara', gara) });
+  }
 
   const conf = {
     gara_id: G,
@@ -3899,7 +3927,9 @@ function operazioniDaMandare(inviati) {
     sessione: S.sessione || 1,
     dispositivo,
   };
-  if (cambiata('conf', conf)) ops.push({ id: 'conf:' + G, gara: G, tipo: 'configurazione', corpo: conf });
+  if (cambiata('conf', conf)) {
+    ops.push({ id: 'conf:' + G, gara: G, tipo: 'configurazione', corpo: conf, impronta: firma('conf', conf) });
+  }
 
   S.matrice.forEach((f, i) => {
     if (!f.idRiga) f.idRiga = nid();
@@ -3907,8 +3937,12 @@ function operazioniDaMandare(inviati) {
       id: f.idRiga, gara_id: G, nome: f.nome || '', fidal: f.fidal || [],
       premi: f.premi ?? null, ordine: i, eliminata: false, dispositivo,
     };
-    if (cambiata('fascia:' + f.idRiga, riga))
-      ops.push({ id: 'fascia:' + f.idRiga, gara: G, tipo: 'fasce', corpo: riga });
+    if (cambiata('fascia:' + f.idRiga, riga)) {
+      ops.push({
+        id: 'fascia:' + f.idRiga, gara: G, tipo: 'fasce', corpo: riga,
+        impronta: firma('fascia:' + f.idRiga, riga),
+      });
+    }
   });
 
   for (const i of S.iscritti) {
@@ -3921,8 +3955,12 @@ function operazioniDaMandare(inviati) {
       conferma: String(i.conferma || '').toUpperCase().startsWith('S'),
       eliminato: false, dispositivo,
     };
-    if (cambiata('iscritto:' + i.id, riga))
-      ops.push({ id: 'iscritto:' + i.id, gara: G, tipo: 'iscritti', corpo: riga });
+    if (cambiata('iscritto:' + i.id, riga)) {
+      ops.push({
+        id: 'iscritto:' + i.id, gara: G, tipo: 'iscritti', corpo: riga,
+        impronta: firma('iscritto:' + i.id, riga),
+      });
+    }
   }
 
   /* GLI ARRIVI. Il `ms` che va sul server è quello GREZZO, misurato rispetto
@@ -3946,28 +3984,42 @@ function operazioniDaMandare(inviati) {
      Con un identificativo basato sull'ora, come avevo fatto prima, ogni
      risincronizzazione avrebbe scritto una correzione in più per ogni
      arrivo: 265 righe inutili a ogni ritorno della rete. */
-  let corrCambiate = false;
   for (const a of S.arrivi) {
     const stato = { pett: a.pett ?? null, corr_s: a.corr || 0, nota: a.nota || null };
     if (stato.pett === null && !stato.corr_s && !stato.nota) continue;  // niente da correggere
     const chiave = JSON.stringify(stato);
-    if (a.corrKey === chiave && a.corrId) continue;                     // già mandata, identica
-    a.corrId = nid();
-    a.corrKey = chiave;
-    corrCambiate = true;
+    if (a.corrKey === chiave && a.corrId) continue;                     // già in salvo
+
+    /* LA CORREZIONE SI SEGNA COME MANDATA SOLO QUANDO È IN CODA, NON QUI.
+       Prima l'identificativo veniva scritto dentro l'arrivo durante la
+       COSTRUZIONE della lista. Ma costruire non è mandare: chi chiama può
+       buttare via il risultato — prendiImpronteDelloScarico fa esattamente
+       questo — e basta che accodare fallisca perché quel pettorale risulti
+       "già mandato" senza essere mai partito. Da lì non lo rigenera più
+       nessuno: sul server resta l'arrivo, il tempo, e nessun pettorale.
+       Adesso la firma la mette chi accoda, e chi butta via non sporca
+       niente. */
+    const inVolo = correzioniInVolo.get(a.id);
+    const corrId = (inVolo && inVolo.chiave === chiave) ? inVolo.corrId : nid();
+    correzioniInVolo.set(a.id, { corrId, chiave });
+
     ops.push({
-      id: 'corr:' + a.corrId, gara: G, tipo: 'arrivi_correzioni', immutabile: true,
-      corpo: Object.assign({ id: a.corrId, gara_id: G, arrivo_id: a.id, annullato: false, dispositivo }, stato),
+      id: 'corr:' + corrId, gara: G, tipo: 'arrivi_correzioni', immutabile: true,
+      // dati semplici: l'operazione finisce in IndexedDB, e lì una funzione
+      // non ci passa
+      daSegnare: { arrivo: a.id, corrId, chiave },
+      corpo: Object.assign({ id: corrId, gara_id: G, arrivo_id: a.id, annullato: false, dispositivo }, stato),
     });
   }
-  // Il legame fra correzione e contenuto va messo al sicuro subito: se la app
-  // muore adesso, al riavvio non deve rimandare la stessa correzione da capo.
-  if (corrCambiate) save();
 
   for (const pett of (S.dnf || [])) {
     const riga = { gara_id: G, pett, ritirato: true, dispositivo };
-    if (cambiata('ritiro:' + pett, riga))
-      ops.push({ id: 'ritiro:' + G + ':' + pett, gara: G, tipo: 'ritiri', corpo: riga });
+    if (cambiata('ritiro:' + pett, riga)) {
+      ops.push({
+        id: 'ritiro:' + G + ':' + pett, gara: G, tipo: 'ritiri', corpo: riga,
+        impronta: firma('ritiro:' + pett, riga),
+      });
+    }
   }
 
   return ops;
@@ -4187,11 +4239,26 @@ async function sincronizzaSubito() {
   if (S.garaId === garaInCancellazione) return;   // la si sta togliendo dal server
   try {
     const inviati = new Set(await leggiInviati());
-    for (const op of operazioniDaMandare(inviati)) {
-      await accoda(Object.assign({ creato: Date.now() }, op));
-    }
+    await accodaTutte(operazioniDaMandare(inviati));
   } catch (e) { }
   await inviaCoda();
+}
+
+/* Mette in coda, e SOLO DOPO segna nell'arrivo la correzione che è entrata.
+   L'ordine è il punto: se accodare fallisce a metà, quello che non è
+   entrato non risulta mandato e al giro dopo ci si riprova. */
+async function accodaTutte(ops) {
+  let segnate = false;
+  for (const op of ops) {
+    await accoda(Object.assign({ creato: Date.now() }, op));
+    // da qui in poi l'operazione è su disco: adesso si può prendere nota
+    if (op.impronta) impronte.set(op.impronta[0], op.impronta[1]);
+    if (op.daSegnare && segnaCorrezione(op.daSegnare)) segnate = true;
+  }
+  // Il legame fra correzione e contenuto va messo al sicuro su disco: se la
+  // app muore adesso, al riavvio non deve rimandare la stessa correzione.
+  if (segnate) save();
+  return ops.length;
 }
 
 const programmaSincronia = debounce(async () => {
@@ -4201,7 +4268,7 @@ const programmaSincronia = debounce(async () => {
   try {
     const inviati = new Set(await leggiInviati());
     const ops = operazioniDaMandare(inviati);
-    for (const op of ops) await accoda(Object.assign({ creato: Date.now() }, op));
+    await accodaTutte(ops);
     aggiornaStato(statoSincronia.fase === 'allineato' && !ops.length ? 'allineato' : 'attesa',
       await contaCoda());
   } catch (e) { /* IndexedDB non disponibile: la app funziona lo stesso */ }
@@ -4392,10 +4459,18 @@ function componiGaraScaricata(d) {
 function prendiImpronteDelloScarico() {
   let ops = [];
   try { ops = operazioniDaMandare(new Set()); } catch (e) { return []; }
-  // Segnato subito e in memoria: scriverlo su disco richiede centinaia di
-  // scritture asincrone, e un giro di sincronizzazione che cada in mezzo
-  // rimanderebbe su tutto quello che è appena sceso.
-  for (const op of ops) if (op.immutabile) giaSulServer.add(op.id);
+  /* Qui le note si mettono TUTTE, e apposta: quella roba sul server c'è
+     davvero, l'abbiamo appena scaricata. È l'unico posto in cui segnare
+     senza aver mandato niente è la cosa giusta — e infatti lo si scrive per
+     esteso invece di lasciarlo fare di nascosto a chi costruisce la lista.
+     Segnato subito e in memoria: scriverlo su disco richiede centinaia di
+     scritture asincrone, e un giro di sincronizzazione che cada in mezzo
+     rimanderebbe su tutto quello che è appena sceso. */
+  for (const op of ops) {
+    if (op.impronta) impronte.set(op.impronta[0], op.impronta[1]);
+    if (op.daSegnare) segnaCorrezione(op.daSegnare);
+    if (op.immutabile) giaSulServer.add(op.id);
+  }
   return ops;
 }
 

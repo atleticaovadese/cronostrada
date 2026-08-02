@@ -170,15 +170,22 @@ async function servi(db, rotta) {
     if (db.giu) { await rotta.abort('failed'); return; }
     if (db.lento) await new Promise(r => setTimeout(r, db.lento));
 
-    const rispondi = (stato, corpo, intestazioni = {}) => rotta.fulfill({
-      status: stato,
-      contentType: 'application/json',
-      headers: Object.assign({
-        'Access-Control-Allow-Origin': '*',
-        'Access-Control-Expose-Headers': 'Content-Range',
-      }, intestazioni),
-      body: JSON.stringify(corpo === undefined ? null : corpo),
-    });
+    /* La risposta si annota anche nel registro delle richieste: quando una
+       cosa non arriva, sapere CON QUALE numero è stata respinta è metà del
+       lavoro. */
+    const nota = db.richieste[db.richieste.length - 1];
+    const rispondi = (stato, corpo, intestazioni = {}) => {
+      if (nota) nota.stato = stato;
+      return rotta.fulfill({
+        status: stato,
+        contentType: 'application/json',
+        headers: Object.assign({
+          'Access-Control-Allow-Origin': '*',
+          'Access-Control-Expose-Headers': 'Content-Range',
+        }, intestazioni),
+        body: JSON.stringify(corpo === undefined ? null : corpo),
+      });
+    };
 
     /* ---- accesso ---- */
     if (url.pathname.startsWith('/auth/v1/token')) {
@@ -380,5 +387,5 @@ const attendiCodaPiena = (page, timeout = 15_000) =>
 
 module.exports = {
   ORIGINE, nuovoServer, montaServerFinto, accediNellaApp,
-  codaDi, attendiCoda, attendiCodaVuota, attendiCodaPiena,
+  codaDi, dettaglioCoda, attendiCoda, attendiCodaVuota, attendiCodaPiena,
 };
