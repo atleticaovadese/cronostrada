@@ -60,6 +60,10 @@ function nuovoServer(opzioni = {}) {
     // client si ignora. Un contatore invece dell'ora vera perché due righe
     // scritte nello stesso millisecondo devono comunque restare in ordine.
     orologio: 0,
+    // le locandine dei prossimi appuntamenti, con i limiti veri del secchio
+    allegati: [],
+    limiteAllegato: opzioni.limiteAllegato || 5 * 1024 * 1024,
+    tipiAmmessi: ['image/jpeg', 'image/png', 'image/webp', 'application/pdf'],
   };
 }
 
@@ -186,6 +190,65 @@ async function servi(db, rotta) {
         body: JSON.stringify(corpo === undefined ? null : corpo),
       });
     };
+
+    /* ---- lo Storage: le locandine dei prossimi appuntamenti ----
+       Come in 0004_appuntamenti.sql: legge chiunque, appende e toglie solo
+       chi organizza gare, cioè chi possiede almeno una riga in gare. Il
+       tetto dei 5 MB e i tipi ammessi li fa rispettare lo Storage, prima
+       ancora dell'RLS, ed è per questo che si controllano qui. */
+    if (url.pathname.startsWith('/storage/v1/')) {
+      const utente = idUtente(db, testa.authorization);
+      const organizza = utente && utente !== ANONIMO &&
+        db.tabelle.gare.some(g => g.proprietario === utente);
+
+      // l'elenco: lo legge chiunque, anche senza accesso
+      if (url.pathname === '/storage/v1/object/list/appuntamenti') {
+        return rispondi(200, db.allegati.map(a => ({
+          id: a.nome, name: a.nome, updated_at: a.quando,
+          metadata: { size: a.dimensione, mimetype: a.tipo },
+        })).sort((x, y) => y.name.localeCompare(x.name)));
+      }
+
+      // il file pubblico, quello che si apre con il collegamento
+      const pub = /^\/storage\/v1\/object\/public\/appuntamenti\/(.+)$/.exec(url.pathname);
+      if (pub) {
+        const nome = decodeURIComponent(pub[1]);
+        const a = db.allegati.find(x => x.nome === nome);
+        if (!a) return rispondi(404, { message: 'non c\'è' });
+        // il corpo esce com'è entrato, byte per byte: una foto passata da
+        // una conversione in testo diventa un rettangolo rotto
+        if (nota) nota.stato = 200;
+        return rotta.fulfill({ status: 200, contentType: a.tipo, body: a.corpo });
+      }
+
+      const uno = /^\/storage\/v1\/object\/appuntamenti\/(.+)$/.exec(url.pathname);
+      if (uno) {
+        const nome = decodeURIComponent(uno[1]);
+        if (!organizza) {
+          return rispondi(403, { message: 'new row violates row-level security policy' });
+        }
+        if (metodo === 'POST') {
+          const tipo = testa['content-type'] || '';
+          if (!db.tipiAmmessi.includes(tipo)) return rispondi(415, { message: 'mime type non ammesso' });
+          const corpo = richiesta.postDataBuffer();
+          const dimensione = corpo ? corpo.length : 0;
+          if (dimensione > db.limiteAllegato) return rispondi(413, { message: 'Payload too large' });
+          if (db.allegati.some(x => x.nome === nome)) return rispondi(409, { message: 'esiste già' });
+          db.allegati.push({
+            nome, tipo, dimensione, corpo: corpo || Buffer.alloc(0),
+            quando: new Date(Date.UTC(2026, 0, 1) + (++db.orologio)).toISOString(),
+          });
+          return rispondi(200, { Key: 'appuntamenti/' + nome });
+        }
+        if (metodo === 'DELETE') {
+          const prima = db.allegati.length;
+          db.allegati = db.allegati.filter(x => x.nome !== nome);
+          if (db.allegati.length === prima) return rispondi(404, { message: 'non c\'è' });
+          return rispondi(200, { message: 'tolto' });
+        }
+      }
+      return rispondi(404, { message: 'percorso storage sconosciuto: ' + url.pathname });
+    }
 
     /* ---- accesso ---- */
     if (url.pathname.startsWith('/auth/v1/token')) {

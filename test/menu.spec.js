@@ -103,22 +103,29 @@ test.describe('Il menu non si mette fra chi cronometra e il traguardo', () => {
   });
 });
 
-test.describe('La struttura: due caselle, poi le pagine', () => {
-  test('il menu ha soltanto le due caselle, niente altro', async ({ page }) => {
+test.describe('La struttura: le caselle, poi le pagine', () => {
+  test('il menu ha soltanto le caselle e il codice QR, niente altro', async ({ page }) => {
+    /* Le caselle erano due; dalla richiesta delle locandine sono tre. La
+       regola che questo test difende non è il NUMERO: è che nel menu
+       principale non ci finisca dentro il lavoro — nessun elenco di gare,
+       nessuna scheda, niente da leggere prima di scegliere dove andare. */
     await apriAlMenu(page);
     const r = await page.evaluate(() => ({
       pagina: ui.porta,
       caselle: [...document.querySelectorAll('#porte .portaTitolo')].map(x => x.textContent),
       casellevisibili: getComputedStyle(document.querySelector('#porte')).display !== 'none',
       corpo: document.querySelector('#menuCorpo').textContent.trim(),
-      elenchi: document.querySelectorAll('#elencoGare, #elencoLive').length,
+      elenchi: document.querySelectorAll('#elencoGare, #elencoLive, #elencoAppuntamenti').length,
       barraApp: getComputedStyle(document.querySelector('#top')).display,
+      qr: getComputedStyle(document.querySelector('#qrBox')).display !== 'none',
     }));
-    expect(r.caselle, 'due caselle, in questo ordine').toEqual(['Organizzatore', 'Live']);
+    expect(r.caselle, 'le caselle, in questo ordine')
+      .toEqual(['Organizzatore', 'Live', 'Prossimi appuntamenti']);
     expect(r.casellevisibili).toBe(true);
     expect(r.corpo, 'e sotto non c\'è nient\'altro').toBe('');
-    expect(r.elenchi, 'nessun elenco di gare nel menu principale').toBe(0);
+    expect(r.elenchi, 'nessun elenco nel menu principale').toBe(0);
     expect(r.barraApp, 'e la app resta dietro').toBe('none');
+    expect(r.qr, 'il codice QR sta qui, con le caselle').toBe(true);
   });
 
   test('Organizzatore chiede l\'account, e da lì si arriva alle gare', async ({ page }) => {

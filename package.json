@@ -13,9 +13,11 @@
     "schermate": "node tools/schermate.js",
     "icone": "node tools/icone.js",
     "versione": "node tools/versione.js",
-    "dati": "python tools/anonimizza.py"
+    "dati": "python tools/anonimizza.py",
+    "qr": "node tools/qr.js"
   },
   "devDependencies": {
-    "@playwright/test": "1.56.1"
+    "@playwright/test": "1.56.1",
+    "qrcode": "^1.5.4"
   }
 }

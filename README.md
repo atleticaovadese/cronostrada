@@ -14,6 +14,7 @@ da ricaricare su WISE.
 - [In due parole](#in-due-parole)
 - [Installala sul telefono](#installala-sul-telefono)
 - [La cosa più importante da sapere: dove finiscono i dati](#la-cosa-più-importante-da-sapere-dove-finiscono-i-dati)
+- [Le tre caselle del menu](#le-tre-caselle-del-menu)
 - [Le otto schede](#le-otto-schede)
 - [Il giorno della gara, passo per passo](#il-giorno-della-gara-passo-per-passo)
 - [Quando qualcosa va storto](#quando-qualcosa-va-storto)
@@ -168,6 +169,39 @@ Restano le tre cose qui sotto da sapere.
 In alto a destra c'è sempre scritto lo stato del salvataggio, con l'ora
 dell'ultimo. Se quel pallino diventa rosso, leggi il messaggio: te lo sta
 dicendo che qualcosa non sta salvando.
+
+---
+
+## Le tre caselle del menu
+
+Aprendo la app si sceglie da dove entrare. Nient'altro: niente elenchi, niente
+da leggere prima di decidere.
+
+| Casella | Cosa c'è dentro | Serve l'accesso? |
+|---|---|---|
+| **Organizzatore** | Le tue gare: cronometro, iscritti, classifiche, stampe | No per lavorare, sì per la copia sul server |
+| **Live** | Le classifiche pubbliche, che si aggiornano da sole | No, mai |
+| **Prossimi appuntamenti** | Le locandine e i volantini delle gare in arrivo | Solo per appenderli |
+
+Sotto le caselle c'è un **codice QR**: inquadrandolo si apre la app. È lì per
+chi ti sta davanti al banchetto e vuole vedere le classifiche sul suo telefono
+— non deve installare niente.
+
+> **Se una gara è in corso il menu non compare.** La app si apre dritta sugli
+> arrivi, col cronometro che cammina. Allo sparo non si tocca niente.
+
+### Prossimi appuntamenti
+
+Le locandine le vede **chiunque**, anche senza accesso, e si aprono toccandole:
+sono un normale collegamento, che si può mandare anche su WhatsApp.
+
+Le appende **chi organizza gare**, cioè chi ha almeno una gara sua su
+CronoStrada. Non serve nessun elenco di permessi da tenere aggiornato: se
+organizzi, puoi appendere. Foto (jpg, png, webp) e PDF, **fino a 5 MB l'uno**;
+il limite e i tipi li fa rispettare il server, non solo la app.
+
+Togliere una locandina la fa sparire per tutti, subito, e non si torna
+indietro: chi ne aveva il collegamento non la apre più.
 
 ---
 
@@ -585,6 +619,7 @@ package.json                  comandi npm (npm test)
 | `npm run mutazioni` | Rompe la app di proposito e controlla che i test se ne accorgano |
 | `npm run versione` | Allinea la versione della app installata dopo una modifica |
 | `npm run icone` | Rigenera i PNG delle icone dagli SVG |
+| `npm run qr` | Ridisegna il codice QR del menu se cambia l'indirizzo del sito |
 | `npm run schermate` | Genera gli screenshot su iPhone e Android |
 | `npm run dati` | Rigenera i dati di test anonimizzati da quelli veri |
 | `npm run browser` | Scarica i browser dei test (la prima volta) |
